@@ -1,0 +1,195 @@
+<div class="container-fluid py-4">
+
+  <!-- MANAGE MODE: Organizer's own events -->
+  <div *ngIf="isManageMode">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="fw-bold mb-0">My Events</h3>
+      <a routerLink="/manage/events/new" class="btn btn-primary">+ Create Event</a>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+    <div *ngIf="!loading && error" class="alert alert-danger">{{ error }}</div>
+
+    <div *ngIf="!loading && events.length === 0" class="text-center py-5 text-muted">
+      <div class="display-1">📅</div>
+      <h5>No events yet</h5>
+      <p>Click "Create Event" to get started</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading && events.length > 0">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Capacity</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of events">
+            <td class="fw-semibold">{{ event.title }}</td>
+            <td class="small">{{ event.start_datetime | date:'MMM d, y, HH:mm' }}</td>
+            <td class="small">{{ event.city }}<span *ngIf="event.country">, {{ event.country }}</span></td>
+            <td class="small">{{ event.capacity }}</td>
+            <td>
+              <span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span>
+            </td>
+            <td>
+              <div class="d-flex gap-1 flex-wrap">
+                <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-secondary">View</a>
+                <a [routerLink]="['/manage/events', event.id, 'edit']" class="btn btn-sm btn-outline-primary"
+                   *ngIf="event.status === 'DRAFT'">Edit</a>
+                <button class="btn btn-sm btn-success"
+                        *ngIf="event.status === 'DRAFT'"
+                        (click)="publishEvent(event)">Publish</button>
+                <button class="btn btn-sm btn-warning"
+                        *ngIf="event.status === 'PUBLISHED'"
+                        (click)="cancelEvent(event)">Cancel</button>
+                <button class="btn btn-sm btn-danger"
+                        *ngIf="event.status === 'DRAFT'"
+                        (click)="deleteEvent(event)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PUBLIC MODE: Browse all published events -->
+  <div *ngIf="!isManageMode">
+    <!-- Search/Filter Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Search Events</h5>
+        <form [formGroup]="filterForm" (ngSubmit)="onSearch()">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <input type="text" class="form-control" formControlName="title" placeholder="Search by title..." />
+            </div>
+            <div class="col-md-2">
+              <select class="form-select" formControlName="category">
+                <option value="">All Categories</option>
+                <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <input type="text" class="form-control" formControlName="location" placeholder="City or Country..." />
+            </div>
+            <div class="col-md-2">
+              <input type="date" class="form-control" formControlName="dateFrom" />
+            </div>
+            <div class="col-md-2">
+              <input type="date" class="form-control" formControlName="dateTo" />
+            </div>
+            <div class="col-md-1">
+              <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-2">
+              <input type="number" class="form-control" formControlName="minPrice" placeholder="Min price €" min="0" />
+            </div>
+            <div class="col-md-2">
+              <input type="number" class="form-control" formControlName="maxPrice" placeholder="Max price €" min="0" />
+            </div>
+            <div class="col-md-2">
+              <button type="button" class="btn btn-outline-secondary" (click)="onReset()">Reset</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Recommended Events -->
+    <div *ngIf="isLoggedIn && recommendedEvents.length > 0" class="mb-5">
+      <h4 class="mb-3 fw-semibold">Recommended for You</h4>
+      <div class="row row-cols-1 row-cols-md-3 g-3">
+        <div class="col" *ngFor="let event of recommendedEvents">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+              <span class="badge bg-primary mb-2">Recommended</span>
+              <h6 class="card-title">{{ event.title }}</h6>
+              <p class="text-muted small mb-1">{{ event.start_datetime | date:'mediumDate' }}</p>
+              <p class="text-muted small mb-0">{{ event.city }}, {{ event.country }}</p>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+              <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-primary">View Details</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+    <div *ngIf="!loading && error" class="alert alert-danger">{{ error }}</div>
+
+    <div *ngIf="!loading && !error">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-semibold mb-0">All Events <small class="text-muted fs-6">({{ total }} found)</small></h4>
+      </div>
+
+      <div *ngIf="events.length === 0" class="text-center py-5 text-muted">
+        <div class="display-1">📅</div>
+        <h5>No events found</h5>
+        <p>Try adjusting your search filters</p>
+      </div>
+
+      <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+        <div class="col" *ngFor="let event of events">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-img-top bg-light text-center py-4" style="min-height:140px;">
+              <img *ngIf="event.photos && event.photos.length > 0"
+                   [src]="event.photos[0]" class="img-fluid"
+                   style="max-height:140px;object-fit:cover;width:100%;" />
+              <span *ngIf="!event.photos || event.photos.length === 0" class="display-3">🎫</span>
+            </div>
+            <div class="card-body">
+              <div class="d-flex gap-1 flex-wrap mb-2">
+                <span *ngFor="let cat of event.categories" class="badge bg-secondary">{{ cat }}</span>
+              </div>
+              <h6 class="card-title fw-bold">{{ event.title }}</h6>
+              <p class="text-muted small mb-1">{{ event.start_datetime | date:'EEE, MMM d, y, HH:mm' }}</p>
+              <p class="text-muted small mb-2">{{ event.venue ? event.venue + ', ' : '' }}{{ event.city }}</p>
+              <div *ngIf="event.ticket_types && event.ticket_types.length > 0" class="small">
+                From <strong>€{{ getMinPrice(event) }}</strong>
+              </div>
+              <div *ngIf="!event.ticket_types || event.ticket_types.length === 0" class="small text-success fw-semibold">
+                Free Entry
+              </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+              <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-primary w-100">View Details</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <nav *ngIf="totalPages > 1" class="mt-4">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <button class="page-link" (click)="onPageChange(currentPage - 1)">Previous</button>
+          </li>
+          <li *ngFor="let page of pages" class="page-item" [class.active]="page === currentPage">
+            <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <button class="page-link" (click)="onPageChange(currentPage + 1)">Next</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+</div>

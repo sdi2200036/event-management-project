@@ -1,0 +1,67 @@
+/* Global Styles for EventHub */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+main {
+  min-height: calc(100vh - 64px);
+}
+
+/* Leaflet map container */
+#event-map {
+  z-index: 1;
+}
+
+/* Card hover effect */
+.card {
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Navbar brand */
+.navbar-brand {
+  font-size: 1.4rem;
+  letter-spacing: -0.5px;
+}
+
+/* Hero section */
+.hero-section {
+  background: linear-gradient(135deg, #0e1217 0%, #3379e3 100%);
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+}
+
+/* Badge in nav */
+.nav-link .badge {
+  font-size: 0.65rem;
+  padding: 0.25em 0.5em;
+}
+
+/* Form controls focus */
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Spinner overlay for buttons */
+.btn .spinner-border-sm {
+  vertical-align: middle;
+}
+
+/* Pagination */
+.pagination .page-link {
+  cursor: pointer;
+}
+
+/* List group message item */
+.list-group-item-action:hover {
+  background-color: #e9ecef;
+}

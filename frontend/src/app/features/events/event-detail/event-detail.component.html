@@ -1,0 +1,142 @@
+<div class="container py-4" *ngIf="!loading && !error && event">
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Photos -->
+      <div *ngIf="event.photos && event.photos.length > 0" class="mb-4">
+        <img [src]="event.photos[0]" class="img-fluid rounded shadow-sm w-100" style="max-height: 400px; object-fit: cover;" [alt]="event.title" />
+      </div>
+
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h1 class="fw-bold mb-1">{{ event.title }}</h1>
+          <div class="d-flex gap-2 flex-wrap mb-2">
+            <span class="badge bg-primary">{{ event.event_type }}</span>
+            <span
+              class="badge"
+              [ngClass]="{
+                'bg-success': event.status === 'PUBLISHED',
+                'bg-secondary': event.status === 'DRAFT',
+                'bg-danger': event.status === 'CANCELLED',
+                'bg-info': event.status === 'COMPLETED'
+              }"
+            >{{ event.status }}</span>
+            <span *ngFor="let cat of event.categories" class="badge bg-light text-dark border">{{ cat }}</span>
+          </div>
+        </div>
+
+        <!-- Organizer Actions -->
+        <div *ngIf="isOwner || isOrganizer" class="d-flex gap-2">
+          <a *ngIf="event.status === 'DRAFT'" [routerLink]="['/manage/events', event.id, 'edit']" class="btn btn-sm btn-outline-primary">Edit</a>
+          <button *ngIf="event.status === 'DRAFT'" class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
+          <button *ngIf="event.status === 'PUBLISHED'" class="btn btn-sm btn-warning" (click)="cancelEvent()">Cancel Event</button>
+          <button *ngIf="event.status === 'DRAFT'" class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">About this Event</h5>
+          <p class="card-text" style="white-space: pre-line;">{{ event.description || 'No description provided.' }}</p>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div *ngIf="event.geo_lat && event.geo_lng" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Location</h5>
+          <p class="text-muted mb-2">
+            {{ event.venue ? event.venue + ', ' : '' }}{{ event.address }}, {{ event.city }}, {{ event.country }}
+          </p>
+          <div id="event-map" style="height: 300px; border-radius: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- No map location text -->
+      <div *ngIf="!event.geo_lat || !event.geo_lng" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Location</h5>
+          <p class="text-muted">
+            {{ event.venue ? event.venue + ', ' : '' }}
+            {{ event.address ? event.address + ', ' : '' }}
+            {{ event.city }}, {{ event.country }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Event Info Card -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Event Details</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <strong>Date:</strong>
+              {{ event.start_datetime | date:'EEEE, MMMM d, y' }}
+            </li>
+            <li class="mb-2">
+              <strong>Time:</strong>
+              {{ event.start_datetime | date:'HH:mm' }} - {{ event.end_datetime | date:'HH:mm' }}
+            </li>
+            <li class="mb-2">
+              <strong>Venue:</strong> {{ event.venue || 'TBA' }}
+            </li>
+            <li class="mb-2">
+              <strong>City:</strong> {{ event.city }}, {{ event.country }}
+            </li>
+            <li class="mb-2">
+              <strong>Capacity:</strong> {{ event.capacity }} attendees
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Ticket Types -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Ticket Types</h5>
+          <div *ngIf="!event.ticket_types || event.ticket_types.length === 0" class="text-success fw-semibold">
+            Free Entry
+          </div>
+          <div *ngFor="let tt of event.ticket_types" class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div>
+              <div class="fw-semibold">{{ tt.name }}</div>
+              <small class="text-muted">{{ tt.available }} available</small>
+            </div>
+            <div class="fw-bold text-primary">€{{ tt.price }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Book Now Button (Participant only, published events) -->
+      <div *ngIf="isLoggedIn && isParticipant && event.status === 'PUBLISHED'">
+        <a
+          [routerLink]="['/events', event.id, 'book']"
+          class="btn btn-primary btn-lg w-100"
+        >
+          Book Now {{ minTicketPrice > 0 ? ('from €' + minTicketPrice) : '(Free)' }}
+        </a>
+      </div>
+
+      <!-- Guest prompt -->
+      <div *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="btn btn-outline-primary btn-lg w-100">
+          Login to Book
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div *ngIf="error" class="container py-5">
+  <div class="alert alert-danger">{{ error }}</div>
+  <a routerLink="/events" class="btn btn-primary">Back to Events</a>
+</div>

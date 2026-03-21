@@ -1,0 +1,336 @@
+# Event Management & Online Booking System
+
+A full-stack web application for managing events and online ticket booking. Built as a university assignment (ΤΕΔ 2026).
+
+Users can register, browse events, book tickets, and message each other. Organizers create and manage events. Admins approve accounts and export data.
+
+---
+
+## How It Works (Big Picture)
+
+The app is split into two separate programs that run at the same time:
+
+- **Backend** — a REST API server (Node.js + Express) that handles all business logic, talks to the database, and responds to HTTP requests. Runs on port `3000`.
+- **Frontend** — an Angular app that runs in the browser and talks to the backend via HTTP. Runs on port `4200`.
+- **Database** — PostgreSQL stores all data (users, events, bookings, messages).
+
+When you open `http://localhost:4200`, the Angular app loads in your browser. Every action (login, create event, book ticket) sends an HTTP request to `http://localhost:3000/api/...`, which the backend handles and responds to with JSON.
+
+```
+Browser (localhost:4200)
+        |
+        | HTTP requests (JSON)
+        v
+Backend API (localhost:3000)
+        |
+        | SQL queries
+        v
+PostgreSQL Database
+```
+
+---
+
+## Project Structure
+
+```
+project/
+├── backend/
+│   ├── src/
+│   │   ├── app.ts                  # Entry point — sets up Express, CORS, routes
+│   │   ├── config/
+│   │   │   └── database.ts         # PostgreSQL connection pool
+│   │   ├── routes/
+│   │   │   ├── auth.routes.ts      # /api/auth — login, register
+│   │   │   ├── users.routes.ts     # /api/users — admin user management
+│   │   │   ├── events.routes.ts    # /api/events — CRUD, search, recommendations
+│   │   │   ├── bookings.routes.ts  # /api/bookings — book tickets, view bookings
+│   │   │   ├── messages.routes.ts  # /api/messages — inbox, send, delete
+│   │   │   └── export.routes.ts    # /api/export — XML and JSON export
+│   │   ├── middleware/
+│   │   │   ├── auth.middleware.ts  # Checks JWT token on every protected request
+│   │   │   └── role.middleware.ts  # Checks user role (admin/organizer/participant)
+│   │   └── utils/
+│   │       └── jwt.utils.ts        # Sign and verify JWT tokens
+│   ├── db/
+│   │   └── schema.sql              # All database tables and the default admin user
+│   ├── .env.example                # Template for environment variables
+│   └── package.json
+│
+└── frontend/
+    └── src/
+        └── app/
+            ├── app.module.ts               # Root Angular module
+            ├── app-routing.module.ts       # Top-level URL routes (lazy loaded)
+            ├── core/
+            │   ├── guards/
+            │   │   ├── auth.guard.ts       # Blocks pages if not logged in
+            │   │   └── role.guard.ts       # Blocks pages if wrong role
+            │   ├── interceptors/
+            │   │   └── jwt.interceptor.ts  # Automatically adds JWT to every request
+            │   └── services/
+            │       ├── auth.service.ts     # Login, register, logout, current user
+            │       ├── event.service.ts    # API calls for events
+            │       ├── booking.service.ts  # API calls for bookings
+            │       └── message.service.ts  # API calls for messages
+            ├── features/
+            │   ├── welcome/                # Landing page
+            │   ├── auth/                   # Login and Register pages
+            │   ├── events/                 # Event list, detail, create/edit form
+            │   ├── bookings/               # Book ticket form, My bookings page
+            │   ├── messaging/              # Inbox and messaging page
+            │   └── admin/                  # User management, XML/JSON export
+            └── shared/
+                └── components/
+                    └── navbar/             # Top navigation bar
+```
+
+---
+
+## User Roles
+
+| Role | What they can do |
+|------|-----------------|
+| **Guest** | Browse and search published events |
+| **Participant** | Book tickets, view bookings, send messages |
+| **Organizer** | Create/edit/publish/cancel events, view bookings for their events |
+| **Admin** | Approve/reject user accounts, manage all users, export data |
+
+New accounts start as `pending` and must be approved by an Admin before they can log in.
+
+---
+
+## Prerequisites
+
+You need the following installed on your machine (WSL/Ubuntu):
+
+- **Node.js v20+** — install via nvm (see below)
+- **PostgreSQL 14+**
+- **Angular CLI**
+
+---
+
+## Step-by-Step Setup (WSL / Ubuntu)
+
+### 1. Install Node.js v20 via nvm
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
+nvm alias default 20
+node --version   # should print v20.x.x
+```
+
+### 2. Install Angular CLI
+
+```bash
+npm install -g @angular/cli
+```
+
+### 3. Install and start PostgreSQL
+
+```bash
+sudo apt update
+sudo apt install -y postgresql postgresql-client
+sudo service postgresql start
+```
+
+### 4. Set a password for the postgres user
+
+```bash
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres123';"
+```
+
+### 5. Create the database and run the schema
+
+```bash
+sudo -u postgres psql -c "CREATE DATABASE eventmanagement;"
+sudo -u postgres psql -d eventmanagement -f backend/db/schema.sql
+```
+
+Run this from inside the cloned project folder (where `backend/` is visible).
+
+### 6. Set the admin password
+
+The schema creates an admin user with a placeholder hash. You need to replace it with a real bcrypt hash.
+
+First install backend dependencies:
+```bash
+cd backend
+npm install
+```
+
+Generate the hash:
+```bash
+node -e "const b=require('bcryptjs'); b.hash('admin123',10).then(h=>console.log(h))"
+```
+
+Copy the output (the full `$2b$10$...` string), then update the database:
+```bash
+sudo -u postgres psql -d eventmanagement
+```
+
+Inside psql (paste your actual hash):
+```sql
+UPDATE users SET password_hash='$2b$10$YOUR_HASH_HERE' WHERE username='admin';
+\q
+```
+
+### 7. Configure backend environment
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Open `.env` and set your values:
+```
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres123
+DB_NAME=eventmanagement
+JWT_SECRET=any_long_random_string_here
+JWT_EXPIRES_IN=24h
+PORT=3000
+FRONTEND_URL=http://localhost:4200
+```
+
+### 8. Install frontend dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## Running the App
+
+You need **two terminals open at the same time**.
+
+**Terminal 1 — Start the backend:**
+```bash
+sudo service postgresql start      # make sure DB is running
+cd backend
+npm run dev
+```
+You should see: `Server running on port 3000`
+
+**Terminal 2 — Start the frontend:**
+```bash
+cd frontend
+npm start
+```
+You should see: `Application bundle generation complete`
+
+> **WSL users:** file change detection is already configured with polling (`--poll=2000`) so the browser auto-refreshes when you save a file. No extra setup needed.
+
+Open your browser at **http://localhost:4200**
+
+**Default admin login:**
+- Username: `admin`
+- Password: `admin123`
+
+---
+
+## Every Time You Restart Your Machine
+
+PostgreSQL does not start automatically in WSL. Run this before starting the backend:
+```bash
+sudo service postgresql start
+```
+
+---
+
+## API Endpoints Reference
+
+### Authentication
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login, returns JWT token |
+
+### Users (Admin only)
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/users` | List all users |
+| PATCH | `/api/users/:id/approve` | Approve a pending user |
+| PATCH | `/api/users/:id/reject` | Reject a pending user |
+
+### Events
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/events` | Search/list published events (public) |
+| GET | `/api/events/:id` | Get event details (public) |
+| GET | `/api/events/my` | Organizer's own events |
+| GET | `/api/events/recommendations` | Personalized recommendations |
+| POST | `/api/events` | Create event (organizer) |
+| PUT | `/api/events/:id` | Edit event (organizer) |
+| PATCH | `/api/events/:id/publish` | Publish a draft event |
+| PATCH | `/api/events/:id/cancel` | Cancel an event |
+| DELETE | `/api/events/:id` | Delete a draft event |
+
+### Bookings
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/bookings` | Book tickets (participant) |
+| GET | `/api/bookings/my` | View own bookings |
+| PATCH | `/api/bookings/:id/cancel` | Cancel a booking |
+
+### Messages
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/messages/inbox` | View inbox |
+| GET | `/api/messages/sent` | View sent messages |
+| POST | `/api/messages` | Send a message |
+| PATCH | `/api/messages/:id/read` | Mark as read |
+| DELETE | `/api/messages/:id` | Delete a message |
+
+### Export (Admin only)
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/export/xml` | Download all events as XML |
+| GET | `/api/export/json` | Download all events as JSON |
+
+---
+
+## Database Schema
+
+The database has 8 tables:
+
+| Table | Description |
+|-------|-------------|
+| `users` | All user accounts with role and approval status |
+| `events` | Events with location, dates, capacity, status |
+| `event_categories` | Tags/categories per event (many per event) |
+| `event_photos` | Photo URLs per event |
+| `ticket_types` | Ticket tiers per event (name, price, quantity) |
+| `bookings` | Ticket bookings linking users to events |
+| `messages` | Internal messages between users |
+| `event_views` | Tracks which users viewed which events (for recommendations) |
+
+---
+
+## Recommendation Algorithm
+
+The system uses **Biased Matrix Factorization** to suggest events to logged-in users.
+
+- Bookings count as a rating of 5 (strong interest)
+- Event views count as a rating of 1 (weak interest)
+- The model learns user preferences and event characteristics from this data
+- New users with no history see the most popular and newest events instead
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Backend | Node.js + Express + TypeScript | Fast, typed REST API |
+| Database | PostgreSQL | Relational data, strong consistency |
+| Auth | JWT + bcryptjs | Stateless authentication, secure passwords |
+| Frontend | Angular 17 | Component-based SPA framework |
+| Maps | Leaflet.js + OpenStreetMap | Free interactive maps |
+| UI | Bootstrap 5 | Responsive layout out of the box |

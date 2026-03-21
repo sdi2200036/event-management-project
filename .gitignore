@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Angular build cache
+frontend/.angular/
+
+# Environment variables (contains passwords - NEVER commit this)
+.env
+backend/.env
+
+# Build outputs
+dist/
+backend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

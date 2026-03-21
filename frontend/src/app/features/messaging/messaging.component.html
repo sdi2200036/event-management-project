@@ -1,0 +1,131 @@
+<div class="container py-4">
+  <h2 class="fw-bold mb-4">Messages</h2>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab === 'inbox'" (click)="switchTab('inbox')">
+        Inbox
+        <span *ngIf="unreadCount > 0" class="badge bg-danger ms-1">{{ unreadCount }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab === 'sent'" (click)="switchTab('sent')">Sent</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab === 'compose'" (click)="switchTab('compose')">
+        + Compose
+      </button>
+    </li>
+  </ul>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary"></div>
+  </div>
+
+  <!-- Inbox / Sent -->
+  <div *ngIf="!loading && (activeTab === 'inbox' || activeTab === 'sent')" class="row">
+    <!-- Message List -->
+    <div class="col-md-4">
+      <div class="list-group">
+        <ng-container *ngIf="activeTab === 'inbox'">
+          <div *ngIf="inbox.length === 0" class="text-muted text-center py-4">No messages</div>
+          <button
+            *ngFor="let msg of inbox"
+            class="list-group-item list-group-item-action"
+            [class.fw-bold]="!msg.is_read"
+            [class.active]="selectedMessage?.id === msg.id"
+            (click)="openMessage(msg)"
+          >
+            <div class="d-flex justify-content-between">
+              <span class="small">{{ msg.sender_first_name }} {{ msg.sender_last_name }}</span>
+              <span class="small text-muted">{{ msg.sent_at | date:'shortDate' }}</span>
+            </div>
+            <div class="text-truncate small">{{ msg.subject }}</div>
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="activeTab === 'sent'">
+          <div *ngIf="sent.length === 0" class="text-muted text-center py-4">No sent messages</div>
+          <button
+            *ngFor="let msg of sent"
+            class="list-group-item list-group-item-action"
+            [class.active]="selectedMessage?.id === msg.id"
+            (click)="openMessage(msg)"
+          >
+            <div class="d-flex justify-content-between">
+              <span class="small">To: {{ msg.receiver_first_name }} {{ msg.receiver_last_name }}</span>
+              <span class="small text-muted">{{ msg.sent_at | date:'shortDate' }}</span>
+            </div>
+            <div class="text-truncate small">{{ msg.subject }}</div>
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Message Detail -->
+    <div class="col-md-8">
+      <div *ngIf="!selectedMessage" class="text-center text-muted py-5">
+        Select a message to read
+      </div>
+      <div *ngIf="selectedMessage" class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h5 class="fw-bold mb-1">{{ selectedMessage.subject }}</h5>
+              <p class="text-muted small mb-0">
+                <ng-container *ngIf="activeTab === 'inbox'">
+                  From: {{ selectedMessage.sender_first_name }} {{ selectedMessage.sender_last_name }}
+                  ({{ selectedMessage.sender_username }})
+                </ng-container>
+                <ng-container *ngIf="activeTab === 'sent'">
+                  To: {{ selectedMessage.receiver_first_name }} {{ selectedMessage.receiver_last_name }}
+                  ({{ selectedMessage.receiver_username }})
+                </ng-container>
+                &bull; {{ selectedMessage.sent_at | date:'medium' }}
+              </p>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteMessage(selectedMessage)">Delete</button>
+          </div>
+          <hr />
+          <p style="white-space: pre-line;">{{ selectedMessage.body }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compose -->
+  <div *ngIf="activeTab === 'compose' && !loading">
+    <div class="row justify-content-center">
+      <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h5 class="card-title mb-4">New Message</h5>
+            <form [formGroup]="composeForm" (ngSubmit)="sendMessage()">
+              <div class="mb-3">
+                <label class="form-label">Recipient User ID</label>
+                <input type="number" class="form-control" formControlName="receiver_id" placeholder="Enter user ID" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Subject</label>
+                <input type="text" class="form-control" formControlName="subject" placeholder="Message subject" />
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Message</label>
+                <textarea class="form-control" formControlName="body" rows="6" placeholder="Write your message..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary px-5" [disabled]="composeForm.invalid || loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
