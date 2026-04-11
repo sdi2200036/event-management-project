@@ -3,8 +3,10 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 
 @Component({
-  selector: 'app-export',
+    selector: 'app-export',
   templateUrl: './export.component.html',
+  standalone: true,
+  imports: []
 })
 export class ExportComponent {
   loadingXML: boolean = false;

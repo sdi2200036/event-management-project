@@ -1,13 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Event, EventFilters } from '../../../shared/models/event.model';
+import { NgClass, DatePipe } from '@angular/common';
+import { signal } from '@angular/core';
+import { FormField, form } from '@angular/forms/signals';
 
 @Component({
-  selector: 'app-event-list',
-  templateUrl: './event-list.component.html',
+    selector: 'app-event-list',
+    templateUrl: './event-list.component.html',
+  standalone: true,
+  imports: [RouterLink, NgClass, DatePipe, FormField]
 })
 export class EventListComponent implements OnInit {
   events: Event[] = [];
@@ -17,7 +21,16 @@ export class EventListComponent implements OnInit {
   pageSize: number = 12;
   loading: boolean = false;
   error: string = '';
-  filterForm: FormGroup;
+  readonly filterModel = signal({
+    title: '',
+    category: '',
+    location: '',
+    dateFrom: '',
+    dateTo: '',
+    minPrice: '',
+    maxPrice: '',
+  });
+  readonly filterForm = form(this.filterModel);
   isLoggedIn: boolean = false;
   isManageMode: boolean = false;
 
@@ -29,19 +42,8 @@ export class EventListComponent implements OnInit {
   constructor(
     private eventService: EventService,
     private authService: AuthService,
-    private router: Router,
-    private fb: FormBuilder
-  ) {
-    this.filterForm = this.fb.group({
-      title: [''],
-      category: [''],
-      location: [''],
-      dateFrom: [''],
-      dateTo: [''],
-      minPrice: [''],
-      maxPrice: [''],
-    });
-  }
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.isLoggedIn = this.authService.isLoggedIn();
@@ -72,7 +74,9 @@ export class EventListComponent implements OnInit {
     }
 
     const filters: EventFilters = {
-      ...this.filterForm.value,
+      ...this.filterModel(),
+      minPrice: this.filterModel().minPrice ? Number(this.filterModel().minPrice) : undefined,
+      maxPrice: this.filterModel().maxPrice ? Number(this.filterModel().maxPrice) : undefined,
       page: this.currentPage,
       limit: this.pageSize,
     };
@@ -108,7 +112,15 @@ export class EventListComponent implements OnInit {
   }
 
   onReset(): void {
-    this.filterForm.reset();
+    this.filterModel.set({
+      title: '',
+      category: '',
+      location: '',
+      dateFrom: '',
+      dateTo: '',
+      minPrice: '',
+      maxPrice: '',
+    });
     this.currentPage = 1;
     this.loadEvents();
   }

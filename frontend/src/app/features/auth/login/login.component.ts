@@ -1,36 +1,43 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { signal } from '@angular/core';
+import { FormField, form, minLength, required, submit } from '@angular/forms/signals';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+  standalone: true,
+  imports: [RouterLink, FormField]
 })
 export class LoginComponent {
-  loginForm: FormGroup;
+  readonly loginModel = signal({
+    username: '',
+    password: '',
+  });
+  readonly loginFields = form(this.loginModel, (p) => {
+    required(p.username);
+    minLength(p.username, 3);
+    required(p.password);
+    minLength(p.password, 6);
+  });
   error: string = '';
   loading: boolean = false;
 
   constructor(
-    private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {
-    this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
-  }
+  ) {}
 
-  onSubmit(): void {
-    if (this.loginForm.invalid) return;
+  async onSubmit(): Promise<void> {
+    const isValid = await submit(this.loginFields);
+    if (!isValid) return;
 
     this.loading = true;
     this.error = '';
 
-    this.authService.login(this.loginForm.value).subscribe({
+    this.authService.login(this.loginModel()).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/events';
         this.router.navigateByUrl(returnUrl);

@@ -2,10 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { User } from '../../../shared/models/user.model';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { NgClass, DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-user-management',
-  templateUrl: './user-management.component.html',
+    selector: 'app-user-management',
+    templateUrl: './user-management.component.html',
+  standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NgClass, DatePipe]
 })
 export class UserManagementComponent implements OnInit {
   users: User[] = [];

@@ -10,7 +10,7 @@
       aria-controls="navbarNav"
       aria-expanded="false"
       aria-label="Toggle navigation"
-    >
+      >
       <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -26,51 +26,60 @@
         </li>
 
         <!-- Organizer links -->
-        <li class="nav-item" *ngIf="isOrganizer()">
-          <a class="nav-link" routerLink="/manage/events" routerLinkActive="active">My Events</a>
-        </li>
-        <li class="nav-item" *ngIf="isOrganizer()">
-          <a class="nav-link" routerLink="/manage/events/new" routerLinkActive="active">Create Event</a>
-        </li>
+        @if (isOrganizer()) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/manage/events" routerLinkActive="active">My Events</a>
+          </li>
+        }
+        @if (isOrganizer()) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/manage/events/new" routerLinkActive="active">Create Event</a>
+          </li>
+        }
 
         <!-- Participant links -->
-        <li class="nav-item" *ngIf="isParticipant()">
-          <a class="nav-link" routerLink="/bookings" routerLinkActive="active">My Bookings</a>
-        </li>
+        @if (isParticipant()) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/bookings" routerLinkActive="active">My Bookings</a>
+          </li>
+        }
 
         <!-- Admin links -->
-        <li class="nav-item dropdown" *ngIf="isAdmin()">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="adminDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Admin
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-            <li><a class="dropdown-item" routerLink="/admin/users">User Management</a></li>
-            <li><a class="dropdown-item" routerLink="/admin/export">Export Data</a></li>
-          </ul>
-        </li>
+        @if (isAdmin()) {
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="adminDropdown"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              >
+              Admin
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+              <li><a class="dropdown-item" routerLink="/admin/users">User Management</a></li>
+              <li><a class="dropdown-item" routerLink="/admin/export">Export Data</a></li>
+            </ul>
+          </li>
+        }
       </ul>
 
       <!-- Right side -->
       <ul class="navbar-nav ms-auto align-items-center">
-        <ng-container *ngIf="isLoggedIn(); else guestLinks">
+        @if (isLoggedIn()) {
           <!-- Messages with badge -->
           <li class="nav-item">
             <a class="nav-link position-relative" routerLink="/messages" routerLinkActive="active">
               Messages
-              <span
-                *ngIf="unreadCount > 0"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                style="font-size: 0.65rem;"
-              >
-                {{ unreadCount > 99 ? '99+' : unreadCount }}
-              </span>
+              @if (unreadCount > 0) {
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style="font-size: 0.65rem;"
+                  >
+                  {{ unreadCount > 99 ? '99+' : unreadCount }}
+                </span>
+              }
             </a>
           </li>
           <li class="nav-item">
@@ -82,16 +91,15 @@
           <li class="nav-item">
             <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
           </li>
-        </ng-container>
-
-        <ng-template #guestLinks>
+        } @else {
           <li class="nav-item">
             <a class="nav-link" routerLink="/login">Login</a>
           </li>
           <li class="nav-item">
             <a class="btn btn-outline-light btn-sm ms-2" routerLink="/register">Register</a>
           </li>
-        </ng-template>
+        }
+
       </ul>
     </div>
   </div>

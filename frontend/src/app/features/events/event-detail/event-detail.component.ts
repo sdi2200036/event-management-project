@@ -1,14 +1,17 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Event } from '../../../shared/models/event.model';
+import { NgClass, DatePipe } from '@angular/common';
 
 declare const L: any; // Leaflet global
 
 @Component({
-  selector: 'app-event-detail',
-  templateUrl: './event-detail.component.html',
+    selector: 'app-event-detail',
+    templateUrl: './event-detail.component.html',
+  standalone: true,
+    imports: [NgClass, RouterLink, DatePipe]
 })
 export class EventDetailComponent implements OnInit, AfterViewInit {
   event: Event | null = null;

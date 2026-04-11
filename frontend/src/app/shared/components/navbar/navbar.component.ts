@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, startWith } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
@@ -7,8 +7,10 @@ import { MessageService } from '../../../core/services/message.service';
 import { User } from '../../models/user.model';
 
 @Component({
-  selector: 'app-navbar',
-  templateUrl: './navbar.component.html',
+    selector: 'app-navbar',
+    templateUrl: './navbar.component.html',
+  standalone: true,
+    imports: [RouterLink, RouterLinkActive]
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;

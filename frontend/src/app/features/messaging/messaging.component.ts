@@ -1,10 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MessageService, Message } from '../../core/services/message.service';
+import { DatePipe } from '@angular/common';
+import { signal } from '@angular/core';
+import { FormField, form, maxLength, min, required, submit } from '@angular/forms/signals';
 
 @Component({
-  selector: 'app-messaging',
-  templateUrl: './messaging.component.html',
+    selector: 'app-messaging',
+    templateUrl: './messaging.component.html',
+  standalone: true,
+  imports: [DatePipe, FormField]
 })
 export class MessagingComponent implements OnInit {
   activeTab: 'inbox' | 'sent' | 'compose' = 'inbox';
@@ -13,16 +17,21 @@ export class MessagingComponent implements OnInit {
   loading: boolean = false;
   error: string = '';
   success: string = '';
-  composeForm: FormGroup;
+  readonly composeModel = signal({
+    receiver_id: 0,
+    subject: '',
+    body: '',
+  });
+  readonly composeForm = form(this.composeModel, (p) => {
+    required(p.receiver_id);
+    min(p.receiver_id, 1);
+    required(p.subject);
+    maxLength(p.subject, 255);
+    required(p.body);
+  });
   selectedMessage: Message | null = null;
 
-  constructor(private messageService: MessageService, private fb: FormBuilder) {
-    this.composeForm = this.fb.group({
-      receiver_id: [null, [Validators.required, Validators.min(1)]],
-      subject: ['', [Validators.required, Validators.maxLength(255)]],
-      body: ['', Validators.required],
-    });
-  }
+  constructor(private messageService: MessageService) {}
 
   ngOnInit(): void {
     this.loadInbox();
@@ -93,14 +102,15 @@ export class MessagingComponent implements OnInit {
     });
   }
 
-  sendMessage(): void {
-    if (this.composeForm.invalid) return;
+  async sendMessage(): Promise<void> {
+    const isValid = await submit(this.composeForm);
+    if (!isValid) return;
 
     this.loading = true;
-    this.messageService.sendMessage(this.composeForm.value).subscribe({
+    this.messageService.sendMessage(this.composeModel()).subscribe({
       next: () => {
         this.success = 'Message sent successfully!';
-        this.composeForm.reset();
+        this.composeModel.set({ receiver_id: 0, subject: '', body: '' });
         this.loading = false;
         setTimeout(() => this.switchTab('sent'), 1500);
       },

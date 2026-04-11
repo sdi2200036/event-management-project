@@ -1,15 +1,65 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { Event } from '../../../shared/models/event.model';
+import { signal } from '@angular/core';
+import { FormField, applyEach, form, maxLength, min, required, submit } from '@angular/forms/signals';
+
+type EventFormModel = {
+  title: string;
+  event_type: string;
+  description: string;
+  venue: string;
+  address: string;
+  city: string;
+  country: string;
+  geo_lat: number | null;
+  geo_lng: number | null;
+  start_datetime: string;
+  end_datetime: string;
+  capacity: number;
+  categories: string[];
+  ticket_types: Array<{ name: string; price: number; quantity: number }>;
+};
 
 @Component({
-  selector: 'app-event-form',
-  templateUrl: './event-form.component.html',
+    selector: 'app-event-form',
+    templateUrl: './event-form.component.html',
+  standalone: true,
+  imports: [RouterLink, FormField]
 })
 export class EventFormComponent implements OnInit {
-  eventForm: FormGroup;
+  readonly eventModel = signal<EventFormModel>({
+    title: '',
+    event_type: '',
+    description: '',
+    venue: '',
+    address: '',
+    city: '',
+    country: '',
+    geo_lat: null,
+    geo_lng: null,
+    start_datetime: '',
+    end_datetime: '',
+    capacity: 100,
+    categories: [],
+    ticket_types: [{ name: '', price: 0, quantity: 100 }],
+  });
+  readonly eventForm = form(this.eventModel, (p) => {
+    required(p.title);
+    maxLength(p.title, 255);
+    required(p.start_datetime);
+    required(p.end_datetime);
+    required(p.capacity);
+    min(p.capacity, 1);
+    applyEach(p.ticket_types, (tt) => {
+      required(tt.name);
+      required(tt.price);
+      min(tt.price, 0);
+      required(tt.quantity);
+      min(tt.quantity, 1);
+    });
+  });
   isEditMode: boolean = false;
   eventId: number | null = null;
   loading: boolean = false;
@@ -22,28 +72,10 @@ export class EventFormComponent implements OnInit {
   ];
 
   constructor(
-    private fb: FormBuilder,
     private eventService: EventService,
     private route: ActivatedRoute,
     private router: Router
-  ) {
-    this.eventForm = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(255)]],
-      event_type: [''],
-      description: [''],
-      venue: [''],
-      address: [''],
-      city: [''],
-      country: [''],
-      geo_lat: [null],
-      geo_lng: [null],
-      start_datetime: ['', Validators.required],
-      end_datetime: ['', Validators.required],
-      capacity: [100, [Validators.required, Validators.min(1)]],
-      categories: [[]],
-      ticket_types: this.fb.array([]),
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -51,8 +83,6 @@ export class EventFormComponent implements OnInit {
       this.isEditMode = true;
       this.eventId = parseInt(id, 10);
       this.loadEvent(this.eventId);
-    } else {
-      this.addTicketType(); // Add one ticket type by default
     }
   }
 
@@ -60,28 +90,28 @@ export class EventFormComponent implements OnInit {
     this.loading = true;
     this.eventService.getEvent(id).subscribe({
       next: (event: Event) => {
-        this.eventForm.patchValue({
+        this.eventModel.set({
           title: event.title,
-          event_type: event.event_type,
-          description: event.description,
-          venue: event.venue,
-          address: event.address,
-          city: event.city,
-          country: event.country,
-          geo_lat: event.geo_lat,
-          geo_lng: event.geo_lng,
+          event_type: event.event_type || '',
+          description: event.description || '',
+          venue: event.venue || '',
+          address: event.address || '',
+          city: event.city || '',
+          country: event.country || '',
+          geo_lat: event.geo_lat || null,
+          geo_lng: event.geo_lng || null,
           start_datetime: event.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 16) : '',
           end_datetime: event.end_datetime ? new Date(event.end_datetime).toISOString().slice(0, 16) : '',
-          capacity: event.capacity,
+          capacity: event.capacity || 100,
           categories: event.categories || [],
+          ticket_types: (event.ticket_types || []).length
+            ? event.ticket_types!.map((tt) => ({
+                name: tt.name,
+                price: tt.price,
+                quantity: tt.quantity,
+              }))
+            : [{ name: '', price: 0, quantity: 100 }],
         });
-
-        // Load ticket types
-        this.ticketTypes.clear();
-        (event.ticket_types || []).forEach((tt) => {
-          this.ticketTypes.push(this.createTicketType(tt.name, tt.price, tt.quantity));
-        });
-        if (this.ticketTypes.length === 0) this.addTicketType();
 
         this.loading = false;
       },
@@ -92,51 +122,58 @@ export class EventFormComponent implements OnInit {
     });
   }
 
-  get ticketTypes(): FormArray {
-    return this.eventForm.get('ticket_types') as FormArray;
-  }
-
-  createTicketType(name = '', price = 0, quantity = 100): FormGroup {
-    return this.fb.group({
-      name: [name, Validators.required],
-      price: [price, [Validators.required, Validators.min(0)]],
-      quantity: [quantity, [Validators.required, Validators.min(1)]],
-    });
-  }
-
   addTicketType(): void {
-    this.ticketTypes.push(this.createTicketType());
+    this.eventModel.update((current) => ({
+      ...current,
+      ticket_types: [...current.ticket_types, { name: '', price: 0, quantity: 100 }],
+    }));
   }
 
   removeTicketType(index: number): void {
-    this.ticketTypes.removeAt(index);
+    this.eventModel.update((current) => ({
+      ...current,
+      ticket_types:
+        current.ticket_types.length <= 1
+          ? current.ticket_types
+          : current.ticket_types.filter((_, i) => i !== index),
+    }));
   }
 
   toggleCategory(cat: string): void {
-    const current: string[] = this.eventForm.get('categories')?.value || [];
+    const current = [...this.eventModel().categories];
     const idx = current.indexOf(cat);
     if (idx > -1) {
       current.splice(idx, 1);
     } else {
       current.push(cat);
     }
-    this.eventForm.get('categories')?.setValue([...current]);
+    this.eventModel.update((value) => ({ ...value, categories: current }));
   }
 
   isCategorySelected(cat: string): boolean {
-    return (this.eventForm.get('categories')?.value || []).includes(cat);
+    return this.eventModel().categories.includes(cat);
   }
 
-  onSubmit(): void {
-    if (this.eventForm.invalid) return;
+  async onSubmit(): Promise<void> {
+    const isValid = await submit(this.eventForm);
+    if (!isValid) return;
 
     this.loading = true;
     this.error = '';
 
-    const formValue = this.eventForm.value;
+    const formValue = this.eventModel();
+    const payload = {
+      ...formValue,
+      geo_lat: formValue.geo_lat ?? undefined,
+      geo_lng: formValue.geo_lng ?? undefined,
+      ticket_types: formValue.ticket_types.map((tt) => ({
+        ...tt,
+        available: tt.quantity,
+      })),
+    };
 
     if (this.isEditMode && this.eventId) {
-      this.eventService.updateEvent(this.eventId, formValue).subscribe({
+      this.eventService.updateEvent(this.eventId, payload).subscribe({
         next: () => {
           this.success = 'Event updated successfully!';
           this.loading = false;
@@ -148,7 +185,7 @@ export class EventFormComponent implements OnInit {
         },
       });
     } else {
-      this.eventService.createEvent(formValue).subscribe({
+      this.eventService.createEvent(payload).subscribe({
         next: (event) => {
           this.success = 'Event created successfully!';
           this.loading = false;

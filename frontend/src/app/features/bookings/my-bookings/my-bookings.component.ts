@@ -1,10 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { BookingService } from '../../../core/services/booking.service';
 import { Booking } from '../../../shared/models/booking.model';
+import { RouterLink } from '@angular/router';
+import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-my-bookings',
-  templateUrl: './my-bookings.component.html',
+    selector: 'app-my-bookings',
+    templateUrl: './my-bookings.component.html',
+  standalone: true,
+    imports: [RouterLink, NgClass, DecimalPipe, DatePipe]
 })
 export class MyBookingsComponent implements OnInit {
   bookings: Booking[] = [];

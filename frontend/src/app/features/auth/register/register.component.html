@@ -5,20 +5,24 @@
         <div class="card-body p-5">
           <h2 class="card-title text-center mb-4 fw-bold">Create Account</h2>
 
-          <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-          <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+          @if (error) {
+            <div class="alert alert-danger">{{ error }}</div>
+          }
+          @if (success) {
+            <div class="alert alert-success">{{ success }}</div>
+          }
 
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+          <form (ngSubmit)="onSubmit()">
             <!-- Account Type -->
             <div class="mb-4">
               <label class="form-label fw-semibold">Register as:</label>
               <div class="d-flex gap-4">
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" formControlName="role" value="participant" id="roleParticipant" />
+                  <input class="form-check-input" type="radio" [formField]="registerForm.role" value="participant" id="roleParticipant" />
                   <label class="form-check-label" for="roleParticipant">Participant</label>
                 </div>
                 <div class="form-check">
-                  <input class="form-check-input" type="radio" formControlName="role" value="organizer" id="roleOrganizer" />
+                  <input class="form-check-input" type="radio" [formField]="registerForm.role" value="organizer" id="roleOrganizer" />
                   <label class="form-check-label" for="roleOrganizer">Organizer</label>
                 </div>
               </div>
@@ -28,93 +32,89 @@
               <!-- Username -->
               <div class="col-md-6">
                 <label for="username" class="form-label">Username *</label>
-                <input id="username" type="text" class="form-control" formControlName="username"
-                  [class.is-invalid]="f['username'].invalid && f['username'].touched" />
+                <input id="username" type="text" class="form-control" [formField]="registerForm.username" />
                 <div class="invalid-feedback">Username required (3-50 characters)</div>
               </div>
 
               <!-- Email -->
               <div class="col-md-6">
                 <label for="email" class="form-label">Email *</label>
-                <input id="email" type="email" class="form-control" formControlName="email"
-                  [class.is-invalid]="f['email'].invalid && f['email'].touched" />
+                <input id="email" type="email" class="form-control" [formField]="registerForm.email" />
                 <div class="invalid-feedback">Valid email is required</div>
               </div>
 
               <!-- Password -->
               <div class="col-md-6">
                 <label for="password" class="form-label">Password *</label>
-                <input id="password" type="password" class="form-control" formControlName="password"
-                  [class.is-invalid]="f['password'].invalid && f['password'].touched" />
+                <input id="password" type="password" class="form-control" [formField]="registerForm.password" />
                 <div class="invalid-feedback">Password required (min 6 characters)</div>
               </div>
 
               <!-- Confirm Password -->
               <div class="col-md-6">
                 <label for="confirmPassword" class="form-label">Confirm Password *</label>
-                <input id="confirmPassword" type="password" class="form-control" formControlName="confirmPassword"
-                  [class.is-invalid]="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched" />
+                <input id="confirmPassword" type="password" class="form-control" [formField]="registerForm.confirmPassword"
+                  [class.is-invalid]="passwordMismatch" />
                 <div class="invalid-feedback">Passwords do not match</div>
               </div>
 
               <!-- First Name -->
               <div class="col-md-6">
                 <label for="first_name" class="form-label">First Name *</label>
-                <input id="first_name" type="text" class="form-control" formControlName="first_name"
-                  [class.is-invalid]="f['first_name'].invalid && f['first_name'].touched" />
+                <input id="first_name" type="text" class="form-control" [formField]="registerForm.first_name" />
                 <div class="invalid-feedback">First name is required</div>
               </div>
 
               <!-- Last Name -->
               <div class="col-md-6">
                 <label for="last_name" class="form-label">Last Name *</label>
-                <input id="last_name" type="text" class="form-control" formControlName="last_name"
-                  [class.is-invalid]="f['last_name'].invalid && f['last_name'].touched" />
+                <input id="last_name" type="text" class="form-control" [formField]="registerForm.last_name" />
                 <div class="invalid-feedback">Last name is required</div>
               </div>
 
               <!-- Phone -->
               <div class="col-md-6">
                 <label for="phone" class="form-label">Phone</label>
-                <input id="phone" type="tel" class="form-control" formControlName="phone" />
+                <input id="phone" type="tel" class="form-control" [formField]="registerForm.phone" />
               </div>
 
               <!-- AFM -->
               <div class="col-md-6">
                 <label for="afm" class="form-label">Tax ID (AFM)</label>
-                <input id="afm" type="text" class="form-control" formControlName="afm"
-                  [class.is-invalid]="f['afm'].invalid && f['afm'].touched" placeholder="9 digits" />
+                <input id="afm" type="text" class="form-control" [formField]="registerForm.afm" placeholder="9 digits" />
                 <div class="invalid-feedback">AFM must be exactly 9 digits</div>
               </div>
 
               <!-- Address -->
               <div class="col-12">
                 <label for="address" class="form-label">Address</label>
-                <input id="address" type="text" class="form-control" formControlName="address" />
+                <input id="address" type="text" class="form-control" [formField]="registerForm.address" />
               </div>
 
               <!-- City -->
               <div class="col-md-4">
                 <label for="city" class="form-label">City</label>
-                <input id="city" type="text" class="form-control" formControlName="city" />
+                <input id="city" type="text" class="form-control" [formField]="registerForm.city" />
               </div>
 
               <!-- Country -->
               <div class="col-md-4">
                 <label for="country" class="form-label">Country</label>
-                <input id="country" type="text" class="form-control" formControlName="country" />
+                <input id="country" type="text" class="form-control" [formField]="registerForm.country" />
               </div>
 
               <!-- Postal Code -->
               <div class="col-md-4">
                 <label for="postal_code" class="form-label">Postal Code</label>
-                <input id="postal_code" type="text" class="form-control" formControlName="postal_code" />
+                <input id="postal_code" type="text" class="form-control" [formField]="registerForm.postal_code" />
               </div>
             </div>
 
             <div class="mt-4">
-              <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid || loading">
-                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid() || loading || passwordMismatch">
+                @if (loading) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
                 {{ loading ? 'Creating account...' : 'Create Account' }}
               </button>
             </div>

@@ -5,21 +5,22 @@
         <div class="card-body p-5">
           <h2 class="card-title text-center mb-4 fw-bold">Sign In</h2>
 
-          <div *ngIf="error" class="alert alert-danger" role="alert">
-            {{ error }}
-          </div>
+          @if (error) {
+            <div class="alert alert-danger" role="alert">
+              {{ error }}
+            </div>
+          }
 
-          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <form (ngSubmit)="onSubmit()">
             <div class="mb-3">
               <label for="username" class="form-label">Username</label>
               <input
                 id="username"
                 type="text"
                 class="form-control"
-                formControlName="username"
+                [formField]="loginFields.username"
                 placeholder="Enter your username"
-                [class.is-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
-              />
+                />
               <div class="invalid-feedback">Username is required (min 3 characters)</div>
             </div>
 
@@ -29,19 +30,20 @@
                 id="password"
                 type="password"
                 class="form-control"
-                formControlName="password"
+                [formField]="loginFields.password"
                 placeholder="Enter your password"
-                [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-              />
+                />
               <div class="invalid-feedback">Password is required (min 6 characters)</div>
             </div>
 
             <button
               type="submit"
               class="btn btn-primary w-100"
-              [disabled]="loginForm.invalid || loading"
-            >
-              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              [disabled]="!loginFields().valid() || loading"
+              >
+              @if (loading) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+              }
               {{ loading ? 'Signing in...' : 'Sign In' }}
             </button>
           </form>

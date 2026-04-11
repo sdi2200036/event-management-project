@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
-  selector: 'app-welcome',
-  templateUrl: './welcome.component.html',
+    selector: 'app-welcome',
+    templateUrl: './welcome.component.html',
+  standalone: true,
+    imports: [RouterLink]
 })
 export class WelcomeComponent {
   constructor(private authService: AuthService, private router: Router) {

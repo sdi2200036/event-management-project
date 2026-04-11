@@ -4,9 +4,11 @@
       <h2 class="fw-bold mb-0">User Management</h2>
       <p class="text-muted mb-0">{{ users.length }} users total</p>
     </div>
-    <span *ngIf="pendingCount > 0" class="badge bg-warning text-dark fs-6">
-      {{ pendingCount }} pending approval
-    </span>
+    @if (pendingCount > 0) {
+      <span class="badge bg-warning text-dark fs-6">
+        {{ pendingCount }} pending approval
+      </span>
+    }
   </div>
 
   <!-- Filters -->
@@ -35,86 +37,99 @@
     </div>
   </div>
 
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary"></div>
-  </div>
+  @if (loading) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+    </div>
+  }
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  @if (error) {
+    <div class="alert alert-danger">{{ error }}</div>
+  }
 
-  <div *ngIf="!loading && users.length > 0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Registered</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let user of users"
-            [class.table-warning]="user.status === 'pending'"
-            [class.table-danger]="user.status === 'rejected'"
-          >
-            <td class="text-muted small">{{ user.id }}</td>
-            <td class="fw-semibold">{{ user.username }}</td>
-            <td>{{ user.first_name }} {{ user.last_name }}</td>
-            <td class="small">{{ user.email }}</td>
-            <td>
-              <span class="badge"
+  @if (!loading && users.length > 0) {
+    <div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user) {
+              <tr
+                [class.table-warning]="user.status === 'pending'"
+                [class.table-danger]="user.status === 'rejected'"
+                >
+                <td class="text-muted small">{{ user.id }}</td>
+                <td class="fw-semibold">{{ user.username }}</td>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td class="small">{{ user.email }}</td>
+                <td>
+                  <span class="badge"
                 [ngClass]="{
                   'bg-danger': user.role === 'admin',
                   'bg-info': user.role === 'organizer',
                   'bg-secondary': user.role === 'participant'
                 }">
-                {{ user.role }}
-              </span>
-            </td>
-            <td>
-              <span class="badge"
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge"
                 [ngClass]="{
                   'bg-warning text-dark': user.status === 'pending',
                   'bg-success': user.status === 'approved',
                   'bg-danger': user.status === 'rejected'
                 }">
-                {{ user.status }}
-              </span>
-            </td>
-            <td class="small text-muted">{{ user.created_at | date:'shortDate' }}</td>
-            <td>
-              <div class="d-flex gap-1">
-                <button
-                  *ngIf="user.status === 'pending'"
-                  class="btn btn-sm btn-success"
-                  (click)="approveUser(user)"
-                  [disabled]="actionLoading === user.id"
-                >
-                  <span *ngIf="actionLoading === user.id" class="spinner-border spinner-border-sm me-1"></span>
-                  Approve
-                </button>
-                <button
-                  *ngIf="user.status === 'pending' || user.status === 'approved'"
-                  class="btn btn-sm btn-outline-danger"
-                  (click)="rejectUser(user)"
-                  [disabled]="actionLoading === user.id || user.role === 'admin'"
-                >
-                  Reject
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                    {{ user.status }}
+                  </span>
+                </td>
+                <td class="small text-muted">{{ user.created_at | date:'shortDate' }}</td>
+                <td>
+                  <div class="d-flex gap-1">
+                    @if (user.status === 'pending') {
+                      <button
+                        class="btn btn-sm btn-success"
+                        (click)="approveUser(user)"
+                        [disabled]="actionLoading === user.id"
+                        >
+                        @if (actionLoading === user.id) {
+                          <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Approve
+                      </button>
+                    }
+                    @if (user.status === 'pending' || user.status === 'approved') {
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="rejectUser(user)"
+                        [disabled]="actionLoading === user.id || user.role === 'admin'"
+                        >
+                        Reject
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  }
 
-  <div *ngIf="!loading && users.length === 0" class="text-center py-5 text-muted">
-    No users found matching the selected filters.
-  </div>
+  @if (!loading && users.length === 0) {
+    <div class="text-center py-5 text-muted">
+      No users found matching the selected filters.
+    </div>
+  }
 </div>

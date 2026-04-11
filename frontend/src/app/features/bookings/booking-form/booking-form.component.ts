@@ -1,17 +1,30 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { BookingService } from '../../../core/services/booking.service';
 import { Event, TicketType } from '../../../shared/models/event.model';
+import { DatePipe } from '@angular/common';
+import { signal } from '@angular/core';
+import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
 
 @Component({
-  selector: 'app-booking-form',
-  templateUrl: './booking-form.component.html',
+    selector: 'app-booking-form',
+    templateUrl: './booking-form.component.html',
+  standalone: true,
+  imports: [RouterLink, DatePipe, FormField]
 })
 export class BookingFormComponent implements OnInit {
   event: Event | null = null;
-  bookingForm: FormGroup;
+  readonly bookingModel = signal({
+    ticket_type_id: '',
+    number_of_tickets: 1,
+  });
+  readonly bookingForm = form(this.bookingModel, (p) => {
+    required(p.ticket_type_id);
+    required(p.number_of_tickets);
+    min(p.number_of_tickets, 1);
+    max(p.number_of_tickets, 20);
+  });
   loading: boolean = false;
   loadingEvent: boolean = true;
   error: string = '';
@@ -19,17 +32,11 @@ export class BookingFormComponent implements OnInit {
   bookingCreated: boolean = false;
 
   constructor(
-    private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
     private bookingService: BookingService
-  ) {
-    this.bookingForm = this.fb.group({
-      ticket_type_id: [null, Validators.required],
-      number_of_tickets: [1, [Validators.required, Validators.min(1), Validators.max(20)]],
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     const eventId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
@@ -38,7 +45,7 @@ export class BookingFormComponent implements OnInit {
         this.event = ev;
         this.loadingEvent = false;
         if (ev.ticket_types && ev.ticket_types.length > 0) {
-          this.bookingForm.get('ticket_type_id')?.setValue(ev.ticket_types[0].id);
+          this.bookingModel.update((current) => ({ ...current, ticket_type_id: String(ev.ticket_types![0].id) }));
         }
       },
       error: () => {
@@ -49,17 +56,18 @@ export class BookingFormComponent implements OnInit {
   }
 
   get selectedTicketType(): TicketType | undefined {
-    const id = this.bookingForm.get('ticket_type_id')?.value;
+    const id = Number(this.bookingModel().ticket_type_id);
     return this.event?.ticket_types?.find((t) => t.id == id);
   }
 
   get totalCost(): number {
     if (!this.selectedTicketType) return 0;
-    return this.selectedTicketType.price * (this.bookingForm.get('number_of_tickets')?.value || 1);
+    return this.selectedTicketType.price * (this.bookingModel().number_of_tickets || 1);
   }
 
-  openConfirmation(): void {
-    if (this.bookingForm.invalid) return;
+  async openConfirmation(): Promise<void> {
+    const isValid = await submit(this.bookingForm);
+    if (!isValid) return;
     this.showConfirmation = true;
   }
 
@@ -71,7 +79,8 @@ export class BookingFormComponent implements OnInit {
 
     this.bookingService.createBooking({
       event_id: this.event.id,
-      ...this.bookingForm.value,
+      ticket_type_id: Number(this.bookingModel().ticket_type_id),
+      number_of_tickets: Number(this.bookingModel().number_of_tickets),
     }).subscribe({
       next: () => {
         this.bookingCreated = true;
