@@ -1,235 +1,242 @@
 <div class="container-fluid py-4">
+	<!-- MANAGE MODE: Organizer's own events -->
+	@if (isManageMode) {
+		<div>
+			<div class="d-flex justify-content-between align-items-center mb-4">
+				<h3 class="fw-bold mb-0">My Events</h3>
+				<button type="button" (click)="goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
+			</div>
+			@if (loading) {
+				<div class="text-center py-5">
+					<div class="spinner-border text-primary"></div>
+				</div>
+			}
+			@if (!loading && error) {
+				<div class="alert alert-danger">{{ error }}</div>
+			}
+			@if (!loading && events.length === 0) {
+				<div class="text-center py-5 text-muted">
+					<div class="display-1">📅</div>
+					<h5>No events yet</h5>
+					<p>Click "Create Event" to get started</p>
+				</div>
+			}
+			@if (!loading && events.length > 0) {
+				<div class="table-responsive">
+					<table class="table table-hover align-middle">
+						<thead class="table-light">
+							<tr>
+								<th>Title</th>
+								<th>Date</th>
+								<th>Location</th>
+								<th>Capacity</th>
+								<th>Status</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (event of events; track event) {
+								<tr>
+									<td class="fw-semibold">{{ event.title }}</td>
+									<td class="small">{{ event.start_datetime | date: 'MMM d, y, HH:mm' }}</td>
+									<td class="small">
+										{{ event.city }}
+										@if (event.country) {
+											<span>, {{ event.country }}</span>
+										}
+									</td>
+									<td class="small">{{ event.capacity }}</td>
+									<td>
+										<span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span>
+									</td>
+									<td>
+										<div class="d-flex gap-1 flex-wrap">
+											<button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-secondary">
+												View
+											</button>
+											@if (event.status === 'DRAFT') {
+												<button type="button" (click)="goToEditEvent(event.id)" class="btn btn-sm btn-outline-primary">
+													Edit
+												</button>
+											}
+											@if (event.status === 'DRAFT') {
+												<button class="btn btn-sm btn-success" (click)="publishEvent(event)">Publish</button>
+											}
+											@if (event.status === 'PUBLISHED') {
+												<button class="btn btn-sm btn-warning" (click)="cancelEvent(event)">Cancel</button>
+											}
+											@if (event.status === 'DRAFT') {
+												<button class="btn btn-sm btn-danger" (click)="deleteEvent(event)">Delete</button>
+											}
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	}
 
-  <!-- MANAGE MODE: Organizer's own events -->
-  @if (isManageMode) {
-    <div>
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0">My Events</h3>
-        <button type="button" (click)="goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
-      </div>
-      @if (loading) {
-        <div class="text-center py-5">
-          <div class="spinner-border text-primary"></div>
-        </div>
-      }
-      @if (!loading && error) {
-        <div class="alert alert-danger">{{ error }}</div>
-      }
-      @if (!loading && events.length === 0) {
-        <div class="text-center py-5 text-muted">
-          <div class="display-1">📅</div>
-          <h5>No events yet</h5>
-          <p>Click "Create Event" to get started</p>
-        </div>
-      }
-      @if (!loading && events.length > 0) {
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Title</th>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Capacity</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (event of events; track event) {
-                <tr>
-                  <td class="fw-semibold">{{ event.title }}</td>
-                  <td class="small">{{ event.start_datetime | date:'MMM d, y, HH:mm' }}</td>
-                  <td class="small">{{ event.city }}@if (event.country) {
-                    <span>, {{ event.country }}</span>
-                  }</td>
-                  <td class="small">{{ event.capacity }}</td>
-                  <td>
-                    <span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span>
-                  </td>
-                  <td>
-                    <div class="d-flex gap-1 flex-wrap">
-                      <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-secondary">View</button>
-                      @if (event.status === 'DRAFT') {
-                        <button type="button" (click)="goToEditEvent(event.id)" class="btn btn-sm btn-outline-primary"
-                        >Edit</button>
-                      }
-                      @if (event.status === 'DRAFT') {
-                        <button class="btn btn-sm btn-success"
-                        (click)="publishEvent(event)">Publish</button>
-                      }
-                      @if (event.status === 'PUBLISHED') {
-                        <button class="btn btn-sm btn-warning"
-                        (click)="cancelEvent(event)">Cancel</button>
-                      }
-                      @if (event.status === 'DRAFT') {
-                        <button class="btn btn-sm btn-danger"
-                        (click)="deleteEvent(event)">Delete</button>
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- PUBLIC MODE: Browse all published events -->
-  @if (!isManageMode) {
-    <div>
-      <!-- Search/Filter Bar -->
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-          <h5 class="card-title mb-3">Search Events</h5>
-          <form (ngSubmit)="onSearch()">
-            <div class="row g-2">
-              <div class="col-md-3">
-                <input type="text" class="form-control" [formField]="filterForm.title" placeholder="Search by title..." />
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" [formField]="filterForm.category">
-                  <option value="">All Categories</option>
-                  @for (cat of categories; track cat) {
-                    <option [value]="cat">{{ cat }}</option>
-                  }
-                </select>
-              </div>
-              <div class="col-md-2">
-                <input type="text" class="form-control" [formField]="filterForm.location" placeholder="City or Country..." />
-              </div>
-              <div class="col-md-2">
-                <input type="date" class="form-control" [formField]="filterForm.dateFrom" />
-              </div>
-              <div class="col-md-2">
-                <input type="date" class="form-control" [formField]="filterForm.dateTo" />
-              </div>
-              <div class="col-md-1">
-                <button type="submit" class="btn btn-primary w-100">Search</button>
-              </div>
-            </div>
-            <div class="row g-2 mt-1">
-              <div class="col-md-2">
-                <input type="number" class="form-control" [formField]="filterForm.minPrice" placeholder="Min price €" />
-              </div>
-              <div class="col-md-2">
-                <input type="number" class="form-control" [formField]="filterForm.maxPrice" placeholder="Max price €" />
-              </div>
-              <div class="col-md-2">
-                <button type="button" class="btn btn-outline-secondary" (click)="onReset()">Reset</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-      <!-- Recommended Events -->
-      @if (isLoggedIn && recommendedEvents.length > 0) {
-        <div class="mb-5">
-          <h4 class="mb-3 fw-semibold">Recommended for You</h4>
-          <div class="row row-cols-1 row-cols-md-3 g-3">
-            @for (event of recommendedEvents; track event) {
-              <div class="col">
-                <div class="card h-100 border-0 shadow-sm">
-                  <div class="card-body">
-                    <span class="badge bg-primary mb-2">Recommended</span>
-                    <h6 class="card-title">{{ event.title }}</h6>
-                    <p class="text-muted small mb-1">{{ event.start_datetime | date:'mediumDate' }}</p>
-                    <p class="text-muted small mb-0">{{ event.city }}, {{ event.country }}</p>
-                  </div>
-                  <div class="card-footer bg-transparent border-0">
-                    <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-primary">View Details</button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      }
-      <!-- Events Grid -->
-      @if (loading) {
-        <div class="text-center py-5">
-          <div class="spinner-border text-primary"></div>
-        </div>
-      }
-      @if (!loading && error) {
-        <div class="alert alert-danger">{{ error }}</div>
-      }
-      @if (!loading && !error) {
-        <div>
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-semibold mb-0">All Events <small class="text-muted fs-6">({{ total }} found)</small></h4>
-          </div>
-          @if (events.length === 0) {
-            <div class="text-center py-5 text-muted">
-              <div class="display-1">📅</div>
-              <h5>No events found</h5>
-              <p>Try adjusting your search filters</p>
-            </div>
-          }
-          <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
-            @for (event of events; track event) {
-              <div class="col">
-                <div class="card h-100 border-0 shadow-sm">
-                  <div class="card-img-top bg-light text-center py-4" style="min-height:140px;">
-                    @if (event.photos && event.photos.length > 0) {
-                      <img
-                        [src]="event.photos[0]" class="img-fluid"
-                        style="max-height:140px;object-fit:cover;width:100%;" />
-                    }
-                    @if (!event.photos || event.photos.length === 0) {
-                      <span class="display-3">🎫</span>
-                    }
-                  </div>
-                  <div class="card-body">
-                    <div class="d-flex gap-1 flex-wrap mb-2">
-                      @for (cat of event.categories; track cat) {
-                        <span class="badge bg-secondary">{{ cat }}</span>
-                      }
-                    </div>
-                    <h6 class="card-title fw-bold">{{ event.title }}</h6>
-                    <p class="text-muted small mb-1">{{ event.start_datetime | date:'EEE, MMM d, y, HH:mm' }}</p>
-                    <p class="text-muted small mb-2">{{ event.venue ? event.venue + ', ' : '' }}{{ event.city }}</p>
-                    @if (event.ticket_types && event.ticket_types.length > 0) {
-                      <div class="small">
-                        From <strong>€{{ getMinPrice(event) }}</strong>
-                      </div>
-                    }
-                    @if (!event.ticket_types || event.ticket_types.length === 0) {
-                      <div class="small text-success fw-semibold">
-                        Free Entry
-                      </div>
-                    }
-                  </div>
-                  <div class="card-footer bg-transparent border-0 pt-0">
-                    <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-primary w-100">View Details</button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          <!-- Pagination -->
-          @if (totalPages > 1) {
-            <nav class="mt-4">
-              <ul class="pagination justify-content-center">
-                <li class="page-item" [class.disabled]="currentPage === 1">
-                  <button class="page-link" (click)="onPageChange(currentPage - 1)">Previous</button>
-                </li>
-                @for (page of pages; track page) {
-                  <li class="page-item" [class.active]="page === currentPage">
-                    <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
-                  </li>
-                }
-                <li class="page-item" [class.disabled]="currentPage === totalPages">
-                  <button class="page-link" (click)="onPageChange(currentPage + 1)">Next</button>
-                </li>
-              </ul>
-            </nav>
-          }
-        </div>
-      }
-    </div>
-  }
-
+	<!-- PUBLIC MODE: Browse all published events -->
+	@if (!isManageMode) {
+		<div>
+			<!-- Search/Filter Bar -->
+			<div class="card shadow-sm border-0 mb-4">
+				<div class="card-body">
+					<h5 class="card-title mb-3">Search Events</h5>
+					<form (ngSubmit)="onSearch()">
+						<div class="row g-2">
+							<div class="col-md-3">
+								<input type="text" class="form-control" [formField]="filterForm.title" placeholder="Search by title..." />
+							</div>
+							<div class="col-md-2">
+								<select class="form-select" [formField]="filterForm.category">
+									<option value="">All Categories</option>
+									@for (cat of categories; track cat) {
+										<option [value]="cat">{{ cat }}</option>
+									}
+								</select>
+							</div>
+							<div class="col-md-2">
+								<input type="text" class="form-control" [formField]="filterForm.location" placeholder="City or Country..." />
+							</div>
+							<div class="col-md-2">
+								<input type="date" class="form-control" [formField]="filterForm.dateFrom" />
+							</div>
+							<div class="col-md-2">
+								<input type="date" class="form-control" [formField]="filterForm.dateTo" />
+							</div>
+							<div class="col-md-1">
+								<button type="submit" class="btn btn-primary w-100">Search</button>
+							</div>
+						</div>
+						<div class="row g-2 mt-1">
+							<div class="col-md-2">
+								<input type="number" class="form-control" [formField]="filterForm.minPrice" placeholder="Min price €" />
+							</div>
+							<div class="col-md-2">
+								<input type="number" class="form-control" [formField]="filterForm.maxPrice" placeholder="Max price €" />
+							</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-outline-secondary" (click)="onReset()">Reset</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			<!-- Recommended Events -->
+			@if (isLoggedIn && recommendedEvents.length > 0) {
+				<div class="mb-5">
+					<h4 class="mb-3 fw-semibold">Recommended for You</h4>
+					<div class="row row-cols-1 row-cols-md-3 g-3">
+						@for (event of recommendedEvents; track event) {
+							<div class="col">
+								<div class="card h-100 border-0 shadow-sm">
+									<div class="card-body">
+										<span class="badge bg-primary mb-2">Recommended</span>
+										<h6 class="card-title">{{ event.title }}</h6>
+										<p class="text-muted small mb-1">{{ event.start_datetime | date: 'mediumDate' }}</p>
+										<p class="text-muted small mb-0">{{ event.city }}, {{ event.country }}</p>
+									</div>
+									<div class="card-footer bg-transparent border-0">
+										<button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-primary">
+											View Details
+										</button>
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			}
+			<!-- Events Grid -->
+			@if (loading) {
+				<div class="text-center py-5">
+					<div class="spinner-border text-primary"></div>
+				</div>
+			}
+			@if (!loading && error) {
+				<div class="alert alert-danger">{{ error }}</div>
+			}
+			@if (!loading && !error) {
+				<div>
+					<div class="d-flex justify-content-between align-items-center mb-3">
+						<h4 class="fw-semibold mb-0">
+							All Events <small class="text-muted fs-6">({{ total }} found)</small>
+						</h4>
+					</div>
+					@if (events.length === 0) {
+						<div class="text-center py-5 text-muted">
+							<div class="display-1">📅</div>
+							<h5>No events found</h5>
+							<p>Try adjusting your search filters</p>
+						</div>
+					}
+					<div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+						@for (event of events; track event) {
+							<div class="col">
+								<div class="card h-100 border-0 shadow-sm">
+									<div class="card-img-top bg-light text-center py-4" style="min-height: 140px">
+										@if (event.photos && event.photos.length > 0) {
+											<img
+												[src]="event.photos[0]"
+												class="img-fluid"
+												style="max-height: 140px; object-fit: cover; width: 100%"
+											/>
+										}
+										@if (!event.photos || event.photos.length === 0) {
+											<span class="display-3">🎫</span>
+										}
+									</div>
+									<div class="card-body">
+										<div class="d-flex gap-1 flex-wrap mb-2">
+											@for (cat of event.categories; track cat) {
+												<span class="badge bg-secondary">{{ cat }}</span>
+											}
+										</div>
+										<h6 class="card-title fw-bold">{{ event.title }}</h6>
+										<p class="text-muted small mb-1">{{ event.start_datetime | date: 'EEE, MMM d, y, HH:mm' }}</p>
+										<p class="text-muted small mb-2">{{ event.venue ? event.venue + ', ' : '' }}{{ event.city }}</p>
+										@if (event.ticket_types && event.ticket_types.length > 0) {
+											<div class="small">
+												From <strong>€{{ getMinPrice(event) }}</strong>
+											</div>
+										}
+										@if (!event.ticket_types || event.ticket_types.length === 0) {
+											<div class="small text-success fw-semibold">Free Entry</div>
+										}
+									</div>
+									<div class="card-footer bg-transparent border-0 pt-0">
+										<button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-primary w-100">
+											View Details
+										</button>
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+					<!-- Pagination -->
+					@if (totalPages > 1) {
+						<nav class="mt-4">
+							<ul class="pagination justify-content-center">
+								<li class="page-item" [class.disabled]="currentPage === 1">
+									<button class="page-link" (click)="onPageChange(currentPage - 1)">Previous</button>
+								</li>
+								@for (page of pages; track page) {
+									<li class="page-item" [class.active]="page === currentPage">
+										<button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+									</li>
+								}
+								<li class="page-item" [class.disabled]="currentPage === totalPages">
+									<button class="page-link" (click)="onPageChange(currentPage + 1)">Next</button>
+								</li>
+							</ul>
+						</nav>
+					}
+				</div>
+			}
+		</div>
+	}
 </div>

@@ -1,61 +1,59 @@
 <div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow-sm border-0">
-        <div class="card-body p-5">
-          <h2 class="card-title text-center mb-4 fw-bold">Sign In</h2>
+	<div class="row justify-content-center">
+		<div class="col-md-5">
+			<div class="card shadow-sm border-0">
+				<div class="card-body p-5">
+					<h2 class="card-title text-center mb-4 fw-bold">Sign In</h2>
 
-          <form (submit)="onSubmit($event)" novalidate>
-            <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input
-                id="username"
-                type="text"
-                class="form-control"
-                [formField]="loginFields.username"
-                placeholder="Enter your username"
-                />
-              <div class="invalid-feedback">Username is required</div>
-            </div>
+					<form (submit)="onSubmit($event)" novalidate>
+						<div class="mb-3">
+							<label for="username" class="form-label">Username</label>
+							<input
+								id="username"
+								type="text"
+								class="form-control"
+								[formField]="loginFields.username"
+								placeholder="Enter your username"
+							/>
+							<div class="invalid-feedback">Username is required</div>
+						</div>
 
-            <div class="mb-4">
-              <label for="password" class="form-label">Password</label>
-              <input
-                id="password"
-                type="password"
-                class="form-control"
-                [formField]="loginFields.password"
-                placeholder="Enter your password"
-                />
-              <div class="invalid-feedback">Password is required</div>
-            </div>
+						<div class="mb-4">
+							<label for="password" class="form-label">Password</label>
+							<input
+								id="password"
+								type="password"
+								class="form-control"
+								[formField]="loginFields.password"
+								placeholder="Enter your password"
+							/>
+							<div class="invalid-feedback">Password is required</div>
+						</div>
 
-            <button
-              type="submit"
-              class="btn btn-primary w-100"
-              [disabled]="!loginFields().valid() || this.loading()"
-              >
-              @if (this.loading()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-              }
-              {{ this.loading() ? 'Signing in...' : 'Sign In' }}
-            </button>
-          </form>
-          @if (this.loginFields().errors().length > 0) {
-            <div class="d-flex flex-column mt-2">
-              @for (error of this.loginFields().errors(); track $index) {
-                <span class="text-danger">{{ error.message }}</span>
-              }
-            </div>
-          }
+						<button type="submit" class="btn btn-primary w-100" [disabled]="!loginFields().valid() || this.loading()">
+							@if (this.loading()) {
+								<span class="spinner-border spinner-border-sm me-2" role="status"></span>
+							}
+							{{ this.loading() ? 'Signing in...' : 'Sign In' }}
+						</button>
+					</form>
+					@if (this.loginFields().errors().length > 0) {
+						<div class="d-flex flex-column mt-2">
+							@for (error of this.loginFields().errors(); track $index) {
+								<span class="text-danger">{{ error.message }}</span>
+							}
+						</div>
+					}
 
-          <hr />
-          <p class="text-center text-muted mb-0">
-            Don't have an account?
-            <button type="button" (click)="goToRegister()" class="btn btn-link p-0 text-decoration-none align-baseline">Register here</button>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+					<hr />
+					<p class="text-center text-muted mb-0">
+						Don't have an account?
+						<button type="button" (click)="goToRegister()" class="btn btn-link p-0 text-decoration-none align-baseline">
+							Register here
+						</button>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

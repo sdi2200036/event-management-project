@@ -1,100 +1,127 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container">
-    <button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">EventHub</button>
+	<div class="container">
+		<button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">EventHub</button>
 
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-      aria-controls="navbarNav"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-      >
-      <span class="navbar-toggler-icon"></span>
-    </button>
+		<button
+			class="navbar-toggler"
+			type="button"
+			data-bs-toggle="collapse"
+			data-bs-target="#navbarNav"
+			aria-controls="navbarNav"
+			aria-expanded="false"
+			aria-label="Toggle navigation"
+		>
+			<span class="navbar-toggler-icon"></span>
+		</button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <button type="button" (click)="goToEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/events')">Events</button>
-        </li>
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav me-auto">
+				<li class="nav-item">
+					<button type="button" (click)="goToEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/events')">
+						Events
+					</button>
+				</li>
 
-        <!-- Organizer links -->
-        @if (isOrganizer()) {
-          <li class="nav-item">
-            <button type="button" (click)="goToManageEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/manage/events')">My Events</button>
-          </li>
-        }
-        @if (isOrganizer()) {
-          <li class="nav-item">
-            <button type="button" (click)="goToCreateEvent()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/manage/events/new')">Create Event</button>
-          </li>
-        }
+				<!-- Organizer links -->
+				@if (isOrganizer()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="goToManageEvents()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="isExactRoute('/manage/events')"
+						>
+							My Events
+						</button>
+					</li>
+				}
+				@if (isOrganizer()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="goToCreateEvent()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="isExactRoute('/manage/events/new')"
+						>
+							Create Event
+						</button>
+					</li>
+				}
 
-        <!-- Participant links -->
-        @if (isParticipant()) {
-          <li class="nav-item">
-            <button type="button" (click)="goToBookings()" class="nav-link border-0 bg-transparent" [class.active]="isRoutePrefix('/bookings')">My Bookings</button>
-          </li>
-        }
+				<!-- Participant links -->
+				@if (isParticipant()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="goToBookings()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="isRoutePrefix('/bookings')"
+						>
+							My Bookings
+						</button>
+					</li>
+				}
 
-        <!-- Admin links -->
-        @if (isAdmin()) {
-          <li class="nav-item dropdown">
-            <button
-              type="button"
-              class="nav-link dropdown-toggle border-0 bg-transparent"
-              id="adminDropdown"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-              >
-              Admin
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-              <li><button type="button" (click)="goToAdminUsers()" class="dropdown-item">User Management</button></li>
-              <li><button type="button" (click)="goToAdminExport()" class="dropdown-item">Export Data</button></li>
-            </ul>
-          </li>
-        }
-      </ul>
+				<!-- Admin links -->
+				@if (isAdmin()) {
+					<li class="nav-item dropdown">
+						<button
+							type="button"
+							class="nav-link dropdown-toggle border-0 bg-transparent"
+							id="adminDropdown"
+							data-bs-toggle="dropdown"
+							aria-expanded="false"
+						>
+							Admin
+						</button>
+						<ul class="dropdown-menu" aria-labelledby="adminDropdown">
+							<li><button type="button" (click)="goToAdminUsers()" class="dropdown-item">User Management</button></li>
+							<li><button type="button" (click)="goToAdminExport()" class="dropdown-item">Export Data</button></li>
+						</ul>
+					</li>
+				}
+			</ul>
 
-      <!-- Right side -->
-      <ul class="navbar-nav ms-auto align-items-center">
-        @if (isLoggedIn()) {
-          <!-- Messages with badge -->
-          <li class="nav-item">
-            <button type="button" (click)="goToMessages()" class="nav-link position-relative border-0 bg-transparent" [class.active]="isRoutePrefix('/messages')">
-              Messages
-              @if (this.unreadCount() > 0) {
-                <span
-                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style="font-size: 0.65rem;"
-                  >
-                  {{ this.unreadCount() > 99 ? '99+' : this.unreadCount() }}
-                </span>
-              }
-            </button>
-          </li>
-          <li class="nav-item">
-            <span class="nav-link text-light opacity-75">
-              {{ this.authService.currentUser()?.first_name }} {{ this.authService.currentUser()?.last_name }}
-              <small class="badge bg-secondary ms-1">{{ this.authService.currentUser()?.role }}</small>
-            </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
-          </li>
-        } @else {
-          <li class="nav-item">
-            <button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">Login</button>
-          </li>
-          <li class="nav-item">
-            <button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">Register</button>
-          </li>
-        }
-
-      </ul>
-    </div>
-  </div>
+			<!-- Right side -->
+			<ul class="navbar-nav ms-auto align-items-center">
+				@if (isLoggedIn()) {
+					<!-- Messages with badge -->
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="goToMessages()"
+							class="nav-link position-relative border-0 bg-transparent"
+							[class.active]="isRoutePrefix('/messages')"
+						>
+							Messages
+							@if (this.unreadCount() > 0) {
+								<span
+									class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+									style="font-size: 0.65rem"
+								>
+									{{ this.unreadCount() > 99 ? '99+' : this.unreadCount() }}
+								</span>
+							}
+						</button>
+					</li>
+					<li class="nav-item">
+						<span class="nav-link text-light opacity-75">
+							{{ this.authService.currentUser()?.first_name }} {{ this.authService.currentUser()?.last_name }}
+							<small class="badge bg-secondary ms-1">{{ this.authService.currentUser()?.role }}</small>
+						</span>
+					</li>
+					<li class="nav-item">
+						<button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
+					</li>
+				} @else {
+					<li class="nav-item">
+						<button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">Login</button>
+					</li>
+					<li class="nav-item">
+						<button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">Register</button>
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
 </nav>

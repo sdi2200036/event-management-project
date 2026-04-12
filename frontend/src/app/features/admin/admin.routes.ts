@@ -3,6 +3,12 @@ import { UserManagementComponent } from './user-management/user-management.compo
 import { ExportComponent } from './export/export.component';
 
 export const ADMIN_ROUTES: Routes = [
-  { path: 'users', component: UserManagementComponent },
-  { path: 'export', component: ExportComponent },
+	{
+		path: 'users',
+		component: UserManagementComponent
+	},
+	{
+		path: 'export',
+		component: ExportComponent
+	}
 ];

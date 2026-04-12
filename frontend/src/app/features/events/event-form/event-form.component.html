@@ -1,160 +1,181 @@
 <div class="container py-4">
-  <div class="row justify-content-center">
-    <div class="col-lg-9">
-      <h2 class="fw-bold mb-4">{{ isEditMode ? 'Edit Event' : 'Create New Event' }}</h2>
+	<div class="row justify-content-center">
+		<div class="col-lg-9">
+			<h2 class="fw-bold mb-4">{{ isEditMode ? 'Edit Event' : 'Create New Event' }}</h2>
 
-      @if (error) {
-        <div class="alert alert-danger">{{ error }}</div>
-      }
-      @if (success) {
-        <div class="alert alert-success">{{ success }}</div>
-      }
+			@if (error) {
+				<div class="alert alert-danger">{{ error }}</div>
+			}
+			@if (success) {
+				<div class="alert alert-success">{{ success }}</div>
+			}
 
-      @if (loading && isEditMode) {
-        <div class="text-center py-3">
-          <div class="spinner-border text-primary"></div>
-        </div>
-      }
+			@if (loading && isEditMode) {
+				<div class="text-center py-3">
+					<div class="spinner-border text-primary"></div>
+				</div>
+			}
 
-      @if (!loading || !isEditMode) {
-        <form (ngSubmit)="onSubmit()">
-          <!-- Basic Info -->
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Basic Information</h5>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label">Event Title *</label>
-                  <input type="text" class="form-control" [formField]="eventForm.title" />
-                  <div class="invalid-feedback">Title is required</div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Event Type</label>
-                  <input type="text" class="form-control" [formField]="eventForm.event_type" placeholder="e.g. Conference, Concert..." />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Capacity *</label>
-                  <input type="number" class="form-control" [formField]="eventForm.capacity" />
-                  <div class="invalid-feedback">Capacity must be at least 1</div>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Description</label>
-                  <textarea class="form-control" [formField]="eventForm.description" rows="4" placeholder="Describe your event..."></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Date & Time -->
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Date & Time</h5>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Start Date & Time *</label>
-                  <input type="datetime-local" class="form-control" [formField]="eventForm.start_datetime" />
-                  <div class="invalid-feedback">Start date/time is required</div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">End Date & Time *</label>
-                  <input type="datetime-local" class="form-control" [formField]="eventForm.end_datetime" />
-                  <div class="invalid-feedback">End date/time is required</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Location -->
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Location</h5>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label">Venue Name</label>
-                  <input type="text" class="form-control" [formField]="eventForm.venue" placeholder="e.g. Grand Arena" />
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Street Address</label>
-                  <input type="text" class="form-control" [formField]="eventForm.address" />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">City</label>
-                  <input type="text" class="form-control" [formField]="eventForm.city" />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Country</label>
-                  <input type="text" class="form-control" [formField]="eventForm.country" />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Latitude</label>
-                  <input type="number" step="any" class="form-control" [formField]="eventForm.geo_lat" placeholder="e.g. 37.9838" />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Longitude</label>
-                  <input type="number" step="any" class="form-control" [formField]="eventForm.geo_lng" placeholder="e.g. 23.7275" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Categories -->
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Categories</h5>
-              <div class="d-flex flex-wrap gap-2">
-                @for (cat of categories; track cat) {
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [class.btn-primary]="isCategorySelected(cat)"
-                    [class.btn-outline-secondary]="!isCategorySelected(cat)"
-                    (click)="toggleCategory(cat)"
-                    >
-                    {{ cat }}
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-          <!-- Ticket Types -->
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="card-title mb-0">Ticket Types</h5>
-                <button type="button" class="btn btn-sm btn-outline-primary" (click)="addTicketType()">+ Add Type</button>
-              </div>
-              <div>
-                @for (tt of eventModel().ticket_types; track tt; let i = $index) {
-                  <div class="row g-2 mb-3 p-3 bg-light rounded">
-                    <div class="col-md-4">
-                      <label class="form-label">Type Name *</label>
-                      <input type="text" class="form-control" [formField]="eventForm.ticket_types[i].name" placeholder="e.g. VIP, General" />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Price (€) *</label>
-                      <input type="number" class="form-control" [formField]="eventForm.ticket_types[i].price" step="0.01" />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Quantity *</label>
-                      <input type="number" class="form-control" [formField]="eventForm.ticket_types[i].quantity" />
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                      <button type="button" class="btn btn-outline-danger w-100" (click)="removeTicketType(i)"
-                      [disabled]="eventModel().ticket_types.length <= 1">Remove</button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
-          <div class="d-flex gap-3">
-            <button type="submit" class="btn btn-primary px-5" [disabled]="!eventForm().valid() || loading">
-              @if (loading) {
-                <span class="spinner-border spinner-border-sm me-2"></span>
-              }
-              {{ isEditMode ? 'Save Changes' : 'Create Event' }}
-            </button>
-            <button type="button" (click)="cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
-          </div>
-        </form>
-      }
-    </div>
-  </div>
+			@if (!loading || !isEditMode) {
+				<form (ngSubmit)="onSubmit()">
+					<!-- Basic Info -->
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Basic Information</h5>
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label">Event Title *</label>
+									<input type="text" class="form-control" [formField]="eventForm.title" />
+									<div class="invalid-feedback">Title is required</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Event Type</label>
+									<input
+										type="text"
+										class="form-control"
+										[formField]="eventForm.event_type"
+										placeholder="e.g. Conference, Concert..."
+									/>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Capacity *</label>
+									<input type="number" class="form-control" [formField]="eventForm.capacity" />
+									<div class="invalid-feedback">Capacity must be at least 1</div>
+								</div>
+								<div class="col-12">
+									<label class="form-label">Description</label>
+									<textarea
+										class="form-control"
+										[formField]="eventForm.description"
+										rows="4"
+										placeholder="Describe your event..."
+									></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Date & Time -->
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Date & Time</h5>
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label">Start Date & Time *</label>
+									<input type="datetime-local" class="form-control" [formField]="eventForm.start_datetime" />
+									<div class="invalid-feedback">Start date/time is required</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">End Date & Time *</label>
+									<input type="datetime-local" class="form-control" [formField]="eventForm.end_datetime" />
+									<div class="invalid-feedback">End date/time is required</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Location -->
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Location</h5>
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label">Venue Name</label>
+									<input type="text" class="form-control" [formField]="eventForm.venue" placeholder="e.g. Grand Arena" />
+								</div>
+								<div class="col-12">
+									<label class="form-label">Street Address</label>
+									<input type="text" class="form-control" [formField]="eventForm.address" />
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">City</label>
+									<input type="text" class="form-control" [formField]="eventForm.city" />
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">Country</label>
+									<input type="text" class="form-control" [formField]="eventForm.country" />
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">Latitude</label>
+									<input type="number" step="any" class="form-control" [formField]="eventForm.geo_lat" placeholder="e.g. 37.9838" />
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">Longitude</label>
+									<input type="number" step="any" class="form-control" [formField]="eventForm.geo_lng" placeholder="e.g. 23.7275" />
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Categories -->
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Categories</h5>
+							<div class="d-flex flex-wrap gap-2">
+								@for (cat of categories; track cat) {
+									<button
+										type="button"
+										class="btn btn-sm"
+										[class.btn-primary]="isCategorySelected(cat)"
+										[class.btn-outline-secondary]="!isCategorySelected(cat)"
+										(click)="toggleCategory(cat)"
+									>
+										{{ cat }}
+									</button>
+								}
+							</div>
+						</div>
+					</div>
+					<!-- Ticket Types -->
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<h5 class="card-title mb-0">Ticket Types</h5>
+								<button type="button" class="btn btn-sm btn-outline-primary" (click)="addTicketType()">+ Add Type</button>
+							</div>
+							<div>
+								@for (tt of eventModel().ticket_types; track tt; let i = $index) {
+									<div class="row g-2 mb-3 p-3 bg-light rounded">
+										<div class="col-md-4">
+											<label class="form-label">Type Name *</label>
+											<input
+												type="text"
+												class="form-control"
+												[formField]="eventForm.ticket_types[i].name"
+												placeholder="e.g. VIP, General"
+											/>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label">Price (€) *</label>
+											<input type="number" class="form-control" [formField]="eventForm.ticket_types[i].price" step="0.01" />
+										</div>
+										<div class="col-md-3">
+											<label class="form-label">Quantity *</label>
+											<input type="number" class="form-control" [formField]="eventForm.ticket_types[i].quantity" />
+										</div>
+										<div class="col-md-2 d-flex align-items-end">
+											<button
+												type="button"
+												class="btn btn-outline-danger w-100"
+												(click)="removeTicketType(i)"
+												[disabled]="eventModel().ticket_types.length <= 1"
+											>
+												Remove
+											</button>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<button type="submit" class="btn btn-primary px-5" [disabled]="!eventForm().valid() || loading">
+							@if (loading) {
+								<span class="spinner-border spinner-border-sm me-2"></span>
+							}
+							{{ isEditMode ? 'Save Changes' : 'Create Event' }}
+						</button>
+						<button type="button" (click)="cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
+					</div>
+				</form>
+			}
+		</div>
+	</div>
 </div>

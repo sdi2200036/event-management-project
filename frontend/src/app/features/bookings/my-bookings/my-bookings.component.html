@@ -1,82 +1,83 @@
 <div class="container py-4">
-  <h2 class="fw-bold mb-4">My Bookings</h2>
+	<h2 class="fw-bold mb-4">My Bookings</h2>
 
-  @if (loading) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary"></div>
-    </div>
-  }
+	@if (loading) {
+		<div class="text-center py-5">
+			<div class="spinner-border text-primary"></div>
+		</div>
+	}
 
-  @if (error) {
-    <div class="alert alert-danger">{{ error }}</div>
-  }
+	@if (error) {
+		<div class="alert alert-danger">{{ error }}</div>
+	}
 
-  @if (!loading && bookings.length === 0) {
-    <div class="text-center py-5 text-muted">
-      <div class="display-3">🎟️</div>
-      <h5>No bookings yet</h5>
-      <button type="button" (click)="goToEvents()" class="btn btn-primary mt-3">Browse Events</button>
-    </div>
-  }
+	@if (!loading && bookings.length === 0) {
+		<div class="text-center py-5 text-muted">
+			<div class="display-3">🎟️</div>
+			<h5>No bookings yet</h5>
+			<button type="button" (click)="goToEvents()" class="btn btn-primary mt-3">Browse Events</button>
+		</div>
+	}
 
-  @if (!loading && bookings.length > 0) {
-    <div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Event</th>
-              <th>Date</th>
-              <th>Ticket Type</th>
-              <th>Qty</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Booked At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (b of bookings; track b) {
-              <tr>
-                <td>
-                  <button type="button" (click)="goToEventDetail(b.event_id)" class="btn btn-link p-0 text-decoration-none fw-semibold align-baseline">
-                    {{ b.event_title }}
-                  </button>
-                </td>
-                <td class="small text-muted">{{ b.event_start_datetime | date:'mediumDate' }}</td>
-                <td>{{ b.ticket_type_name }}</td>
-                <td>{{ b.number_of_tickets }}</td>
-                <td class="fw-semibold">€{{ b.total_cost | number:'1.2-2' }}</td>
-                <td>
-                  <span
-                    class="badge"
-                [ngClass]="{
-                  'bg-success': b.booking_status === 'CONFIRMED',
-                  'bg-warning text-dark': b.booking_status === 'PENDING',
-                  'bg-danger': b.booking_status === 'CANCELLED'
-                }"
-                  >{{ b.booking_status }}</span>
-                </td>
-                <td class="small text-muted">{{ b.booked_at | date:'short' }}</td>
-                <td>
-                  @if (b.booking_status !== 'CANCELLED') {
-                    <button
-                      class="btn btn-sm btn-outline-danger"
-                      (click)="cancelBooking(b)"
-                      [disabled]="cancellingId === b.id"
-                      >
-                      @if (cancellingId === b.id) {
-                        <span class="spinner-border spinner-border-sm me-1"></span>
-                      }
-                      Cancel
-                    </button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  }
+	@if (!loading && bookings.length > 0) {
+		<div>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle">
+					<thead class="table-light">
+						<tr>
+							<th>Event</th>
+							<th>Date</th>
+							<th>Ticket Type</th>
+							<th>Qty</th>
+							<th>Total</th>
+							<th>Status</th>
+							<th>Booked At</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (b of bookings; track b) {
+							<tr>
+								<td>
+									<button
+										type="button"
+										(click)="goToEventDetail(b.event_id)"
+										class="btn btn-link p-0 text-decoration-none fw-semibold align-baseline"
+									>
+										{{ b.event_title }}
+									</button>
+								</td>
+								<td class="small text-muted">{{ b.event_start_datetime | date: 'mediumDate' }}</td>
+								<td>{{ b.ticket_type_name }}</td>
+								<td>{{ b.number_of_tickets }}</td>
+								<td class="fw-semibold">€{{ b.total_cost | number: '1.2-2' }}</td>
+								<td>
+									<span
+										class="badge"
+										[ngClass]="{
+											'bg-success': b.booking_status === 'CONFIRMED',
+											'bg-warning text-dark': b.booking_status === 'PENDING',
+											'bg-danger': b.booking_status === 'CANCELLED'
+										}"
+										>{{ b.booking_status }}</span
+									>
+								</td>
+								<td class="small text-muted">{{ b.booked_at | date: 'short' }}</td>
+								<td>
+									@if (b.booking_status !== 'CANCELLED') {
+										<button class="btn btn-sm btn-outline-danger" (click)="cancelBooking(b)" [disabled]="cancellingId === b.id">
+											@if (cancellingId === b.id) {
+												<span class="spinner-border spinner-border-sm me-1"></span>
+											}
+											Cancel
+										</button>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
 </div>
