@@ -66,20 +66,20 @@
           <li class="nav-item">
             <button type="button" (click)="goToMessages()" class="nav-link position-relative border-0 bg-transparent" [class.active]="isRoutePrefix('/messages')">
               Messages
-              @if (unreadCount > 0) {
+              @if (this.unreadCount() > 0) {
                 <span
                   class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                   style="font-size: 0.65rem;"
                   >
-                  {{ unreadCount > 99 ? '99+' : unreadCount }}
+                  {{ this.unreadCount() > 99 ? '99+' : this.unreadCount() }}
                 </span>
               }
             </button>
           </li>
           <li class="nav-item">
             <span class="nav-link text-light opacity-75">
-              {{ currentUser?.first_name }} {{ currentUser?.last_name }}
-              <small class="badge bg-secondary ms-1">{{ currentUser?.role }}</small>
+              {{ this.authService.currentUser()?.first_name }} {{ this.authService.currentUser()?.last_name }}
+              <small class="badge bg-secondary ms-1">{{ this.authService.currentUser()?.role }}</small>
             </span>
           </li>
           <li class="nav-item">

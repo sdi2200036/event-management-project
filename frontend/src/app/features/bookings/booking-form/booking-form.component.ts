@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { BookingService } from '../../../core/services/booking.service';
-import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
+import { Event, TicketType } from '../../../shared/models/event.model';
 import { DatePipe } from '@angular/common';
 import { signal } from '@angular/core';
 import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
@@ -14,7 +14,7 @@ import { FormField, form, max, min, required, submit } from '@angular/forms/sign
   imports: [DatePipe, FormField]
 })
 export class BookingFormComponent implements OnInit {
-  event: EventModel | null = null;
+  event: Event | null = null;
   readonly bookingModel = signal({
     ticket_type_id: '',
     number_of_tickets: 1,

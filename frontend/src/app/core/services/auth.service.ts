@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { computed, Injectable, Signal, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -9,8 +9,11 @@ import { User, LoginRequest, RegisterRequest, AuthResponse, UserRole } from '../
 })
 export class AuthService {
   private apiUrl = environment.apiUrl;
-  private currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private _currentUser = signal<User | null>(this.loadUser());
+  
+  public currentUser: Signal<User | null> = this._currentUser.asReadonly();
+  public userRole: Signal<UserRole | null> = computed(() => this._currentUser()?.role || null);
+  public isLoggedIn: Signal<boolean> = computed(() => !!this._currentUser());
 
   constructor(private http: HttpClient) {}
 
@@ -28,7 +31,7 @@ export class AuthService {
       tap((response) => {
         localStorage.setItem('token', response.token);
         localStorage.setItem('currentUser', JSON.stringify(response.user));
-        this.currentUserSubject.next(response.user);
+        this._currentUser.set(response.user);
       })
     );
   }
@@ -41,20 +44,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
-    this.currentUserSubject.next(null);
-  }
-
-  getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
-
-  isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
-  }
-
-  getUserRole(): UserRole | null {
-    const user = this.getCurrentUser();
-    return user ? user.role : null;
+    this._currentUser.set(null);
   }
 
   getToken(): string | null {

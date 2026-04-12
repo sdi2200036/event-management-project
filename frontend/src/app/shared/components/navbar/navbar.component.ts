@@ -1,10 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription, interval } from 'rxjs';
-import { switchMap, startWith } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { MessageService } from '../../../core/services/message.service';
-import { User } from '../../models/user.model';
+import { interval } from 'rxjs';
 
 @Component({
     selector: 'app-navbar',
@@ -12,50 +11,30 @@ import { User } from '../../models/user.model';
   standalone: true,
     imports: []
 })
-export class NavbarComponent implements OnInit, OnDestroy {
-  currentUser: User | null = null;
-  unreadCount: number = 0;
-  private subscriptions = new Subscription();
+export class NavbarComponent {
+  unreadCount: WritableSignal<number> = signal(0);
 
   constructor(
-    private authService: AuthService,
+    protected authService: AuthService,
     private messageService: MessageService,
     private router: Router
-  ) {}
-
-  ngOnInit(): void {
-    this.subscriptions.add(
-      this.authService.currentUser$.subscribe((user) => {
-        this.currentUser = user;
-        if (user) {
-          this.loadUnreadCount();
-        } else {
-          this.unreadCount = 0;
-        }
-      })
-    );
+  ) {
+    if (this.authService.currentUser()) {
+      this.loadUnreadCount();
+    } else {
+      this.unreadCount.set(0);
+    }
 
     // Poll unread count every 30 seconds when logged in
-    this.subscriptions.add(
-      interval(30000).pipe(
-        startWith(0),
-      ).subscribe(() => {
-        if (this.currentUser) {
-          this.loadUnreadCount();
-        }
-      })
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    interval(30000).pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.authService.currentUser()) {
+        this.loadUnreadCount();
+      }
+    });
   }
 
   loadUnreadCount(): void {
-    this.messageService.getUnreadCount().subscribe({
-      next: (res) => (this.unreadCount = res.count),
-      error: () => {},
-    });
+    this.messageService.getUnreadCount().subscribe((res) => this.unreadCount.set(res.count));
   }
 
   isLoggedIn(): boolean {
@@ -63,15 +42,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   isAdmin(): boolean {
-    return this.currentUser?.role === 'admin';
+    return this.authService.currentUser()?.role === 'admin';
   }
 
   isOrganizer(): boolean {
-    return this.currentUser?.role === 'organizer';
+    return this.authService.currentUser()?.role === 'organizer';
   }
 
   isParticipant(): boolean {
-    return this.currentUser?.role === 'participant';
+    return this.authService.currentUser()?.role === 'participant';
   }
 
   isExactRoute(path: string): boolean {
