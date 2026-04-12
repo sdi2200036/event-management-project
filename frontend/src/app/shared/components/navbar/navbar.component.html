@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container">
-    <a class="navbar-brand fw-bold" routerLink="/">EventHub</a>
+    <button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">EventHub</button>
 
     <button
       class="navbar-toggler"
@@ -17,49 +17,43 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Home
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/events" routerLinkActive="active">Events</a>
+          <button type="button" (click)="goToEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/events')">Events</button>
         </li>
 
         <!-- Organizer links -->
         @if (isOrganizer()) {
           <li class="nav-item">
-            <a class="nav-link" routerLink="/manage/events" routerLinkActive="active">My Events</a>
+            <button type="button" (click)="goToManageEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/manage/events')">My Events</button>
           </li>
         }
         @if (isOrganizer()) {
           <li class="nav-item">
-            <a class="nav-link" routerLink="/manage/events/new" routerLinkActive="active">Create Event</a>
+            <button type="button" (click)="goToCreateEvent()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/manage/events/new')">Create Event</button>
           </li>
         }
 
         <!-- Participant links -->
         @if (isParticipant()) {
           <li class="nav-item">
-            <a class="nav-link" routerLink="/bookings" routerLinkActive="active">My Bookings</a>
+            <button type="button" (click)="goToBookings()" class="nav-link border-0 bg-transparent" [class.active]="isRoutePrefix('/bookings')">My Bookings</button>
           </li>
         }
 
         <!-- Admin links -->
         @if (isAdmin()) {
           <li class="nav-item dropdown">
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
+            <button
+              type="button"
+              class="nav-link dropdown-toggle border-0 bg-transparent"
               id="adminDropdown"
-              role="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
               >
               Admin
-            </a>
+            </button>
             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-              <li><a class="dropdown-item" routerLink="/admin/users">User Management</a></li>
-              <li><a class="dropdown-item" routerLink="/admin/export">Export Data</a></li>
+              <li><button type="button" (click)="goToAdminUsers()" class="dropdown-item">User Management</button></li>
+              <li><button type="button" (click)="goToAdminExport()" class="dropdown-item">Export Data</button></li>
             </ul>
           </li>
         }
@@ -70,7 +64,7 @@
         @if (isLoggedIn()) {
           <!-- Messages with badge -->
           <li class="nav-item">
-            <a class="nav-link position-relative" routerLink="/messages" routerLinkActive="active">
+            <button type="button" (click)="goToMessages()" class="nav-link position-relative border-0 bg-transparent" [class.active]="isRoutePrefix('/messages')">
               Messages
               @if (unreadCount > 0) {
                 <span
@@ -80,7 +74,7 @@
                   {{ unreadCount > 99 ? '99+' : unreadCount }}
                 </span>
               }
-            </a>
+            </button>
           </li>
           <li class="nav-item">
             <span class="nav-link text-light opacity-75">
@@ -93,10 +87,10 @@
           </li>
         } @else {
           <li class="nav-item">
-            <a class="nav-link" routerLink="/login">Login</a>
+            <button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">Login</button>
           </li>
           <li class="nav-item">
-            <a class="btn btn-outline-light btn-sm ms-2" routerLink="/register">Register</a>
+            <button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">Register</button>
           </li>
         }
 

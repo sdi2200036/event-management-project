@@ -6,8 +6,8 @@
       and make memories that last a lifetime.
     </p>
     <div class="d-flex gap-3 justify-content-center">
-      <a routerLink="/login" class="btn btn-light btn-lg px-5">Login</a>
-      <a routerLink="/register" class="btn btn-outline-light btn-lg px-5">Register</a>
+      <button type="button" (click)="goToLogin()" class="btn btn-light btn-lg px-5">Login</button>
+      <button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-lg px-5">Register</button>
     </div>
   </div>
 </div>
@@ -22,7 +22,7 @@
           <p class="card-text text-muted">
             Explore a wide variety of events — concerts, conferences, workshops, sports, and more.
           </p>
-          <a routerLink="/events" class="btn btn-primary mt-2">Explore Events</a>
+          <button type="button" (click)="goToEvents()" class="btn btn-primary mt-2">Explore Events</button>
         </div>
       </div>
     </div>
@@ -34,7 +34,7 @@
           <p class="card-text text-muted">
             Secure your spot instantly. Multiple ticket types available for every budget.
           </p>
-          <a routerLink="/register" class="btn btn-primary mt-2">Get Started</a>
+          <button type="button" (click)="goToRegister()" class="btn btn-primary mt-2">Get Started</button>
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@
           <p class="card-text text-muted">
             Create and manage your own events. Reach your audience and sell tickets online.
           </p>
-          <a routerLink="/register" class="btn btn-primary mt-2">Become an Organizer</a>
+          <button type="button" (click)="goToRegister()" class="btn btn-primary mt-2">Become an Organizer</button>
         </div>
       </div>
     </div>

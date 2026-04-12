@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Event, EventFilters } from '../../../shared/models/event.model';
@@ -11,7 +11,7 @@ import { FormField, form } from '@angular/forms/signals';
     selector: 'app-event-list',
     templateUrl: './event-list.component.html',
   standalone: true,
-  imports: [RouterLink, NgClass, DatePipe, FormField]
+  imports: [NgClass, DatePipe, FormField]
 })
 export class EventListComponent implements OnInit {
   events: Event[] = [];
@@ -129,6 +129,18 @@ export class EventListComponent implements OnInit {
     this.currentPage = page;
     this.loadEvents();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  goToCreateEvent(): void {
+    this.router.navigate(['/manage/events/new']);
+  }
+
+  goToEventDetail(eventId: number): void {
+    this.router.navigate(['/events', eventId]);
+  }
+
+  goToEditEvent(eventId: number): void {
+    this.router.navigate(['/manage/events', eventId, 'edit']);
   }
 
   publishEvent(event: Event): void {

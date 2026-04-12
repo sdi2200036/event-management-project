@@ -1,5 +1,5 @@
 import { Component, WritableSignal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { FieldState, FormField, email, form, maxLength, minLength, required, submit, validate } from '@angular/forms/signals';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +10,7 @@ import { RegisterUserRole } from 'src/app/shared/models/user.model';
   selector: 'app-register',
   templateUrl: './register.component.html',
   standalone: true,
-  imports: [FormField, RouterLink]
+  imports: [FormField]
 })
 export class RegisterComponent {
   readonly registerModel = signal({
@@ -54,6 +54,10 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
+  }
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();

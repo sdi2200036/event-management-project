@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { Event } from '../../../shared/models/event.model';
 import { signal } from '@angular/core';
@@ -26,7 +26,7 @@ type EventFormModel = {
     selector: 'app-event-form',
     templateUrl: './event-form.component.html',
   standalone: true,
-  imports: [RouterLink, FormField]
+  imports: [FormField]
 })
 export class EventFormComponent implements OnInit {
   readonly eventModel = signal<EventFormModel>({
@@ -152,6 +152,10 @@ export class EventFormComponent implements OnInit {
 
   isCategorySelected(cat: string): boolean {
     return this.eventModel().categories.includes(cat);
+  }
+
+  cancel(): void {
+    this.router.navigate(['/manage/events']);
   }
 
   async onSubmit(): Promise<void> {

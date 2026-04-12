@@ -151,7 +151,7 @@
               }
               {{ isEditMode ? 'Save Changes' : 'Create Event' }}
             </button>
-            <a routerLink="/manage/events" class="btn btn-outline-secondary px-4">Cancel</a>
+            <button type="button" (click)="cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
           </div>
         </form>
       }

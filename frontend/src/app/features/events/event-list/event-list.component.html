@@ -5,7 +5,7 @@
     <div>
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold mb-0">My Events</h3>
-        <a routerLink="/manage/events/new" class="btn btn-primary">+ Create Event</a>
+        <button type="button" (click)="goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
       </div>
       @if (loading) {
         <div class="text-center py-5">
@@ -49,10 +49,10 @@
                   </td>
                   <td>
                     <div class="d-flex gap-1 flex-wrap">
-                      <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-secondary">View</a>
+                      <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-secondary">View</button>
                       @if (event.status === 'DRAFT') {
-                        <a [routerLink]="['/manage/events', event.id, 'edit']" class="btn btn-sm btn-outline-primary"
-                        >Edit</a>
+                        <button type="button" (click)="goToEditEvent(event.id)" class="btn btn-sm btn-outline-primary"
+                        >Edit</button>
                       }
                       @if (event.status === 'DRAFT') {
                         <button class="btn btn-sm btn-success"
@@ -139,7 +139,7 @@
                     <p class="text-muted small mb-0">{{ event.city }}, {{ event.country }}</p>
                   </div>
                   <div class="card-footer bg-transparent border-0">
-                    <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-primary">View Details</a>
+                    <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-outline-primary">View Details</button>
                   </div>
                 </div>
               </div>
@@ -203,7 +203,7 @@
                     }
                   </div>
                   <div class="card-footer bg-transparent border-0 pt-0">
-                    <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-primary w-100">View Details</a>
+                    <button type="button" (click)="goToEventDetail(event.id)" class="btn btn-sm btn-primary w-100">View Details</button>
                   </div>
                 </div>
               </div>

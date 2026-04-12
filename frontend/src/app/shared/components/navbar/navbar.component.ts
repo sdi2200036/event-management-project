@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, startWith } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +10,7 @@ import { User } from '../../models/user.model';
     selector: 'app-navbar',
     templateUrl: './navbar.component.html',
   standalone: true,
-    imports: [RouterLink, RouterLinkActive]
+    imports: []
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
@@ -72,6 +72,54 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   isParticipant(): boolean {
     return this.currentUser?.role === 'participant';
+  }
+
+  isExactRoute(path: string): boolean {
+    return this.router.url === path;
+  }
+
+  isRoutePrefix(path: string): boolean {
+    return this.router.url.startsWith(path);
+  }
+
+  goToHome(): void {
+    this.router.navigate(['/']);
+  }
+
+  goToEvents(): void {
+    this.router.navigate(['/events']);
+  }
+
+  goToManageEvents(): void {
+    this.router.navigate(['/manage/events']);
+  }
+
+  goToCreateEvent(): void {
+    this.router.navigate(['/manage/events/new']);
+  }
+
+  goToBookings(): void {
+    this.router.navigate(['/bookings']);
+  }
+
+  goToAdminUsers(): void {
+    this.router.navigate(['/admin/users']);
+  }
+
+  goToAdminExport(): void {
+    this.router.navigate(['/admin/export']);
+  }
+
+  goToMessages(): void {
+    this.router.navigate(['/messages']);
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
+  }
+
+  goToRegister(): void {
+    this.router.navigate(['/register']);
   }
 
   logout(): void {

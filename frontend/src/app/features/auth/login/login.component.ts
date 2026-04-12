@@ -1,5 +1,5 @@
 import { Component, WritableSignal } from '@angular/core';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { FormField, form, minLength, required, submit } from '@angular/forms/signals';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,7 +9,7 @@ import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
   selector: 'app-login',
   templateUrl: './login.component.html',
   standalone: true,
-  imports: [RouterLink, FormField]
+  imports: [FormField]
 })
 export class LoginComponent {
   readonly loginModel = signal({
@@ -28,6 +28,10 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router,
   ) {}
+
+  goToRegister(): void {
+    this.router.navigate(['/register']);
+  }
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();

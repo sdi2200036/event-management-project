@@ -16,8 +16,8 @@
           <h3 class="fw-bold">Booking Confirmed!</h3>
           <p class="text-muted">Your booking for <strong>{{ event?.title }}</strong> has been confirmed.</p>
           <div class="d-flex gap-3 justify-content-center mt-4">
-            <a routerLink="/bookings" class="btn btn-primary">My Bookings</a>
-            <a routerLink="/events" class="btn btn-outline-secondary">Browse More Events</a>
+            <button type="button" (click)="goToBookings()" class="btn btn-primary">My Bookings</button>
+            <button type="button" (click)="goToEvents()" class="btn btn-outline-secondary">Browse More Events</button>
           </div>
         </div>
       }

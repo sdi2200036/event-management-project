@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { BookingService } from '../../../core/services/booking.service';
 import { Booking } from '../../../shared/models/booking.model';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
 
 @Component({
     selector: 'app-my-bookings',
     templateUrl: './my-bookings.component.html',
   standalone: true,
-    imports: [RouterLink, NgClass, DecimalPipe, DatePipe]
+    imports: [NgClass, DecimalPipe, DatePipe]
 })
 export class MyBookingsComponent implements OnInit {
   bookings: Booking[] = [];
@@ -16,7 +16,7 @@ export class MyBookingsComponent implements OnInit {
   error: string = '';
   cancellingId: number | null = null;
 
-  constructor(private bookingService: BookingService) {}
+  constructor(private bookingService: BookingService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadBookings();
@@ -50,5 +50,13 @@ export class MyBookingsComponent implements OnInit {
         this.cancellingId = null;
       },
     });
+  }
+
+  goToEvents(): void {
+    this.router.navigate(['/events']);
+  }
+
+  goToEventDetail(eventId: number): void {
+    this.router.navigate(['/events', eventId]);
   }
 }

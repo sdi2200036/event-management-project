@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Event } from '../../../shared/models/event.model';
+import { Event as EventModel } from '../../../shared/models/event.model';
 import { NgClass, DatePipe } from '@angular/common';
 
 declare const L: any; // Leaflet global
@@ -11,10 +11,10 @@ declare const L: any; // Leaflet global
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
   standalone: true,
-    imports: [NgClass, RouterLink, DatePipe]
+    imports: [NgClass, DatePipe]
 })
 export class EventDetailComponent implements OnInit, AfterViewInit {
-  event: Event | null = null;
+  event: EventModel | null = null;
   loading: boolean = true;
   error: string = '';
   isLoggedIn: boolean = false;
@@ -54,6 +54,24 @@ export class EventDetailComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {}
+
+  goToEditEvent(): void {
+    if (!this.event) return;
+    this.router.navigate(['/manage/events', this.event.id, 'edit']);
+  }
+
+  goToBookEvent(): void {
+    if (!this.event) return;
+    this.router.navigate(['/events', this.event.id, 'book']);
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login']);
+  }
+
+  goToEvents(): void {
+    this.router.navigate(['/events']);
+  }
 
   initMap(lat: number, lng: number): void {
     if (this.mapInitialized || typeof L === 'undefined') return;
