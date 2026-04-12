@@ -5,13 +5,7 @@
         <div class="card-body p-5">
           <h2 class="card-title text-center mb-4 fw-bold">Sign In</h2>
 
-          @if (error) {
-            <div class="alert alert-danger" role="alert">
-              {{ error }}
-            </div>
-          }
-
-          <form (ngSubmit)="onSubmit()">
+          <form (submit)="onSubmit($event)" novalidate>
             <div class="mb-3">
               <label for="username" class="form-label">Username</label>
               <input
@@ -21,7 +15,7 @@
                 [formField]="loginFields.username"
                 placeholder="Enter your username"
                 />
-              <div class="invalid-feedback">Username is required (min 3 characters)</div>
+              <div class="invalid-feedback">Username is required</div>
             </div>
 
             <div class="mb-4">
@@ -33,20 +27,27 @@
                 [formField]="loginFields.password"
                 placeholder="Enter your password"
                 />
-              <div class="invalid-feedback">Password is required (min 6 characters)</div>
+              <div class="invalid-feedback">Password is required</div>
             </div>
 
             <button
               type="submit"
               class="btn btn-primary w-100"
-              [disabled]="!loginFields().valid() || loading"
+              [disabled]="!loginFields().valid() || this.loading()"
               >
-              @if (loading) {
+              @if (this.loading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
               }
-              {{ loading ? 'Signing in...' : 'Sign In' }}
+              {{ this.loading() ? 'Signing in...' : 'Sign In' }}
             </button>
           </form>
+          @if (this.loginFields().errors().length > 0) {
+            <div class="d-flex flex-column mt-2">
+              @for (error of this.loginFields().errors(); track $index) {
+                <span class="text-danger">{{ error.message }}</span>
+              }
+            </div>
+          }
 
           <hr />
           <p class="text-center text-muted mb-0">

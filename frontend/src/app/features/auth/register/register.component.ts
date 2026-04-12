@@ -1,12 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, WritableSignal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { signal } from '@angular/core';
-import { FormField, email, form, maxLength, minLength, required, submit } from '@angular/forms/signals';
+import { FieldState, FormField, email, form, maxLength, minLength, required, submit, validate } from '@angular/forms/signals';
 import { AuthService } from '../../../core/services/auth.service';
+import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
+import { RegisterUserRole } from 'src/app/shared/models/user.model';
 
 @Component({
-    selector: 'app-register',
-    templateUrl: './register.component.html',
+  selector: 'app-register',
+  templateUrl: './register.component.html',
   standalone: true,
   imports: [FormField, RouterLink]
 })
@@ -24,58 +26,71 @@ export class RegisterComponent {
     country: '',
     postal_code: '',
     afm: '',
-    role: 'participant' as 'participant' | 'organizer',
+    role: RegisterUserRole.Participant,
   });
   readonly registerForm = form(this.registerModel, (p) => {
-    required(p.username);
-    minLength(p.username, 3);
-    maxLength(p.username, 50);
+    required(p.username, { message: 'Username is required' });
+    minLength(p.username, 3, { message: 'Username must be at least 3 characters' });
+    maxLength(p.username, 50, { message: 'Username must be at most 50 characters' });
 
-    required(p.password);
-    minLength(p.password, 6);
+    required(p.password, { message: 'Password is required' });
+    minLength(p.password, 6, { message: 'Password must be at least 6 characters' });
 
     required(p.confirmPassword);
 
-    required(p.first_name);
-    required(p.last_name);
-    required(p.email);
-    email(p.email);
+    required(p.first_name, { message: 'First name is required' });
+    required(p.last_name, { message: 'Last name is required' });
+    required(p.email, { message: 'Email is required' });
+    email(p.email, { message: 'Invalid email format' });
 
-    minLength(p.afm, 9);
-    maxLength(p.afm, 9);
-    required(p.role);
+    minLength(p.afm, 9, { message: 'AFM must be 9 characters' });
+    maxLength(p.afm, 9, { message: 'AFM must be 9 characters' });
+    required(p.role, { message: 'Role is required' });
   });
-  error: string = '';
-  success: string = '';
-  loading: boolean = false;
-  passwordMismatch = false;
+  successMessage: WritableSignal<string> = signal('');
+  isLoading: WritableSignal<boolean> = signal(false);
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
-  async onSubmit(): Promise<void> {
-    const isValid = await submit(this.registerForm);
-    if (!isValid) return;
+  async onSubmit(event: Event): Promise<void> {
+    event.preventDefault();
 
-    this.passwordMismatch = this.registerModel().password !== this.registerModel().confirmPassword;
-    if (this.passwordMismatch) return;
+    await submit(this.registerForm, async (form) => {
+      if (this.registerModel().password !== this.registerModel().confirmPassword) {
+        return [{
+          kind: 'validation',
+          field: 'form',
+          message: 'Passwords do not match.'
+        }];
+      }
 
-    this.loading = true;
-    this.error = '';
-    this.success = '';
+      this.isLoading.set(true);
+      this.successMessage.set('');
 
-    this.authService.register(this.registerModel()).subscribe({
-      next: (res) => {
-        this.success = res.message;
-        this.loading = false;
-        setTimeout(() => this.router.navigate(['/login']), 2000);
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Registration failed. Please try again.';
-        this.loading = false;
-      },
+      return await firstValueFrom(this.authService.register(this.registerModel()).pipe(
+        switchMap((res) => {
+          this.successMessage.set(res.message);
+          this.isLoading.set(false);
+          setTimeout(() => this.router.navigate(['/login']), 2000);
+          return of(undefined);
+        }),
+        catchError((err) => {
+          this.isLoading.set(false);
+          return of([{
+            kind: 'server',
+            field: 'form',
+            message: err.error?.message || 'Registration failed. Please try again.'
+          }])
+        })
+      ));
     });
+    
+  }
+
+  protected isFieldInvalid(field: FieldState<any>): boolean {
+    return field.touched() && !field.valid();
   }
 }

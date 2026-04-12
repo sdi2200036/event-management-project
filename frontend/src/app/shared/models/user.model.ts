@@ -1,5 +1,19 @@
-export type UserRole = 'admin' | 'organizer' | 'participant';
-export type UserStatus = 'pending' | 'approved' | 'rejected';
+export enum RegisterUserRole {
+  Organizer = 'organizer',
+  Participant = 'participant'
+}
+
+export enum UserRole {
+  Admin = 'admin',
+  Organizer = 'organizer',
+  Participant = 'participant'
+}
+
+export enum UserStatus {
+  Pending = 'pending',
+  Approved = 'approved',
+  Rejected = 'rejected'
+}
 
 export interface User {
   id: number;
@@ -31,7 +45,7 @@ export interface RegisterRequest {
   country?: string;
   postal_code?: string;
   afm?: string;
-  role: 'organizer' | 'participant';
+  role: RegisterUserRole;
 }
 
 export interface LoginRequest {

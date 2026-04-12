@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { User } from '../../../shared/models/user.model';
+import { User, UserStatus } from '../../../shared/models/user.model';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NgClass, DatePipe } from '@angular/common';
 
@@ -47,7 +47,7 @@ export class UserManagementComponent implements OnInit {
     this.actionLoading = user.id;
     this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
       next: () => {
-        user.status = 'approved';
+        user.status = UserStatus.Approved;
         this.actionLoading = null;
       },
       error: (err) => {
@@ -62,7 +62,7 @@ export class UserManagementComponent implements OnInit {
     this.actionLoading = user.id;
     this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
       next: () => {
-        user.status = 'rejected';
+        user.status = UserStatus.Rejected;
         this.actionLoading = null;
       },
       error: (err) => {
@@ -73,6 +73,6 @@ export class UserManagementComponent implements OnInit {
   }
 
   get pendingCount(): number {
-    return this.users.filter((u) => u.status === 'pending').length;
+    return this.users.filter((u) => u.status === UserStatus.Pending).length;
   }
 }
