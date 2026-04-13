@@ -15,7 +15,6 @@
 								[formField]="loginFields.username"
 								placeholder="Enter your username"
 							/>
-							<div class="invalid-feedback">Username is required</div>
 						</div>
 
 						<div class="mb-4">
@@ -27,25 +26,26 @@
 								[formField]="loginFields.password"
 								placeholder="Enter your password"
 							/>
-							<div class="invalid-feedback">Password is required</div>
 						</div>
 
 						<button type="submit" class="btn btn-primary w-100" [disabled]="!loginFields().valid()">
 							Sign In
 						</button>
 					</form>
-					@if (this.loginFields().errors().length > 0) {
-						<div class="d-flex flex-column mt-2">
-							@for (error of this.loginFields().errors(); track $index) {
-								<span class="text-danger">{{ error.message }}</span>
-							}
-						</div>
-					}
+					<div class="d-flex flex-column mt-2">
+						@for (error of this.loginFields().errors(); track $index) {
+							<span class="text-danger">{{ error.message }}</span>
+						}
+					</div>
 
 					<hr />
 					<p class="text-center text-muted mb-0">
 						Don't have an account?
-						<button type="button" (click)="goToRegister()" class="btn btn-link p-0 text-decoration-none align-baseline">
+						<button
+							type="button"
+							(click)="goToRegister()"
+							class="btn btn-link p-0 text-decoration-none align-baseline"
+						>
 							Register here
 						</button>
 					</p>

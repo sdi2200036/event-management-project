@@ -1,5 +1,26 @@
-import { afterNextRender, Component, computed, effect, ElementRef, input, Signal, signal, viewChild, WritableSignal } from '@angular/core';
-import { applyEach, FieldState, form, FormField, maxLength, min, required, submit } from '@angular/forms/signals';
+import {
+	afterNextRender,
+	Component,
+	computed,
+	ElementRef,
+	input,
+	linkedSignal,
+	Signal,
+	signal,
+	viewChild,
+	WritableSignal
+} from '@angular/core';
+import {
+	applyEach,
+	FieldState,
+	form,
+	FormField,
+	maxLength,
+	min,
+	required,
+	submit,
+	validate
+} from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
@@ -32,31 +53,43 @@ type EventFormModel = {
 })
 export class EventFormComponent {
 	// Resolved event data for edit mode (null/undefined for create mode)
-	readonly eventData = input<EventModel | null>();
+	readonly event = input<EventModel | null>(null, { alias: 'eventData' });
 
-	readonly eventModel = signal<EventFormModel>({
-		title: '',
-		event_type: '',
-		description: '',
-		venue: '',
-		address: '',
-		city: '',
-		country: '',
-		geo_lat: null,
-		geo_lng: null,
-		start_datetime: '',
-		end_datetime: '',
-		capacity: 100,
-		categories: [],
-		ticket_types: [{ name: '', price: 0, quantity: 100 }]
-	});
+	readonly eventModel = linkedSignal<EventFormModel>(() => ({
+		title: this.event()?.title || '',
+		event_type: this.event()?.event_type || '',
+		description: this.event()?.description || '',
+		venue: this.event()?.venue || '',
+		address: this.event()?.address || '',
+		city: this.event()?.city || '',
+		country: this.event()?.country || '',
+		geo_lat: this.event()?.geo_lat || null,
+		geo_lng: this.event()?.geo_lng || null,
+		start_datetime: this.event()?.start_datetime
+			? new Date(this.event()!.start_datetime).toISOString().slice(0, 16)
+			: '',
+		end_datetime: this.event()?.end_datetime ? new Date(this.event()!.end_datetime).toISOString().slice(0, 16) : '',
+		capacity: this.event()?.capacity || 100,
+		categories: this.event()?.categories || [],
+		ticket_types: (this.event()?.ticket_types || []).length
+			? this.event()!.ticket_types!.map((tt) => ({
+					name: tt.name,
+					price: tt.price,
+					quantity: tt.quantity
+				}))
+			: [{ name: '', price: 0, quantity: 100 }]
+	}));
+
 	readonly eventForm = form(this.eventModel, (p) => {
 		required(p.title, { message: 'Title is required' });
 		maxLength(p.title, 255, { message: 'Title must be at most 255 characters' });
+
 		required(p.start_datetime, { message: 'Start date/time is required' });
 		required(p.end_datetime, { message: 'End date/time is required' });
+
 		required(p.capacity, { message: 'Capacity is required' });
 		min(p.capacity, 1, { message: 'Capacity must be at least 1' });
+
 		applyEach(p.ticket_types, (tt) => {
 			required(tt.name, { message: 'Ticket type name is required' });
 			required(tt.price, { message: 'Price is required' });
@@ -64,9 +97,22 @@ export class EventFormComponent {
 			required(tt.quantity, { message: 'Quantity is required' });
 			min(tt.quantity, 1, { message: 'Quantity must be at least 1' });
 		});
+
+		validate(p, ({ valueOf }) => {
+			if (valueOf(p.capacity) < valueOf(p.ticket_types).reduce((sum, tt) => sum + tt.quantity, 0)) {
+				return [
+					{
+						kind: 'form',
+						field: 'capacity',
+						message: 'Capacity cannot be less than total ticket quantity'
+					}
+				];
+			}
+			return undefined;
+		});
 	});
 
-	readonly isEditMode: Signal<boolean> = computed(() => !!this.eventData());
+	readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
 	photos: WritableSignal<string[]> = signal([]);
 	error: WritableSignal<string> = signal('');
 	success: WritableSignal<string> = signal('');
@@ -83,44 +129,10 @@ export class EventFormComponent {
 		private eventService: EventService,
 		private router: Router
 	) {
-		// Populate form from resolved data in edit mode
-		effect(() => {
-			const event = this.eventData();
-			if (event) {
-				this.populateForm(event);
-			}
-		});
-
 		// Initialize map after render
 		afterNextRender(() => {
 			this.initFormMap();
 		});
-	}
-
-	private populateForm(event: EventModel): void {
-		this.eventModel.set({
-			title: event.title,
-			event_type: event.event_type || '',
-			description: event.description || '',
-			venue: event.venue || '',
-			address: event.address || '',
-			city: event.city || '',
-			country: event.country || '',
-			geo_lat: event.geo_lat || null,
-			geo_lng: event.geo_lng || null,
-			start_datetime: event.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 16) : '',
-			end_datetime: event.end_datetime ? new Date(event.end_datetime).toISOString().slice(0, 16) : '',
-			capacity: event.capacity || 100,
-			categories: event.categories || [],
-			ticket_types: (event.ticket_types || []).length
-				? event.ticket_types!.map((tt) => ({
-						name: tt.name,
-						price: tt.price,
-						quantity: tt.quantity
-					}))
-				: [{ name: '', price: 0, quantity: 100 }]
-		});
-		this.photos.set(event.photos || []);
 	}
 
 	// === Map Picker Logic ===
@@ -296,7 +308,7 @@ export class EventFormComponent {
 				}))
 			};
 
-			const eventData = this.eventData();
+			const eventData = this.event();
 			if (this.isEditMode() && eventData) {
 				return firstValueFrom(
 					this.eventService.updateEvent(eventData.id, payload).pipe(

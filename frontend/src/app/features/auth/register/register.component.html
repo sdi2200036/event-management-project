@@ -11,7 +11,11 @@
 						</div>
 					}
 
-					<form (submit)="onSubmit($event)" novalidate [class.is-invalid]="this.isFieldInvalid(registerForm())">
+					<form
+						(submit)="onSubmit($event)"
+						novalidate
+						[class.is-invalid]="this.isFieldInvalid(registerForm())"
+					>
 						<!-- Account Type -->
 						<div class="mb-4">
 							<label class="form-label fw-semibold">Register as:</label>
@@ -50,12 +54,10 @@
 									[formField]="registerForm.username"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.username())"
 								/>
-								@if (this.isFieldInvalid(registerForm.username())) {
-									@for (error of registerForm.username().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.username().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -69,12 +71,10 @@
 									[formField]="registerForm.email"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.email())"
 								/>
-								@if (this.isFieldInvalid(registerForm.email())) {
-									@for (error of registerForm.email().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.email().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -88,12 +88,10 @@
 									[formField]="registerForm.password"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.password())"
 								/>
-								@if (this.isFieldInvalid(registerForm.password())) {
-									@for (error of registerForm.password().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.password().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -107,12 +105,10 @@
 									[formField]="registerForm.confirmPassword"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.confirmPassword())"
 								/>
-								@if (this.isFieldInvalid(registerForm.confirmPassword())) {
-									@for (error of registerForm.confirmPassword().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.confirmPassword().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -126,12 +122,10 @@
 									[formField]="registerForm.first_name"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.first_name())"
 								/>
-								@if (this.isFieldInvalid(registerForm.first_name())) {
-									@for (error of registerForm.first_name().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.first_name().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -145,12 +139,10 @@
 									[formField]="registerForm.last_name"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.last_name())"
 								/>
-								@if (this.isFieldInvalid(registerForm.last_name())) {
-									@for (error of registerForm.last_name().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.last_name().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -164,12 +156,10 @@
 									[formField]="registerForm.phone"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.phone())"
 								/>
-								@if (this.isFieldInvalid(registerForm.phone())) {
-									@for (error of registerForm.phone().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.phone().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
@@ -184,19 +174,22 @@
 									placeholder="9 digits"
 									[class.is-invalid]="this.isFieldInvalid(registerForm.afm())"
 								/>
-								@if (this.isFieldInvalid(registerForm.afm())) {
-									@for (error of registerForm.afm().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of registerForm.afm().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 
 							<!-- Address -->
 							<div class="col-12">
 								<label for="address" class="form-label">Address</label>
-								<input id="address" type="text" class="form-control" [formField]="registerForm.address" />
+								<input
+									id="address"
+									type="text"
+									class="form-control"
+									[formField]="registerForm.address"
+								/>
 							</div>
 
 							<!-- City -->
@@ -208,34 +201,48 @@
 							<!-- Country -->
 							<div class="col-md-4">
 								<label for="country" class="form-label">Country</label>
-								<input id="country" type="text" class="form-control" [formField]="registerForm.country" />
+								<input
+									id="country"
+									type="text"
+									class="form-control"
+									[formField]="registerForm.country"
+								/>
 							</div>
 
 							<!-- Postal Code -->
 							<div class="col-md-4">
 								<label for="postal_code" class="form-label">Postal Code</label>
-								<input id="postal_code" type="text" class="form-control" [formField]="registerForm.postal_code" />
+								<input
+									id="postal_code"
+									type="text"
+									class="form-control"
+									[formField]="registerForm.postal_code"
+								/>
 							</div>
 						</div>
 
 						<div class="mt-4">
 							<button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid()">
-							Create Account
-						</button>
+								Create Account
+							</button>
 						</div>
 					</form>
-					@if (this.registerForm().errors().length > 0) {
-						<div class="d-flex flex-column mt-2">
-							@for (error of this.registerForm().errors(); track $index) {
-								<span class="text-danger">{{ error.message }}</span>
-							}
-						</div>
-					}
+					<div class="d-flex flex-column mt-2">
+						@for (error of this.registerForm().errors(); track $index) {
+							<span class="text-danger">{{ error.message }}</span>
+						}
+					</div>
 
 					<hr />
 					<p class="text-center text-muted mb-0">
 						Already have an account?
-						<button type="button" (click)="goToLogin()" class="btn btn-link p-0 text-decoration-none align-baseline">Sign in</button>
+						<button
+							type="button"
+							(click)="goToLogin()"
+							class="btn btn-link p-0 text-decoration-none align-baseline"
+						>
+							Sign in
+						</button>
 					</p>
 				</div>
 			</div>

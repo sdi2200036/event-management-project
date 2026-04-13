@@ -1,9 +1,8 @@
 import { Component, signal } from '@angular/core';
+import { FormField, form, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { FormField, form, minLength, required, submit } from '@angular/forms/signals';
-import { AuthService } from '../../../core/services/auth.service';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
-import { NgClass } from '@angular/common';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
 	selector: 'app-login',
@@ -17,10 +16,8 @@ export class LoginComponent {
 		password: ''
 	});
 	readonly loginFields = form(this.loginModel, (p) => {
-		required(p.username, { message: 'Username is required' });
-		minLength(p.username, 3);
-		required(p.password, { message: 'Password is required' });
-		minLength(p.password, 6);
+		required(p.username);
+		required(p.password);
 	});
 	constructor(
 		private authService: AuthService,

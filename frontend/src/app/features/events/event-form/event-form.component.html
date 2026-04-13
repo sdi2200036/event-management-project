@@ -21,12 +21,10 @@
 									[formField]="eventForm.title"
 									[class.is-invalid]="isFieldInvalid(eventForm.title())"
 								/>
-								@if (isFieldInvalid(eventForm.title())) {
-									@for (error of eventForm.title().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of eventForm.title().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 							<div class="col-md-6">
@@ -41,12 +39,10 @@
 							<div class="col-md-6">
 								<label class="form-label">Capacity *</label>
 								<input type="number" class="form-control" [formField]="eventForm.capacity" />
-								@if (isFieldInvalid(eventForm.capacity())) {
-									@for (error of eventForm.capacity().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of eventForm.capacity().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 							<div class="col-12">
@@ -74,12 +70,10 @@
 									[formField]="eventForm.start_datetime"
 									[class.is-invalid]="isFieldInvalid(eventForm.start_datetime())"
 								/>
-								@if (isFieldInvalid(eventForm.start_datetime())) {
-									@for (error of eventForm.start_datetime().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of eventForm.start_datetime().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 							<div class="col-md-6">
@@ -90,12 +84,10 @@
 									[formField]="eventForm.end_datetime"
 									[class.is-invalid]="isFieldInvalid(eventForm.end_datetime())"
 								/>
-								@if (isFieldInvalid(eventForm.end_datetime())) {
-									@for (error of eventForm.end_datetime().errors(); track $index) {
-										<div class="invalid-feedback">
-											{{ error.message }}
-										</div>
-									}
+								@for (error of eventForm.end_datetime().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
 								}
 							</div>
 						</div>
@@ -151,7 +143,10 @@
 										}
 									</button>
 								</div>
-								<div id="form-map" style="height: 350px; border-radius: 8px; border: 1px solid #dee2e6"></div>
+								<div
+									id="form-map"
+									style="height: 350px; border-radius: 8px; border: 1px solid #dee2e6"
+								></div>
 								@if (eventModel().geo_lat !== null && eventModel().geo_lng !== null) {
 									<div class="d-flex justify-content-between align-items-center mt-2">
 										<small class="text-muted">
@@ -212,19 +207,12 @@
 											class="form-control"
 											[formField]="eventForm.ticket_types[i].name"
 											placeholder="e.g. VIP, General"
-											[class.is-invalid]="
-												isFieldInvalid(eventForm.ticket_types[i].name())
-											"
+											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].name())"
 										/>
-										@if (isFieldInvalid(eventForm.ticket_types[i].name())) {
-											@for (
-												error of eventForm.ticket_types[i].name().errors();
-												track $index
-											) {
-												<div class="invalid-feedback">
-													{{ error.message }}
-												</div>
-											}
+										@for (error of eventForm.ticket_types[i].name().errors(); track $index) {
+											<div class="invalid-feedback">
+												{{ error.message }}
+											</div>
 										}
 									</div>
 									<div class="col-md-3">
@@ -234,19 +222,12 @@
 											class="form-control"
 											[formField]="eventForm.ticket_types[i].price"
 											step="0.01"
-											[class.is-invalid]="
-												isFieldInvalid(eventForm.ticket_types[i].price())
-											"
+											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].price())"
 										/>
-										@if (isFieldInvalid(eventForm.ticket_types[i].price())) {
-											@for (
-												error of eventForm.ticket_types[i].price().errors();
-												track $index
-											) {
-												<div class="invalid-feedback">
-													{{ error.message }}
-												</div>
-											}
+										@for (error of eventForm.ticket_types[i].price().errors(); track $index) {
+											<div class="invalid-feedback">
+												{{ error.message }}
+											</div>
 										}
 									</div>
 									<div class="col-md-3">
@@ -255,19 +236,12 @@
 											type="number"
 											class="form-control"
 											[formField]="eventForm.ticket_types[i].quantity"
-											[class.is-invalid]="
-												isFieldInvalid(eventForm.ticket_types[i].quantity())
-											"
+											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].quantity())"
 										/>
-										@if (isFieldInvalid(eventForm.ticket_types[i].quantity())) {
-											@for (
-												error of eventForm.ticket_types[i].quantity().errors();
-												track $index
-											) {
-												<div class="invalid-feedback">
-													{{ error.message }}
-												</div>
-											}
+										@for (error of eventForm.ticket_types[i].quantity().errors(); track $index) {
+											<div class="invalid-feedback">
+												{{ error.message }}
+											</div>
 										}
 									</div>
 									<div class="col-md-2 d-flex align-items-end">
@@ -297,7 +271,9 @@
 								multiple
 								(change)="onPhotosSelected($event)"
 							/>
-							<small class="text-muted">Select one or more images (JPEG, PNG, WebP). They are stored with the event.</small>
+							<small class="text-muted"
+								>Select one or more images (JPEG, PNG, WebP). They are stored with the event.</small
+							>
 						</div>
 						@if (photos().length > 0) {
 							<div class="row g-2">
@@ -323,23 +299,17 @@
 					</div>
 				</div>
 				<div class="d-flex gap-3">
-					<button
-						type="submit"
-						class="btn btn-primary px-5"
-						[disabled]="!eventForm().valid()"
-					>
+					<button type="submit" class="btn btn-primary px-5" [disabled]="!eventForm().valid()">
 						{{ isEditMode() ? 'Save Changes' : 'Create Event' }}
 					</button>
 					<button type="button" (click)="cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
 				</div>
 			</form>
-			@if (isFieldInvalid(eventForm())) {
-				<div class="d-flex flex-column mt-3">
-					@for (error of eventForm().errors(); track $index) {
-						<span class="text-danger">{{ error.message }}</span>
-					}
-				</div>
-			}
+			<div class="d-flex flex-column mt-3">
+				@for (error of eventForm().errors(); track $index) {
+					<span class="text-danger">{{ error.message }}</span>
+				}
+			</div>
 		</div>
 	</div>
 </div>
