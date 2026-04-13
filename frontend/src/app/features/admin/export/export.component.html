@@ -21,11 +21,8 @@
 						<li>Includes categories, ticket types, photos</li>
 						<li>Embedded DTD validation schema</li>
 					</ul>
-					<button class="btn btn-primary mt-2" (click)="exportXML()" [disabled]="loadingXML">
-						@if (loadingXML) {
-							<span class="spinner-border spinner-border-sm me-2"></span>
-						}
-						{{ loadingXML ? 'Exporting...' : 'Download XML' }}
+					<button class="btn btn-primary mt-2" (click)="exportXML()">
+						Download XML
 					</button>
 				</div>
 			</div>
@@ -45,11 +42,8 @@
 						<li>Nested categories, ticket types, photos</li>
 						<li>Includes export timestamp and total count</li>
 					</ul>
-					<button class="btn btn-success mt-2" (click)="exportJSON()" [disabled]="loadingJSON">
-						@if (loadingJSON) {
-							<span class="spinner-border spinner-border-sm me-2"></span>
-						}
-						{{ loadingJSON ? 'Exporting...' : 'Download JSON' }}
+					<button class="btn btn-success mt-2" (click)="exportJSON()">
+						Download JSON
 					</button>
 				</div>
 			</div>

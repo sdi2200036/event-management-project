@@ -23,9 +23,9 @@ app.use(cors({
   credentials: true,
 }));
 
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing — 20mb limit to accommodate base64-encoded event photos
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Health check
 app.get('/api/health', (_req, res) => {

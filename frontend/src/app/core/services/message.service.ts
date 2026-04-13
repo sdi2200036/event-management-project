@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SKIP_LOADING } from '../interceptors/loading.interceptor';
 
 export interface Message {
 	id: number;
@@ -56,6 +57,8 @@ export class MessageService {
 	}
 
 	getUnreadCount(): Observable<{ count: number }> {
-		return this.http.get<{ count: number }>(`${this.apiUrl}/unread-count`);
+		return this.http.get<{ count: number }>(`${this.apiUrl}/unread-count`, {
+			context: new HttpContext().set(SKIP_LOADING, true)
+		});
 	}
 }

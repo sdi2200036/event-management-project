@@ -13,7 +13,6 @@ import { NgClass, DatePipe } from '@angular/common';
 })
 export class UserManagementComponent implements OnInit {
 	users: User[] = [];
-	loading: boolean = true;
 	error: string = '';
 	filterStatus: string = '';
 	filterRole: string = '';
@@ -26,20 +25,13 @@ export class UserManagementComponent implements OnInit {
 	}
 
 	loadUsers(): void {
-		this.loading = true;
 		let url = `${environment.apiUrl}/users?`;
 		if (this.filterStatus) url += `status=${this.filterStatus}&`;
 		if (this.filterRole) url += `role=${this.filterRole}&`;
 
 		this.http.get<User[]>(url).subscribe({
-			next: (users) => {
-				this.users = users;
-				this.loading = false;
-			},
-			error: () => {
-				this.error = 'Failed to load users';
-				this.loading = false;
-			}
+			next: (users) => (this.users = users),
+			error: () => (this.error = 'Failed to load users')
 		});
 	}
 

@@ -55,11 +55,11 @@ CREATE TABLE IF NOT EXISTS event_categories (
   PRIMARY KEY (event_id, category)
 );
 
--- Event photos
+-- Event photos (photo_url stored as base64 data URL or external URL)
 CREATE TABLE IF NOT EXISTS event_photos (
   id              SERIAL PRIMARY KEY,
   event_id        INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  photo_url       VARCHAR(500) NOT NULL
+  photo_url       TEXT NOT NULL
 );
 
 -- Ticket types per event

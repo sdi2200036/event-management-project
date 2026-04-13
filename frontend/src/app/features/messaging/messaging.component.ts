@@ -20,7 +20,6 @@ export class MessagingComponent implements OnInit {
 	activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
 	inbox: WritableSignal<Message[]> = signal([]);
 	sent: WritableSignal<Message[]> = signal([]);
-	loading: WritableSignal<boolean> = signal(false);
 	error: WritableSignal<string> = signal('');
 	success: WritableSignal<string> = signal('');
 	unreadCount: Signal<number> = computed(() => this.inbox().filter((m) => !m.is_read).length);
@@ -46,30 +45,16 @@ export class MessagingComponent implements OnInit {
 	}
 
 	loadInbox(): void {
-		this.loading.set(true);
 		this.messageService.getInbox().subscribe({
-			next: (msgs) => {
-				this.inbox.set(msgs);
-				this.loading.set(false);
-			},
-			error: () => {
-				this.error.set('Failed to load inbox');
-				this.loading.set(false);
-			}
+			next: (msgs) => this.inbox.set(msgs),
+			error: () => this.error.set('Failed to load inbox')
 		});
 	}
 
 	loadSent(): void {
-		this.loading.set(true);
 		this.messageService.getSent().subscribe({
-			next: (msgs) => {
-				this.sent.set(msgs);
-				this.loading.set(false);
-			},
-			error: () => {
-				this.error.set('Failed to load sent messages');
-				this.loading.set(false);
-			}
+			next: (msgs) => this.sent.set(msgs),
+			error: () => this.error.set('Failed to load sent messages')
 		});
 	}
 
@@ -88,7 +73,9 @@ export class MessagingComponent implements OnInit {
 		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
 			this.messageService.markAsRead(msg.id).subscribe({
 				next: () => (msg.is_read = true),
-				error: () => {}
+				error: (err) => {
+					this.error.set(err || 'Failed to mark as read');
+				}
 			});
 		}
 	}
@@ -114,19 +101,16 @@ export class MessagingComponent implements OnInit {
 		event.preventDefault();
 
 		await submit(this.composeForm, (form) => {
-			this.loading.set(true);
 			return firstValueFrom(
 				this.messageService.sendMessage(form().value()).pipe(
 					switchMap(() => {
 						this.success.set('Message sent successfully!');
 						this.composeModel.set({ receiver_id: 0, subject: '', body: '' });
-						this.loading.set(false);
 						setTimeout(() => this.switchTab(Tab.SENT), 1500);
 						return of(undefined);
 					}),
 					catchError((err) => {
 						this.error.set(err.error?.message || 'Failed to send message');
-						this.loading.set(false);
 						return of([
 							{
 								kind: 'server',

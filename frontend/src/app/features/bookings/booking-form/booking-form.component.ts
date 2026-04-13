@@ -24,8 +24,6 @@ export class BookingFormComponent implements OnInit {
 		min(p.number_of_tickets, 1);
 		max(p.number_of_tickets, 20);
 	});
-	loading: boolean = false;
-	loadingEvent: boolean = true;
 	error: string = '';
 	showConfirmation: boolean = false;
 	bookingCreated: boolean = false;
@@ -42,7 +40,6 @@ export class BookingFormComponent implements OnInit {
 		this.eventService.getEvent(eventId).subscribe({
 			next: (ev) => {
 				this.event = ev;
-				this.loadingEvent = false;
 				if (ev.ticket_types && ev.ticket_types.length > 0) {
 					this.bookingModel.update((current) => ({
 						...current,
@@ -50,10 +47,7 @@ export class BookingFormComponent implements OnInit {
 					}));
 				}
 			},
-			error: () => {
-				this.error = 'Event not found';
-				this.loadingEvent = false;
-			}
+			error: () => (this.error = 'Event not found')
 		});
 	}
 
@@ -76,9 +70,7 @@ export class BookingFormComponent implements OnInit {
 	confirmBooking(): void {
 		if (!this.event) return;
 
-		this.loading = true;
 		this.error = '';
-
 		this.bookingService
 			.createBooking({
 				event_id: this.event.id,
@@ -89,12 +81,10 @@ export class BookingFormComponent implements OnInit {
 				next: () => {
 					this.bookingCreated = true;
 					this.showConfirmation = false;
-					this.loading = false;
 				},
 				error: (err) => {
 					this.error = err.error?.message || 'Booking failed';
 					this.showConfirmation = false;
-					this.loading = false;
 				}
 			});
 	}

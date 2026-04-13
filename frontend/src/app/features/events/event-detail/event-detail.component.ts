@@ -56,7 +56,7 @@ export class EventDetailComponent {
 	goToBookEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
-		this.router.navigate(['/events', ev.id, 'book']);
+		this.router.navigate(['/bookings', 'new', ev.id]);
 	}
 
 	goToLogin(): void {

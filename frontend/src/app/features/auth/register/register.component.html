@@ -219,12 +219,9 @@
 						</div>
 
 						<div class="mt-4">
-							<button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid() || this.isLoading()">
-								@if (this.isLoading()) {
-									<span class="spinner-border spinner-border-sm me-2" role="status"></span>
-								}
-								{{ this.isLoading() ? 'Creating account...' : 'Create Account' }}
-							</button>
+							<button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid()">
+							Create Account
+						</button>
 						</div>
 					</form>
 					@if (this.registerForm().errors().length > 0) {

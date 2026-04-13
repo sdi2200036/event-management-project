@@ -6,13 +6,9 @@
 				<h3 class="fw-bold mb-0">My Events</h3>
 				<button type="button" (click)="goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
 			</div>
-			@if (this.loading()) {
-				<div class="text-center py-5">
-					<div class="spinner-border text-primary"></div>
-				</div>
-			} @else if (!this.loading() && this.error()) {
+			@if (this.error()) {
 				<div class="alert alert-danger">{{ this.error() }}</div>
-			} @else if (!this.loading() && this.events().length === 0) {
+			} @else if (this.events().length === 0) {
 				<div class="text-center py-5 text-muted">
 					<div class="display-1">📅</div>
 					<h5>No events yet</h5>
@@ -58,6 +54,9 @@
 												View
 											</button>
 											@if (event.status === 'DRAFT') {
+												<button class="btn btn-sm btn-success" (click)="publishEvent(event)">
+													Publish
+												</button>
 												<button
 													type="button"
 													(click)="goToEditEvent(event.id)"
@@ -65,20 +64,13 @@
 												>
 													Edit
 												</button>
-											}
-											@if (event.status === 'DRAFT') {
-												<button class="btn btn-sm btn-success" (click)="publishEvent(event)">
-													Publish
+												<button class="btn btn-sm btn-danger" (click)="deleteEvent(event)">
+													Delete
 												</button>
 											}
 											@if (event.status === 'PUBLISHED') {
 												<button class="btn btn-sm btn-warning" (click)="cancelEvent(event)">
 													Cancel
-												</button>
-											}
-											@if (event.status === 'DRAFT') {
-												<button class="btn btn-sm btn-danger" (click)="deleteEvent(event)">
-													Delete
 												</button>
 											}
 										</div>
@@ -192,11 +184,7 @@
 				</div>
 			}
 			<!-- Events Grid -->
-			@if (this.loading()) {
-				<div class="text-center py-5">
-					<div class="spinner-border text-primary"></div>
-				</div>
-			} @else if (!this.loading() && this.error()) {
+			@if (this.error()) {
 				<div class="alert alert-danger">{{ this.error() }}</div>
 			} @else {
 				<div>

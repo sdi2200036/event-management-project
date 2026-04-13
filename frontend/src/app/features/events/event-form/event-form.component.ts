@@ -67,7 +67,7 @@ export class EventFormComponent {
 	});
 
 	readonly isEditMode: Signal<boolean> = computed(() => !!this.eventData());
-	loading: WritableSignal<boolean> = signal(false);
+	photos: WritableSignal<string[]> = signal([]);
 	error: WritableSignal<string> = signal('');
 	success: WritableSignal<string> = signal('');
 
@@ -120,6 +120,7 @@ export class EventFormComponent {
 					}))
 				: [{ name: '', price: 0, quantity: 100 }]
 		});
+		this.photos.set(event.photos || []);
 	}
 
 	// === Map Picker Logic ===
@@ -216,6 +217,28 @@ export class EventFormComponent {
 		}));
 	}
 
+	// === Photo Management ===
+
+	onPhotosSelected(event: Event): void {
+		const input = event.target as HTMLInputElement;
+		if (!input.files) return;
+
+		Array.from(input.files).forEach((file) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				this.photos.update((current) => [...current, reader.result as string]);
+			};
+			reader.readAsDataURL(file);
+		});
+
+		// Reset so the same file can be selected again if removed
+		input.value = '';
+	}
+
+	removePhoto(index: number): void {
+		this.photos.update((current) => current.filter((_, i) => i !== index));
+	}
+
 	// === Form Actions ===
 
 	addTicketType(): void {
@@ -258,12 +281,12 @@ export class EventFormComponent {
 		event.preventDefault();
 
 		await submit(this.eventForm, (form) => {
-			this.loading.set(true);
 			this.error.set('');
 
 			const formValue = form().value();
 			const payload = {
 				...formValue,
+				photos: this.photos(),
 				categories: formValue.categories.length > 0 ? (formValue.categories as EventCategory[]) : undefined,
 				geo_lat: formValue.geo_lat ?? undefined,
 				geo_lng: formValue.geo_lng ?? undefined,
@@ -279,12 +302,10 @@ export class EventFormComponent {
 					this.eventService.updateEvent(eventData.id, payload).pipe(
 						switchMap(() => {
 							this.success.set('Event updated successfully!');
-							this.loading.set(false);
 							setTimeout(() => this.router.navigate(['/manage/events']), 1500);
 							return of(undefined);
 						}),
 						catchError((err) => {
-							this.loading.set(false);
 							return of([
 								{
 									kind: 'server',
@@ -300,12 +321,10 @@ export class EventFormComponent {
 					this.eventService.createEvent(payload).pipe(
 						switchMap(() => {
 							this.success.set('Event created successfully!');
-							this.loading.set(false);
 							setTimeout(() => this.router.navigate(['/manage/events']), 1500);
 							return of(undefined);
 						}),
 						catchError((err) => {
-							this.loading.set(false);
 							return of([
 								{
 									kind: 'server',

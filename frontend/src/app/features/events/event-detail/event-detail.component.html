@@ -12,6 +12,20 @@
 							style="max-height: 400px; object-fit: cover"
 							[alt]="event()!.title"
 						/>
+						@if (event()!.photos!.length > 1) {
+							<div class="row g-2 mt-2">
+								@for (photo of event()!.photos!.slice(1); track $index) {
+									<div class="col-4">
+										<img
+											[src]="photo"
+											class="img-fluid rounded shadow-sm"
+											style="height: 130px; width: 100%; object-fit: cover"
+											[alt]="event()!.title"
+										/>
+									</div>
+								}
+							</div>
+						}
 					</div>
 				}
 				<!-- Header -->
@@ -36,21 +50,17 @@
 						</div>
 					</div>
 					<!-- Organizer Actions -->
-					@if (isOwner() || isOrganizer()) {
+					@if (isOwner()) {
 						<div class="d-flex gap-2">
 							@if (event()!.status === 'DRAFT') {
+								<button class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
 								<button type="button" (click)="goToEditEvent()" class="btn btn-sm btn-outline-primary">
 									Edit
 								</button>
-							}
-							@if (event()!.status === 'DRAFT') {
-								<button class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
+								<button class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
 							}
 							@if (event()!.status === 'PUBLISHED') {
 								<button class="btn btn-sm btn-warning" (click)="cancelEvent()">Cancel Event</button>
-							}
-							@if (event()!.status === 'DRAFT') {
-								<button class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
 							}
 						</div>
 					}
@@ -65,32 +75,17 @@
 					</div>
 				</div>
 				<!-- Map -->
-				@if (event()!.geo_lat && event()!.geo_lng) {
-					<div class="card border-0 shadow-sm mb-4">
-						<div class="card-body">
-							<h5 class="card-title">Location</h5>
-							<p class="text-muted mb-2">
-								{{ event()!.venue ? event()!.venue + ', ' : '' }}{{ event()!.address }},
-								{{ event()!.city }},
-								{{ event()!.country }}
-							</p>
-							<div id="event-map" style="height: 300px; border-radius: 8px"></div>
-						</div>
+				<div class="card border-0 shadow-sm mb-4">
+					<div class="card-body">
+						<h5 class="card-title">Location</h5>
+						<p class="text-muted mb-2">
+							{{ event()!.venue ? event()!.venue + ', ' : '' }}{{ event()!.address }},
+							{{ event()!.city }},
+							{{ event()!.country }}
+						</p>
+						<div id="event-map" style="height: 300px; border-radius: 8px"></div>
 					</div>
-				}
-				<!-- No map location text -->
-				@if (!event()!.geo_lat || !event()!.geo_lng) {
-					<div class="card border-0 shadow-sm mb-4">
-						<div class="card-body">
-							<h5 class="card-title">Location</h5>
-							<p class="text-muted">
-								{{ event()!.venue ? event()!.venue + ', ' : '' }}
-								{{ event()!.address ? event()!.address + ', ' : '' }}
-								{{ event()!.city }}, {{ event()!.country }}
-							</p>
-						</div>
-					</div>
-				}
+				</div>
 			</div>
 			<!-- Sidebar -->
 			<div class="col-lg-4">
@@ -143,7 +138,7 @@
 					</div>
 				}
 				<!-- Guest prompt -->
-				@if (!isLoggedIn()) {
+				@else if (!isLoggedIn()) {
 					<div>
 						<button type="button" (click)="goToLogin()" class="btn btn-outline-primary btn-lg w-100">
 							Login to Book

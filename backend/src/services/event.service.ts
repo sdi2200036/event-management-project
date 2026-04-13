@@ -163,10 +163,10 @@ export const updateEvent = async (id: number, organizerId: number, dto: Partial<
 
   const {
     title, event_type, venue, address, city, country,
-    geo_lat, geo_lng, start_datetime, end_datetime, capacity, description,
+    geo_lat, geo_lng, start_datetime, end_datetime, capacity, description, photos,
   } = dto;
 
-  const result = await query(
+  await query(
     `UPDATE events SET
       title = COALESCE($1, title),
       event_type = COALESCE($2, event_type),
@@ -180,12 +180,20 @@ export const updateEvent = async (id: number, organizerId: number, dto: Partial<
       end_datetime = COALESCE($10, end_datetime),
       capacity = COALESCE($11, capacity),
       description = COALESCE($12, description)
-     WHERE id = $13 RETURNING *`,
+     WHERE id = $13`,
     [title, event_type, venue, address, city, country, geo_lat, geo_lng,
      start_datetime, end_datetime, capacity, description, id]
   );
 
-  return result.rows[0];
+  // Replace photos if provided
+  if (photos !== undefined) {
+    await query('DELETE FROM event_photos WHERE event_id = $1', [id]);
+    for (const url of photos) {
+      await query('INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)', [id, url]);
+    }
+  }
+
+  return (await getEventById(id))!;
 };
 
 export const publishEvent = async (id: number, organizerId: number): Promise<Event> => {

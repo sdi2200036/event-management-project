@@ -30,11 +30,8 @@
 							<div class="invalid-feedback">Password is required</div>
 						</div>
 
-						<button type="submit" class="btn btn-primary w-100" [disabled]="!loginFields().valid() || this.loading()">
-							@if (this.loading()) {
-								<span class="spinner-border spinner-border-sm me-2" role="status"></span>
-							}
-							{{ this.loading() ? 'Signing in...' : 'Sign In' }}
+						<button type="submit" class="btn btn-primary w-100" [disabled]="!loginFields().valid()">
+							Sign In
 						</button>
 					</form>
 					@if (this.loginFields().errors().length > 0) {

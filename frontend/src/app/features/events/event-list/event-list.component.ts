@@ -20,7 +20,6 @@ export class EventListComponent {
 	total: WritableSignal<number> = signal(0);
 	currentPage: WritableSignal<number> = signal(1);
 	pageSize: WritableSignal<number> = signal(12);
-	loading: WritableSignal<boolean> = signal(false);
 	error: WritableSignal<string> = signal('');
 
 	readonly filterModel = signal({
@@ -73,7 +72,6 @@ export class EventListComponent {
 	}
 
 	loadEvents(): void {
-		this.loading.set(true);
 		this.error.set('');
 
 		if (this.isManageMode()) {
@@ -81,12 +79,8 @@ export class EventListComponent {
 				next: (res) => {
 					this.events.set(res.events);
 					this.total.set(res.total);
-					this.loading.set(false);
 				},
-				error: () => {
-					this.error.set('Failed to load your events');
-					this.loading.set(false);
-				}
+				error: () => this.error.set('Failed to load your events')
 			});
 			return;
 		}
@@ -105,24 +99,19 @@ export class EventListComponent {
 			}
 		});
 
-		this.loading.set(true);
 		this.eventService.getEvents(filters).subscribe({
 			next: (res) => {
 				this.events.set(res.events);
 				this.total.set(res.total);
-				this.loading.set(false);
 			},
-			error: () => {
-				this.error.set('Failed to load events');
-				this.loading.set(false);
-			}
+			error: () => this.error.set('Failed to load events')
 		});
 	}
 
 	loadRecommendations(): void {
 		this.eventService.getRecommendations(6).subscribe({
 			next: (res) => this.recommendedEvents.set(res.events),
-			error: () => { }
+			error: () => {}
 		});
 	}
 

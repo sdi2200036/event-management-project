@@ -53,7 +53,6 @@ export class RegisterComponent {
 		required(p.role, { message: 'Role is required' });
 	});
 	successMessage: WritableSignal<string> = signal('');
-	isLoading: WritableSignal<boolean> = signal(false);
 
 	constructor(
 		private authService: AuthService,
@@ -78,19 +77,16 @@ export class RegisterComponent {
 				];
 			}
 
-			this.isLoading.set(true);
 			this.successMessage.set('');
 
 			return await firstValueFrom(
 				this.authService.register(this.registerModel()).pipe(
 					switchMap((res) => {
 						this.successMessage.set(res.message);
-						this.isLoading.set(false);
 						setTimeout(() => this.router.navigate(['/login']), 2000);
 						return of(undefined);
 					}),
 					catchError((err) => {
-						this.isLoading.set(false);
 						return of([
 							{
 								kind: 'server',

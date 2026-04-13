@@ -12,7 +12,6 @@ import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
 })
 export class MyBookingsComponent implements OnInit {
 	bookings: Booking[] = [];
-	loading: boolean = true;
 	error: string = '';
 	cancellingId: number | null = null;
 
@@ -26,16 +25,9 @@ export class MyBookingsComponent implements OnInit {
 	}
 
 	loadBookings(): void {
-		this.loading = true;
 		this.bookingService.getMyBookings().subscribe({
-			next: (bookings) => {
-				this.bookings = bookings;
-				this.loading = false;
-			},
-			error: () => {
-				this.error = 'Failed to load bookings';
-				this.loading = false;
-			}
+			next: (bookings) => (this.bookings = bookings),
+			error: () => (this.error = 'Failed to load bookings')
 		});
 	}
 
