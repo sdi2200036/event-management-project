@@ -1,9 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, computed, input, linkedSignal, Signal, signal, WritableSignal } from '@angular/core';
+import { form, FormField, max, min, required, submit } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
-import { EventService } from '../../../core/services/event.service';
 import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
 
 @Component({
@@ -12,79 +11,66 @@ import { Event as EventModel, TicketType } from '../../../shared/models/event.mo
 	standalone: true,
 	imports: [DatePipe, FormField]
 })
-export class BookingFormComponent implements OnInit {
-	event: EventModel | null = null;
-	readonly bookingModel = signal({
-		ticket_type_id: '',
+export class BookingFormComponent {
+	readonly event: Signal<EventModel | undefined> = input<EventModel>(undefined, { alias: 'eventData' });
+
+	readonly bookingModel = linkedSignal(() => ({
+		ticket_type_id: String(this.event()?.ticket_types?.[0]?.id),
 		number_of_tickets: 1
-	});
+	}));
 	readonly bookingForm = form(this.bookingModel, (p) => {
 		required(p.ticket_type_id);
 		required(p.number_of_tickets);
 		min(p.number_of_tickets, 1);
 		max(p.number_of_tickets, 20);
 	});
-	error: string = '';
-	showConfirmation: boolean = false;
-	bookingCreated: boolean = false;
+
+	error: WritableSignal<string> = signal('');
+	showConfirmation: WritableSignal<boolean> = signal(false);
+	bookingCreated: WritableSignal<boolean> = signal(false);
+
+	readonly selectedTicketType: Signal<TicketType | undefined> = computed(() => {
+		const id = Number(this.bookingModel().ticket_type_id);
+		return this.event()?.ticket_types?.find((t) => t.id == id);
+	});
+
+	readonly totalCost: Signal<number> = computed(() => {
+		const ticket = this.selectedTicketType();
+		if (!ticket) return 0;
+		return ticket.price * (this.bookingModel().number_of_tickets || 1);
+	});
 
 	constructor(
-		private route: ActivatedRoute,
 		private router: Router,
-		private eventService: EventService,
 		private bookingService: BookingService
 	) {}
 
-	ngOnInit(): void {
-		const eventId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
-		this.eventService.getEvent(eventId).subscribe({
-			next: (ev) => {
-				this.event = ev;
-				if (ev.ticket_types && ev.ticket_types.length > 0) {
-					this.bookingModel.update((current) => ({
-						...current,
-						ticket_type_id: String(ev.ticket_types![0].id)
-					}));
-				}
-			},
-			error: () => (this.error = 'Event not found')
+	async onSubmit(event: Event): Promise<void> {
+		event.preventDefault();
+		await submit(this.bookingForm, async () => {
+			this.showConfirmation.set(true);
 		});
 	}
 
-	get selectedTicketType(): TicketType | undefined {
-		const id = Number(this.bookingModel().ticket_type_id);
-		return this.event?.ticket_types?.find((t) => t.id == id);
-	}
-
-	get totalCost(): number {
-		if (!this.selectedTicketType) return 0;
-		return this.selectedTicketType.price * (this.bookingModel().number_of_tickets || 1);
-	}
-
-	async openConfirmation(): Promise<void> {
-		const isValid = await submit(this.bookingForm);
-		if (!isValid) return;
-		this.showConfirmation = true;
-	}
-
 	confirmBooking(): void {
-		if (!this.event) return;
+		const ev = this.event();
+		if (!ev) return;
 
-		this.error = '';
+		this.error.set('');
 		this.bookingService
 			.createBooking({
-				event_id: this.event.id,
+				event_id: ev.id,
 				ticket_type_id: Number(this.bookingModel().ticket_type_id),
 				number_of_tickets: Number(this.bookingModel().number_of_tickets)
 			})
 			.subscribe({
 				next: () => {
-					this.bookingCreated = true;
-					this.showConfirmation = false;
+					this.bookingCreated.set(true);
+					this.showConfirmation.set(false);
 				},
 				error: (err) => {
-					this.error = err.error?.message || 'Booking failed';
-					this.showConfirmation = false;
+					this.error.set(err.error?.message || 'Booking failed');
+					this.showConfirmation.set(false);
 				}
 			});
 	}

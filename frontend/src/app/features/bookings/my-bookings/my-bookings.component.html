@@ -1,11 +1,11 @@
 <div class="container py-4">
 	<h2 class="fw-bold mb-4">My Bookings</h2>
 
-	@if (error) {
-		<div class="alert alert-danger">{{ error }}</div>
+	@if (error()) {
+		<div class="alert alert-danger">{{ error() }}</div>
 	}
 
-	@if (bookings.length === 0) {
+	@if (bookings().length === 0) {
 		<div class="text-center py-5 text-muted">
 			<div class="display-3">🎟️</div>
 			<h5>No bookings yet</h5>
@@ -13,7 +13,7 @@
 		</div>
 	}
 
-	@if (bookings.length > 0) {
+	@if (bookings().length > 0) {
 		<div>
 			<div class="table-responsive">
 				<table class="table table-hover align-middle">
@@ -30,7 +30,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						@for (b of bookings; track b) {
+						@for (b of bookings(); track b.id) {
 							<tr>
 								<td>
 									<button
@@ -59,8 +59,12 @@
 								<td class="small text-muted">{{ b.booked_at | date: 'short' }}</td>
 								<td>
 									@if (b.booking_status !== 'CANCELLED') {
-										<button class="btn btn-sm btn-outline-danger" (click)="cancelBooking(b)" [disabled]="cancellingId === b.id">
-											@if (cancellingId === b.id) {
+										<button
+											class="btn btn-sm btn-outline-danger"
+											(click)="cancelBooking(b)"
+											[disabled]="cancellingId() === b.id"
+										>
+											@if (cancellingId() === b.id) {
 												<span class="spinner-border spinner-border-sm me-1"></span>
 											}
 											Cancel

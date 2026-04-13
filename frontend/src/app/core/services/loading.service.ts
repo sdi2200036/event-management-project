@@ -1,5 +1,6 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
 import { EventType, Router } from '@angular/router';
+import { BehaviorSubject, debounceTime } from 'rxjs';
 
 @Injectable({
 	providedIn: 'root'
@@ -8,7 +9,7 @@ export class LoadingService {
 	private _loading: WritableSignal<boolean> = signal(false);
 	public loading = this._loading.asReadonly();
 
-	private counter: WritableSignal<number> = signal(0);
+	private counter: BehaviorSubject<number> = new BehaviorSubject(0);
 
 	constructor(router: Router) {
 		router.events.subscribe((e) => {
@@ -22,6 +23,10 @@ export class LoadingService {
 				this.decrement();
 			}
 		});
+
+		this.counter.pipe(debounceTime(100)).subscribe((count) => {
+			this._loading.set(count > 0);
+		});
 	}
 
 	public setLoading(isLoading: boolean): void {
@@ -29,14 +34,10 @@ export class LoadingService {
 	}
 
 	public increment(): void {
-		this.counter.update((c) => c + 1);
-		this._loading.set(true);
+		this.counter.next(this.counter.value + 1);
 	}
 
 	public decrement(): void {
-		this.counter.update((c) => Math.max(0, c - 1));
-		if (this.counter() === 0) {
-			this._loading.set(false);
-		}
+		this.counter.next(Math.max(0, this.counter.value - 1));
 	}
 }

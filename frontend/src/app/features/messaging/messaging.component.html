@@ -40,7 +40,7 @@
 						@if (this.inbox().length === 0) {
 							<div class="text-muted text-center py-4">No messages</div>
 						}
-						@for (msg of this.inbox(); track msg) {
+						@for (msg of this.inbox(); track msg.id) {
 							<button
 								class="list-group-item list-group-item-action"
 								[class.fw-bold]="!msg.is_read"
@@ -59,7 +59,7 @@
 						@if (this.sent().length === 0) {
 							<div class="text-muted text-center py-4">No sent messages</div>
 						}
-						@for (msg of this.sent(); track msg) {
+						@for (msg of this.sent(); track msg.id) {
 							<button
 								class="list-group-item list-group-item-action"
 								[class.active]="this.selectedMessage()?.id === msg.id"
@@ -156,11 +156,7 @@
 										placeholder="Write your message..."
 									></textarea>
 								</div>
-								<button
-									type="submit"
-									class="btn btn-primary px-5"
-									[disabled]="!composeForm().valid()"
-								>
+								<button type="submit" class="btn btn-primary px-5" [disabled]="!composeForm().valid()">
 									Send Message
 								</button>
 							</form>

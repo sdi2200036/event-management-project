@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { DatePipe, NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Component, computed, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { User, UserStatus } from '../../../shared/models/user.model';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { NgClass, DatePipe } from '@angular/common';
 
 @Component({
 	selector: 'app-user-management',
@@ -11,60 +12,57 @@ import { NgClass, DatePipe } from '@angular/common';
 	standalone: true,
 	imports: [ReactiveFormsModule, FormsModule, NgClass, DatePipe]
 })
-export class UserManagementComponent implements OnInit {
-	users: User[] = [];
-	error: string = '';
-	filterStatus: string = '';
-	filterRole: string = '';
-	actionLoading: number | null = null;
+export class UserManagementComponent {
+	users: InputSignal<User[]> = input<User[]>([], { alias: 'usersData' });
+	error: WritableSignal<string> = signal('');
+	filterStatus: WritableSignal<string> = signal('');
+	filterRole: WritableSignal<string> = signal('');
+	actionLoading: WritableSignal<number | null> = signal(null);
 
-	constructor(private http: HttpClient) {}
+	pendingCount: Signal<number> = computed(() => this.users().filter((u) => u.status === UserStatus.Pending).length);
 
-	ngOnInit(): void {
-		this.loadUsers();
-	}
+	constructor(
+		private http: HttpClient,
+		private router: Router
+	) {}
 
 	loadUsers(): void {
-		let url = `${environment.apiUrl}/users?`;
-		if (this.filterStatus) url += `status=${this.filterStatus}&`;
-		if (this.filterRole) url += `role=${this.filterRole}&`;
-
-		this.http.get<User[]>(url).subscribe({
-			next: (users) => (this.users = users),
-			error: () => (this.error = 'Failed to load users')
+		this.router.navigate([], {
+			queryParams: {
+				status: this.filterStatus() || null,
+				role: this.filterRole() || null
+			},
+			queryParamsHandling: 'merge',
+			onSameUrlNavigation: 'reload'
 		});
 	}
 
 	approveUser(user: User): void {
-		this.actionLoading = user.id;
+		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
 			next: () => {
-				user.status = UserStatus.Approved;
-				this.actionLoading = null;
+				this.router.navigate([], { onSameUrlNavigation: 'reload' });
+				this.actionLoading.set(null);
 			},
 			error: (err) => {
 				alert(err.error?.message || 'Failed to approve');
-				this.actionLoading = null;
+				this.actionLoading.set(null);
 			}
 		});
 	}
 
 	rejectUser(user: User): void {
 		if (!confirm(`Reject user "${user.username}"?`)) return;
-		this.actionLoading = user.id;
+		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
 			next: () => {
-				user.status = UserStatus.Rejected;
-				this.actionLoading = null;
+				this.router.navigate([], { onSameUrlNavigation: 'reload' });
+				this.actionLoading.set(null);
 			},
 			error: (err) => {
 				alert(err.error?.message || 'Failed to reject');
-				this.actionLoading = null;
+				this.actionLoading.set(null);
 			}
 		});
-	}
-
-	get pendingCount(): number {
-		return this.users.filter((u) => u.status === UserStatus.Pending).length;
 	}
 }

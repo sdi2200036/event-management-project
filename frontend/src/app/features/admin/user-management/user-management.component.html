@@ -2,10 +2,10 @@
 	<div class="d-flex justify-content-between align-items-center mb-4">
 		<div>
 			<h2 class="fw-bold mb-0">User Management</h2>
-			<p class="text-muted mb-0">{{ users.length }} users total</p>
+			<p class="text-muted mb-0">{{ this.users().length }} users total</p>
 		</div>
-		@if (pendingCount > 0) {
-			<span class="badge bg-warning text-dark fs-6"> {{ pendingCount }} pending approval </span>
+		@if (this.pendingCount() > 0) {
+			<span class="badge bg-warning text-dark fs-6"> {{ this.pendingCount() }} pending approval </span>
 		}
 	</div>
 
@@ -35,11 +35,11 @@
 		</div>
 	</div>
 
-	@if (error) {
-		<div class="alert alert-danger">{{ error }}</div>
+	@if (this.error()) {
+		<div class="alert alert-danger">{{ this.error() }}</div>
 	}
 
-	@if (users.length > 0) {
+	@if (this.users().length > 0) {
 		<div>
 			<div class="table-responsive">
 				<table class="table table-hover align-middle">
@@ -56,8 +56,11 @@
 						</tr>
 					</thead>
 					<tbody>
-						@for (user of users; track user) {
-							<tr [class.table-warning]="user.status === 'pending'" [class.table-danger]="user.status === 'rejected'">
+						@for (user of this.users(); track user.id) {
+							<tr
+								[class.table-warning]="user.status === 'pending'"
+								[class.table-danger]="user.status === 'rejected'"
+							>
 								<td class="text-muted small">{{ user.id }}</td>
 								<td class="fw-semibold">{{ user.username }}</td>
 								<td>{{ user.first_name }} {{ user.last_name }}</td>
@@ -92,8 +95,12 @@
 								<td>
 									<div class="d-flex gap-1">
 										@if (user.status === 'pending') {
-											<button class="btn btn-sm btn-success" (click)="approveUser(user)" [disabled]="actionLoading === user.id">
-												@if (actionLoading === user.id) {
+											<button
+												class="btn btn-sm btn-success"
+												(click)="approveUser(user)"
+												[disabled]="this.actionLoading() === user.id"
+											>
+												@if (this.actionLoading() === user.id) {
 													<span class="spinner-border spinner-border-sm me-1"></span>
 												}
 												Approve
@@ -103,7 +110,7 @@
 											<button
 												class="btn btn-sm btn-outline-danger"
 												(click)="rejectUser(user)"
-												[disabled]="actionLoading === user.id || user.role === 'admin'"
+												[disabled]="this.actionLoading() === user.id || user.role === 'admin'"
 											>
 												Reject
 											</button>
@@ -118,7 +125,7 @@
 		</div>
 	}
 
-	@if (users.length === 0) {
+	@if (this.users().length === 0) {
 		<div class="text-center py-5 text-muted">No users found matching the selected filters.</div>
 	}
 </div>

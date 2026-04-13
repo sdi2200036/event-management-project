@@ -2,23 +2,23 @@ import { query } from '../config/database';
 import { Message, MessageWithUsers, SendMessageDTO } from '../models/message.model';
 
 export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promise<Message> => {
-  const { receiver_id, booking_id, subject, body } = dto;
+	const { receiver_id, booking_id, subject, body } = dto;
 
-  // Verify receiver exists
-  const receiver = await query('SELECT id FROM users WHERE id = $1', [receiver_id]);
-  if (receiver.rows.length === 0) throw new Error('Receiver not found');
+	// Verify receiver exists
+	const receiver = await query('SELECT id FROM users WHERE id = $1', [receiver_id]);
+	if (receiver.rows.length === 0) throw new Error('Receiver not found');
 
-  const result = await query(
-    `INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
+	const result = await query(
+		`INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [senderId, receiver_id, booking_id || null, subject, body]
-  );
-  return result.rows[0];
+		[senderId, receiver_id, booking_id || null, subject, body]
+	);
+	return result.rows[0];
 };
 
 export const getInbox = async (userId: number): Promise<MessageWithUsers[]> => {
-  const result = await query(
-    `SELECT m.*,
+	const result = await query(
+		`SELECT m.*,
             s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
             r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
      FROM messages m
@@ -26,14 +26,14 @@ export const getInbox = async (userId: number): Promise<MessageWithUsers[]> => {
      JOIN users r ON r.id = m.receiver_id
      WHERE m.receiver_id = $1 AND m.deleted_by_receiver = FALSE
      ORDER BY m.sent_at DESC`,
-    [userId]
-  );
-  return result.rows;
+		[userId]
+	);
+	return result.rows;
 };
 
 export const getSent = async (userId: number): Promise<MessageWithUsers[]> => {
-  const result = await query(
-    `SELECT m.*,
+	const result = await query(
+		`SELECT m.*,
             s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
             r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
      FROM messages m
@@ -41,70 +41,77 @@ export const getSent = async (userId: number): Promise<MessageWithUsers[]> => {
      JOIN users r ON r.id = m.receiver_id
      WHERE m.sender_id = $1 AND m.deleted_by_sender = FALSE
      ORDER BY m.sent_at DESC`,
-    [userId]
-  );
-  return result.rows;
+		[userId]
+	);
+	return result.rows;
 };
 
 export const markAsRead = async (messageId: number, userId: number): Promise<void> => {
-  const result = await query(
-    'UPDATE messages SET is_read = TRUE WHERE id = $1 AND receiver_id = $2 RETURNING id',
-    [messageId, userId]
-  );
-  if (result.rows.length === 0) throw new Error('Message not found or not authorized');
+	const result = await query('UPDATE messages SET is_read = TRUE WHERE id = $1 AND receiver_id = $2 RETURNING id', [
+		messageId,
+		userId
+	]);
+	if (result.rows.length === 0) throw new Error('Message not found or not authorized');
 };
 
 export const deleteMessage = async (messageId: number, userId: number): Promise<void> => {
-  const result = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
-  if (result.rows.length === 0) throw new Error('Message not found');
+	const result = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
+	if (result.rows.length === 0) throw new Error('Message not found');
 
-  const msg = result.rows[0];
-  if (msg.sender_id === userId) {
-    await query('UPDATE messages SET deleted_by_sender = TRUE WHERE id = $1', [messageId]);
-  } else if (msg.receiver_id === userId) {
-    await query('UPDATE messages SET deleted_by_receiver = TRUE WHERE id = $1', [messageId]);
-  } else {
-    throw new Error('Not authorized to delete this message');
-  }
+	const msg = result.rows[0];
+	if (msg.sender_id === userId) {
+		await query('UPDATE messages SET deleted_by_sender = TRUE WHERE id = $1', [messageId]);
+	} else if (msg.receiver_id === userId) {
+		await query('UPDATE messages SET deleted_by_receiver = TRUE WHERE id = $1', [messageId]);
+	} else {
+		throw new Error('Not authorized to delete this message');
+	}
 
-  // If both sides deleted, hard-delete the record
-  const updated = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
-  if (updated.rows[0].deleted_by_sender && updated.rows[0].deleted_by_receiver) {
-    await query('DELETE FROM messages WHERE id = $1', [messageId]);
-  }
+	// If both sides deleted, hard-delete the record
+	const updated = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
+	if (updated.rows[0].deleted_by_sender && updated.rows[0].deleted_by_receiver) {
+		await query('DELETE FROM messages WHERE id = $1', [messageId]);
+	}
 };
 
 export const getUnreadCount = async (userId: number): Promise<number> => {
-  const result = await query(
-    'SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE AND deleted_by_receiver = FALSE',
-    [userId]
-  );
-  return parseInt(result.rows[0].count, 10);
+	const result = await query(
+		'SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE AND deleted_by_receiver = FALSE',
+		[userId]
+	);
+	return parseInt(result.rows[0].count, 10);
 };
 
 export const notifyEventCancellation = async (eventId: number): Promise<void> => {
-  // Get all confirmed bookings for this event
-  const bookings = await query(
-    `SELECT b.attendee_id, b.id as booking_id, e.title as event_title, e.organizer_id,
+	// Get all confirmed bookings for this event
+	const bookings = await query(
+		`SELECT b.attendee_id, b.id as booking_id, e.title as event_title, e.organizer_id,
             u.first_name, u.last_name
      FROM bookings b
      JOIN events e ON e.id = b.event_id
      JOIN users u ON u.id = b.attendee_id
      WHERE b.event_id = $1 AND b.booking_status = 'CONFIRMED'`,
-    [eventId]
-  );
+		[eventId]
+	);
 
-  for (const row of bookings.rows) {
-    await query(
-      `INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
+	// Send a message to each attendee about the cancellation
+	for (const row of bookings.rows) {
+		await query(
+			`INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
        VALUES ($1,$2,$3,$4,$5)`,
-      [
-        row.organizer_id,
-        row.attendee_id,
-        row.booking_id,
-        `Event Cancellation Notice`,
-        `Dear ${row.first_name} ${row.last_name},\n\nWe regret to inform you that the event "${row.event_title}" has been cancelled.\nYour booking has been cancelled and a refund will be processed.\n\nWe apologize for any inconvenience.`,
-      ]
-    );
-  }
+			[
+				row.organizer_id,
+				row.attendee_id,
+				row.booking_id,
+				`Event Cancellation Notice`,
+				`Dear ${row.first_name} ${row.last_name},\n\nWe regret to inform you that the event "${row.event_title}" has been cancelled.\nYour booking has been cancelled and a refund will be processed.\n\nWe apologize for any inconvenience.`
+			]
+		);
+	}
+
+	// Cancel all bookings for this event
+	await query(
+		`UPDATE bookings SET booking_status = 'CANCELLED' WHERE event_id = $1 AND booking_status = 'CONFIRMED'`,
+		[eventId]
+	);
 };

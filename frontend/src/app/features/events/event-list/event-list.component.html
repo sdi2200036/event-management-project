@@ -28,7 +28,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							@for (event of this.events(); track event) {
+							@for (event of this.events(); track event.id) {
 								<tr>
 									<td class="fw-semibold">{{ event.title }}</td>
 									<td class="small">{{ event.start_datetime | date: 'MMM d, y, HH:mm' }}</td>
@@ -157,7 +157,7 @@
 				<div class="mb-5">
 					<h4 class="mb-3 fw-semibold">Recommended for You</h4>
 					<div class="row row-cols-1 row-cols-md-3 g-3">
-						@for (event of this.recommendedEvents(); track event) {
+						@for (event of this.recommendedEvents(); track event.id) {
 							<div class="col">
 								<div class="card h-100 border-0 shadow-sm">
 									<div class="card-body">
@@ -201,7 +201,7 @@
 						</div>
 					}
 					<div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
-						@for (event of this.events(); track event) {
+						@for (event of this.events(); track event.id) {
 							<div class="col">
 								<div class="card h-100 border-0 shadow-sm">
 									<div class="card-img-top bg-light text-center py-4" style="min-height: 140px">
