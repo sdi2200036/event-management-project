@@ -1,4 +1,24 @@
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'COMPLETED' | 'CANCELLED';
+export enum EventStatus {
+	DRAFT = 'DRAFT',
+	PUBLISHED = 'PUBLISHED',
+	COMPLETED = 'COMPLETED',
+	CANCELLED = 'CANCELLED'
+}
+
+export enum EventCategory {
+	MUSIC = 'Music',
+	SPORTS = 'Sports',
+	ARTS = 'Arts',
+	TECHNOLOGY = 'Technology',
+	BUSINESS = 'Business',
+	FOOD_AND_DRINK = 'Food & Drink',
+	HEALTH = 'Health',
+	COMMUNITY = 'Community',
+	FILM = 'Film',
+	FASHION = 'Fashion',
+	EDUCATION = 'Education',
+	OTHER = 'Other'
+}
 
 export interface TicketType {
 	id: number;
@@ -26,13 +46,13 @@ export interface Event {
 	status: EventStatus;
 	description?: string;
 	created_at?: string;
-	categories?: string[];
+	categories?: EventCategory[];
 	photos?: string[];
 	ticket_types?: TicketType[];
 }
 
 export interface EventFilters {
-	category?: string;
+	category?: EventCategory;
 	title?: string;
 	description?: string;
 	dateFrom?: string;
@@ -62,7 +82,7 @@ export interface CreateEventRequest {
 	end_datetime: string;
 	capacity: number;
 	description?: string;
-	categories?: string[];
+	categories?: EventCategory[];
 	photos?: string[];
 	ticket_types?: Omit<TicketType, 'id' | 'event_id'>[];
 }

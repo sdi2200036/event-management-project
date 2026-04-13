@@ -1,11 +1,9 @@
-import { Component, WritableSignal } from '@angular/core';
-import { Router } from '@angular/router';
-import { signal } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { FieldState, FormField, email, form, maxLength, minLength, required, submit } from '@angular/forms/signals';
-import { AuthService } from '../../../core/services/auth.service';
+import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { RegisterUserRole } from 'src/app/shared/models/user.model';
-import { NgClass } from '@angular/common';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
 	selector: 'app-register',

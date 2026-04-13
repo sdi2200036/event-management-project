@@ -4,50 +4,54 @@
 	<!-- Tabs -->
 	<ul class="nav nav-tabs mb-4">
 		<li class="nav-item">
-			<button class="nav-link" [class.active]="activeTab === 'inbox'" (click)="switchTab('inbox')">
+			<button class="nav-link" [class.active]="this.activeTab() === 'inbox'" (click)="switchTab(Tab.INBOX)">
 				Inbox
-				@if (unreadCount > 0) {
-					<span class="badge bg-danger ms-1">{{ unreadCount }}</span>
+				@if (this.unreadCount() > 0) {
+					<span class="badge bg-danger ms-1">{{ this.unreadCount() }}</span>
 				}
 			</button>
 		</li>
 		<li class="nav-item">
-			<button class="nav-link" [class.active]="activeTab === 'sent'" (click)="switchTab('sent')">Sent</button>
+			<button class="nav-link" [class.active]="this.activeTab() === 'sent'" (click)="switchTab(Tab.SENT)">
+				Sent
+			</button>
 		</li>
 		<li class="nav-item">
-			<button class="nav-link" [class.active]="activeTab === 'compose'" (click)="switchTab('compose')">+ Compose</button>
+			<button class="nav-link" [class.active]="this.activeTab() === 'compose'" (click)="switchTab(Tab.COMPOSE)">
+				+ Compose
+			</button>
 		</li>
 	</ul>
 
-	@if (error) {
-		<div class="alert alert-danger">{{ error }}</div>
+	@if (this.error()) {
+		<div class="alert alert-danger">{{ this.error() }}</div>
 	}
-	@if (success) {
-		<div class="alert alert-success">{{ success }}</div>
+	@if (this.success()) {
+		<div class="alert alert-success">{{ this.success() }}</div>
 	}
 
 	<!-- Loading -->
-	@if (loading) {
+	@if (this.loading()) {
 		<div class="text-center py-4">
 			<div class="spinner-border text-primary"></div>
 		</div>
 	}
 
 	<!-- Inbox / Sent -->
-	@if (!loading && (activeTab === 'inbox' || activeTab === 'sent')) {
+	@if (!this.loading() && (this.activeTab() === 'inbox' || this.activeTab() === 'sent')) {
 		<div class="row">
 			<!-- Message List -->
 			<div class="col-md-4">
 				<div class="list-group">
-					@if (activeTab === 'inbox') {
-						@if (inbox.length === 0) {
+					@if (this.activeTab() === 'inbox') {
+						@if (this.inbox().length === 0) {
 							<div class="text-muted text-center py-4">No messages</div>
 						}
-						@for (msg of inbox; track msg) {
+						@for (msg of this.inbox(); track msg) {
 							<button
 								class="list-group-item list-group-item-action"
 								[class.fw-bold]="!msg.is_read"
-								[class.active]="selectedMessage?.id === msg.id"
+								[class.active]="this.selectedMessage()?.id === msg.id"
 								(click)="openMessage(msg)"
 							>
 								<div class="d-flex justify-content-between">
@@ -58,18 +62,20 @@
 							</button>
 						}
 					}
-					@if (activeTab === 'sent') {
-						@if (sent.length === 0) {
+					@if (this.activeTab() === 'sent') {
+						@if (this.sent().length === 0) {
 							<div class="text-muted text-center py-4">No sent messages</div>
 						}
-						@for (msg of sent; track msg) {
+						@for (msg of this.sent(); track msg) {
 							<button
 								class="list-group-item list-group-item-action"
-								[class.active]="selectedMessage?.id === msg.id"
+								[class.active]="this.selectedMessage()?.id === msg.id"
 								(click)="openMessage(msg)"
 							>
 								<div class="d-flex justify-content-between">
-									<span class="small">To: {{ msg.receiver_first_name }} {{ msg.receiver_last_name }}</span>
+									<span class="small"
+										>To: {{ msg.receiver_first_name }} {{ msg.receiver_last_name }}</span
+									>
 									<span class="small text-muted">{{ msg.sent_at | date: 'shortDate' }}</span>
 								</div>
 								<div class="text-truncate small">{{ msg.subject }}</div>
@@ -80,33 +86,40 @@
 			</div>
 			<!-- Message Detail -->
 			<div class="col-md-8">
-				@if (!selectedMessage) {
+				@if (!this.selectedMessage()) {
 					<div class="text-center text-muted py-5">Select a message to read</div>
 				}
-				@if (selectedMessage) {
+				@if (this.selectedMessage()) {
 					<div class="card border-0 shadow-sm">
 						<div class="card-body">
 							<div class="d-flex justify-content-between align-items-start mb-3">
 								<div>
-									<h5 class="fw-bold mb-1">{{ selectedMessage.subject }}</h5>
+									<h5 class="fw-bold mb-1">{{ this.selectedMessage()!.subject }}</h5>
 									<p class="text-muted small mb-0">
-										@if (activeTab === 'inbox') {
-											From: {{ selectedMessage.sender_first_name }} {{ selectedMessage.sender_last_name }} ({{
-												selectedMessage.sender_username
+										@if (this.activeTab() === 'inbox') {
+											From: {{ this.selectedMessage()!.sender_first_name }}
+											{{ this.selectedMessage()!.sender_last_name }} ({{
+												this.selectedMessage()!.sender_username
 											}})
 										}
-										@if (activeTab === 'sent') {
-											To: {{ selectedMessage.receiver_first_name }} {{ selectedMessage.receiver_last_name }} ({{
-												selectedMessage.receiver_username
+										@if (this.activeTab() === 'sent') {
+											To: {{ this.selectedMessage()!.receiver_first_name }}
+											{{ this.selectedMessage()!.receiver_last_name }} ({{
+												this.selectedMessage()!.receiver_username
 											}})
 										}
-										&bull; {{ selectedMessage.sent_at | date: 'medium' }}
+										&bull; {{ this.selectedMessage()!.sent_at | date: 'medium' }}
 									</p>
 								</div>
-								<button class="btn btn-sm btn-outline-danger" (click)="deleteMessage(selectedMessage)">Delete</button>
+								<button
+									class="btn btn-sm btn-outline-danger"
+									(click)="deleteMessage(this.selectedMessage()!)"
+								>
+									Delete
+								</button>
 							</div>
 							<hr />
-							<p style="white-space: pre-line">{{ selectedMessage.body }}</p>
+							<p style="white-space: pre-line">{{ this.selectedMessage()!.body }}</p>
 						</div>
 					</div>
 				}
@@ -115,21 +128,31 @@
 	}
 
 	<!-- Compose -->
-	@if (activeTab === 'compose' && !loading) {
+	@if (this.activeTab() === 'compose' && !this.loading()) {
 		<div>
 			<div class="row justify-content-center">
 				<div class="col-md-7">
 					<div class="card border-0 shadow-sm">
 						<div class="card-body p-4">
 							<h5 class="card-title mb-4">New Message</h5>
-							<form (ngSubmit)="sendMessage()">
+							<form (submit)="sendMessage($event)" novalidate>
 								<div class="mb-3">
 									<label class="form-label">Recipient User ID</label>
-									<input type="number" class="form-control" [formField]="composeForm.receiver_id" placeholder="Enter user ID" />
+									<input
+										type="number"
+										class="form-control"
+										[formField]="composeForm.receiver_id"
+										placeholder="Enter user ID"
+									/>
 								</div>
 								<div class="mb-3">
 									<label class="form-label">Subject</label>
-									<input type="text" class="form-control" [formField]="composeForm.subject" placeholder="Message subject" />
+									<input
+										type="text"
+										class="form-control"
+										[formField]="composeForm.subject"
+										placeholder="Message subject"
+									/>
 								</div>
 								<div class="mb-4">
 									<label class="form-label">Message</label>
@@ -140,8 +163,12 @@
 										placeholder="Write your message..."
 									></textarea>
 								</div>
-								<button type="submit" class="btn btn-primary px-5" [disabled]="!composeForm().valid() || loading">
-									@if (loading) {
+								<button
+									type="submit"
+									class="btn btn-primary px-5"
+									[disabled]="!composeForm().valid() || this.loading()"
+								>
+									@if (this.loading()) {
 										<span class="spinner-border spinner-border-sm me-2"></span>
 									}
 									Send Message

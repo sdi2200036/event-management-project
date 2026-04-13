@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { EventService } from '../../../core/services/event.service';
-import { BookingService } from '../../../core/services/booking.service';
-import { Event, TicketType } from '../../../shared/models/event.model';
 import { DatePipe } from '@angular/common';
-import { signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormField, form, max, min, required, submit } from '@angular/forms/signals';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BookingService } from '../../../core/services/booking.service';
+import { EventService } from '../../../core/services/event.service';
+import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
 
 @Component({
 	selector: 'app-booking-form',
@@ -14,7 +13,7 @@ import { FormField, form, max, min, required, submit } from '@angular/forms/sign
 	imports: [DatePipe, FormField]
 })
 export class BookingFormComponent implements OnInit {
-	event: Event | null = null;
+	event: EventModel | null = null;
 	readonly bookingModel = signal({
 		ticket_type_id: '',
 		number_of_tickets: 1
@@ -45,7 +44,10 @@ export class BookingFormComponent implements OnInit {
 				this.event = ev;
 				this.loadingEvent = false;
 				if (ev.ticket_types && ev.ticket_types.length > 0) {
-					this.bookingModel.update((current) => ({ ...current, ticket_type_id: String(ev.ticket_types![0].id) }));
+					this.bookingModel.update((current) => ({
+						...current,
+						ticket_type_id: String(ev.ticket_types![0].id)
+					}));
 				}
 			},
 			error: () => {

@@ -1,53 +1,55 @@
-@if (!loading && !error && this.event()) {
+@if (event()) {
 	<div class="container py-4">
 		<div class="row">
 			<!-- Main Content -->
 			<div class="col-lg-8">
 				<!-- Photos -->
-				@if (this.event()?.photos && this.event()!.photos!.length > 0) {
+				@if (event()?.photos && event()!.photos!.length > 0) {
 					<div class="mb-4">
 						<img
-							[src]="this.event()!.photos![0]"
+							[src]="event()!.photos![0]"
 							class="img-fluid rounded shadow-sm w-100"
 							style="max-height: 400px; object-fit: cover"
-							[alt]="this.event()!.title"
+							[alt]="event()!.title"
 						/>
 					</div>
 				}
 				<!-- Header -->
 				<div class="d-flex justify-content-between align-items-start mb-3">
 					<div>
-						<h1 class="fw-bold mb-1">{{ this.event()!.title }}</h1>
+						<h1 class="fw-bold mb-1">{{ event()!.title }}</h1>
 						<div class="d-flex gap-2 flex-wrap mb-2">
-							<span class="badge bg-primary">{{ this.event()!.event_type }}</span>
+							<span class="badge bg-primary">{{ event()!.event_type }}</span>
 							<span
 								class="badge"
 								[ngClass]="{
-									'bg-success': this.event()!.status === 'PUBLISHED',
-									'bg-secondary': this.event()!.status === 'DRAFT',
-									'bg-danger': this.event()!.status === 'CANCELLED',
-									'bg-info': this.event()!.status === 'COMPLETED'
+									'bg-success': event()!.status === 'PUBLISHED',
+									'bg-secondary': event()!.status === 'DRAFT',
+									'bg-danger': event()!.status === 'CANCELLED',
+									'bg-info': event()!.status === 'COMPLETED'
 								}"
-								>{{ this.event()!.status }}</span
+								>{{ event()!.status }}</span
 							>
-							@for (cat of this.event()!.categories; track cat) {
+							@for (cat of event()!.categories; track cat) {
 								<span class="badge bg-light text-dark border">{{ cat }}</span>
 							}
 						</div>
 					</div>
 					<!-- Organizer Actions -->
-					@if (this.isOwner() || this.isOrganizer()) {
+					@if (isOwner() || isOrganizer()) {
 						<div class="d-flex gap-2">
-							@if (this.event()!.status === 'DRAFT') {
-								<button type="button" (click)="goToEditEvent()" class="btn btn-sm btn-outline-primary">Edit</button>
+							@if (event()!.status === 'DRAFT') {
+								<button type="button" (click)="goToEditEvent()" class="btn btn-sm btn-outline-primary">
+									Edit
+								</button>
 							}
-							@if (this.event()!.status === 'DRAFT') {
+							@if (event()!.status === 'DRAFT') {
 								<button class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
 							}
-							@if (this.event()!.status === 'PUBLISHED') {
+							@if (event()!.status === 'PUBLISHED') {
 								<button class="btn btn-sm btn-warning" (click)="cancelEvent()">Cancel Event</button>
 							}
-							@if (this.event()!.status === 'DRAFT') {
+							@if (event()!.status === 'DRAFT') {
 								<button class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
 							}
 						</div>
@@ -57,31 +59,34 @@
 				<div class="card border-0 shadow-sm mb-4">
 					<div class="card-body">
 						<h5 class="card-title">About this Event</h5>
-						<p class="card-text" style="white-space: pre-line">{{ this.event()!.description || 'No description provided.' }}</p>
+						<p class="card-text" style="white-space: pre-line">
+							{{ event()!.description || 'No description provided.' }}
+						</p>
 					</div>
 				</div>
 				<!-- Map -->
-				@if (this.event()!.geo_lat && this.event()!.geo_lng) {
+				@if (event()!.geo_lat && event()!.geo_lng) {
 					<div class="card border-0 shadow-sm mb-4">
 						<div class="card-body">
 							<h5 class="card-title">Location</h5>
 							<p class="text-muted mb-2">
-								{{ this.event()!.venue ? this.event()!.venue + ', ' : '' }}{{ this.event()!.address }}, {{ this.event()!.city }},
-								{{ this.event()!.country }}
+								{{ event()!.venue ? event()!.venue + ', ' : '' }}{{ event()!.address }},
+								{{ event()!.city }},
+								{{ event()!.country }}
 							</p>
 							<div id="event-map" style="height: 300px; border-radius: 8px"></div>
 						</div>
 					</div>
 				}
 				<!-- No map location text -->
-				@if (!this.event()!.geo_lat || !this.event()!.geo_lng) {
+				@if (!event()!.geo_lat || !event()!.geo_lng) {
 					<div class="card border-0 shadow-sm mb-4">
 						<div class="card-body">
 							<h5 class="card-title">Location</h5>
 							<p class="text-muted">
-								{{ this.event()!.venue ? this.event()!.venue + ', ' : '' }}
-								{{ this.event()!.address ? this.event()!.address + ', ' : '' }}
-								{{ this.event()!.city }}, {{ this.event()!.country }}
+								{{ event()!.venue ? event()!.venue + ', ' : '' }}
+								{{ event()!.address ? event()!.address + ', ' : '' }}
+								{{ event()!.city }}, {{ event()!.country }}
 							</p>
 						</div>
 					</div>
@@ -96,15 +101,18 @@
 						<ul class="list-unstyled">
 							<li class="mb-2">
 								<strong>Date:</strong>
-								{{ this.event()!.start_datetime | date: 'EEEE, MMMM d, y' }}
+								{{ event()!.start_datetime | date: 'EEEE, MMMM d, y' }}
 							</li>
 							<li class="mb-2">
 								<strong>Time:</strong>
-								{{ this.event()!.start_datetime | date: 'HH:mm' }} - {{ this.event()!.end_datetime | date: 'HH:mm' }}
+								{{ event()!.start_datetime | date: 'HH:mm' }} -
+								{{ event()!.end_datetime | date: 'HH:mm' }}
 							</li>
-							<li class="mb-2"><strong>Venue:</strong> {{ this.event()!.venue || 'TBA' }}</li>
-							<li class="mb-2"><strong>City:</strong> {{ this.event()!.city }}, {{ this.event()!.country }}</li>
-							<li class="mb-2"><strong>Capacity:</strong> {{ this.event()!.capacity }} attendees</li>
+							<li class="mb-2"><strong>Venue:</strong> {{ event()!.venue || 'TBA' }}</li>
+							<li class="mb-2">
+								<strong>City:</strong> {{ event()!.city }}, {{ event()!.country }}
+							</li>
+							<li class="mb-2"><strong>Capacity:</strong> {{ event()!.capacity }} attendees</li>
 						</ul>
 					</div>
 				</div>
@@ -112,10 +120,10 @@
 				<div class="card border-0 shadow-sm mb-3">
 					<div class="card-body">
 						<h5 class="card-title mb-3">Ticket Types</h5>
-						@if (!this.event()!.ticket_types || this.event()!.ticket_types?.length === 0) {
+						@if (!event()!.ticket_types || event()!.ticket_types?.length === 0) {
 							<div class="text-success fw-semibold">Free Entry</div>
 						}
-						@for (tt of this.event()!.ticket_types; track tt) {
+						@for (tt of event()!.ticket_types; track tt) {
 							<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
 								<div>
 									<div class="fw-semibold">{{ tt.name }}</div>
@@ -127,33 +135,22 @@
 					</div>
 				</div>
 				<!-- Book Now Button (Participant only, published events) -->
-				@if (this.isLoggedIn() && this.isParticipant() && this.event()!.status === 'PUBLISHED') {
+				@if (isLoggedIn() && isParticipant() && event()!.status === 'PUBLISHED') {
 					<div>
 						<button type="button" (click)="goToBookEvent()" class="btn btn-primary btn-lg w-100">
-							Book Now {{ this.minTicketPrice > 0 ? 'from €' + this.minTicketPrice : '(Free)' }}
+							Book Now {{ minTicketPrice() > 0 ? 'from €' + minTicketPrice() : '(Free)' }}
 						</button>
 					</div>
 				}
 				<!-- Guest prompt -->
-				@if (!this.isLoggedIn()) {
+				@if (!isLoggedIn()) {
 					<div>
-						<button type="button" (click)="goToLogin()" class="btn btn-outline-primary btn-lg w-100">Login to Book</button>
+						<button type="button" (click)="goToLogin()" class="btn btn-outline-primary btn-lg w-100">
+							Login to Book
+						</button>
 					</div>
 				}
 			</div>
 		</div>
-	</div>
-}
-
-@if (this.loading()) {
-	<div class="text-center py-5">
-		<div class="spinner-border text-primary" role="status"></div>
-	</div>
-}
-
-@if (this.error) {
-	<div class="container py-5">
-		<div class="alert alert-danger">{{ this.error }}</div>
-		<button type="button" (click)="goToEvents()" class="btn btn-primary">Back to Events</button>
 	</div>
 }

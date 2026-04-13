@@ -1,9 +1,11 @@
 export enum RegisterUserRole {
+	Undefined = 'undefined',
 	Organizer = 'organizer',
 	Participant = 'participant'
 }
 
 export enum UserRole {
+	Undefined = 'undefined',
 	Admin = 'admin',
 	Organizer = 'organizer',
 	Participant = 'participant'
