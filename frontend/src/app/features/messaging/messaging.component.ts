@@ -1,6 +1,17 @@
-import { Component, computed, inject, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
+import {
+	Component,
+	computed,
+	inject,
+	input,
+	InputSignal,
+	linkedSignal,
+	Signal,
+	signal,
+	WritableSignal
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Message, MessageService, SendMessageRequest } from '../../core/services/message.service';
+import { MessagesResolverData } from '../../core/resolvers/messages.resolver';
+import { Message, MessageService, PAGE_SIZE, SendMessageRequest } from '../../core/services/message.service';
 import { ModalService } from '../../core/services/modal.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ComposeComponent } from './message-compose/message-compose.component';
@@ -20,21 +31,29 @@ enum Tab {
 	imports: [MessageDetailsComponent, MessageListComponent, ComposeComponent]
 })
 export class MessagingComponent {
-	public messagesData: InputSignal<{ sent: Message[]; inbox: Message[] }> = input({
-		sent: [] as Message[],
-		inbox: [] as Message[]
+	public messagesData: InputSignal<MessagesResolverData> = input({
+		inbox: { messages: [] as Message[], total: 0, unread_count: 0 },
+		sent: { messages: [] as Message[], total: 0 },
+		page: 1
 	});
+	public prefillReceiver: InputSignal<string | undefined> = input<string>(undefined, { alias: 'receiver' });
 
 	private readonly toastService: ToastService = inject(ToastService);
 	private readonly modalService: ModalService = inject(ModalService);
 
-	public activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
-	public inbox: Signal<Message[]> = computed(() => this.messagesData().inbox);
-	public sent: Signal<Message[]> = computed(() => this.messagesData().sent);
+	public activeTab: WritableSignal<Tab> = linkedSignal(() => {
+		const receiver = this.prefillReceiver();
+		return receiver ? Tab.COMPOSE : Tab.INBOX;
+	});
 	public unreadCount: Signal<number> = this.messageService.unreadCount;
 	public selectedMessage: WritableSignal<Message | null> = signal(null);
-	public prefillReceiver: WritableSignal<string | undefined> = signal(undefined);
 	public Tab: typeof Tab = Tab;
+
+	public readonly inboxMessages: Signal<Message[]> = computed(() => this.messagesData().inbox.messages);
+	public readonly inboxTotal: Signal<number> = computed(() => this.messagesData().inbox.total);
+	public readonly sentMessages: Signal<Message[]> = computed(() => this.messagesData().sent.messages);
+	public readonly sentTotal: Signal<number> = computed(() => this.messagesData().sent.total);
+	public readonly page: Signal<number> = computed(() => this.messagesData().page);
 
 	constructor(
 		private messageService: MessageService,
@@ -42,27 +61,29 @@ export class MessagingComponent {
 		private route: ActivatedRoute
 	) {
 		this.messageService.refreshUnreadCount();
-
-		const receiver = this.route.snapshot.queryParamMap.get('receiver');
-		if (receiver) {
-			this.prefillReceiver.set(receiver);
-			this.activeTab.set(Tab.COMPOSE);
-		}
 	}
 
 	public switchTab(tab: Tab): void {
 		this.activeTab.set(tab);
 		this.selectedMessage.set(null);
-		if (tab === Tab.INBOX) {
-			this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
-		}
+		this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: 1 } });
+	}
+
+	public onPageChange(page: number): void {
+		this.selectedMessage.set(null);
+		this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: page } });
 	}
 
 	public markAsRead(msg: Message): void {
 		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
 			this.messageService.markAsRead(msg.id).subscribe({
 				next: () => {
-					this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
+					this.router.navigate([], {
+						relativeTo: this.route,
+						queryParams: { pageIndex: this.page() },
+						onSameUrlNavigation: 'reload',
+						replaceUrl: true
+					});
 				},
 				error: () => this.toastService.error('Failed to mark as read')
 			});
@@ -77,7 +98,17 @@ export class MessagingComponent {
 					if (this.selectedMessage()?.id === msg.id) {
 						this.selectedMessage.set(null);
 					}
-					this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
+
+					const currentTotal = this.activeTab() === Tab.INBOX ? this.inboxTotal() : this.sentTotal();
+					const maxPage = Math.max(1, Math.ceil((currentTotal - 1) / PAGE_SIZE));
+					const pageToLoad = Math.min(this.page(), maxPage);
+
+					this.router.navigate([], {
+						relativeTo: this.route,
+						queryParams: { pageIndex: pageToLoad },
+						onSameUrlNavigation: 'reload',
+						replaceUrl: true
+					});
 					this.toastService.warning('Message deleted successfully');
 				},
 				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
@@ -85,10 +116,10 @@ export class MessagingComponent {
 		});
 	}
 
-	public sendMessage(data: SendMessageRequest) {
+	public sendMessage(data: SendMessageRequest): void {
 		this.messageService.sendMessage(data).subscribe({
 			next: () => {
-				this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
+				this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: 1 } });
 				this.toastService.success('Message sent successfully');
 			},
 			error: (err) => {

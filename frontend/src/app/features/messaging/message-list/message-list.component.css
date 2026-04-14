@@ -4,3 +4,8 @@
 	color: var(--bs-list-group-active-color);
 	cursor: default;
 }
+
+/* Remove the focus ring that appears after clicking a page button */
+.page-link:focus {
+	box-shadow: none;
+}

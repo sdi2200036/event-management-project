@@ -1,5 +1,11 @@
 import { query } from '../config/database';
-import { Message, MessageWithUsers, SendMessageDTO } from '../models/message.model';
+import {
+	Message,
+	MessageWithUsers,
+	PaginatedInboxResponse,
+	PaginatedSentResponse,
+	SendMessageDTO
+} from '../models/message.model';
 
 export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promise<Message> => {
 	const { receiver_username, booking_id, subject, body } = dto;
@@ -18,34 +24,50 @@ export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promis
 	return result.rows[0];
 };
 
-export const getInbox = async (userId: number): Promise<MessageWithUsers[]> => {
+export const getInbox = async (userId: number, page: number, limit: number): Promise<PaginatedInboxResponse> => {
+	const offset = (page - 1) * limit;
 	const result = await query(
 		`SELECT m.*,
             s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
-            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
+            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name,
+            COUNT(*) OVER() AS total_count,
+            (SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE AND deleted_by_receiver = FALSE) AS unread_count
      FROM messages m
      JOIN users s ON s.id = m.sender_id
      JOIN users r ON r.id = m.receiver_id
      WHERE m.receiver_id = $1 AND m.deleted_by_receiver = FALSE
-     ORDER BY m.sent_at DESC`,
-		[userId]
+     ORDER BY m.is_read ASC, m.sent_at DESC
+     LIMIT $2 OFFSET $3`,
+		[userId, limit, offset]
 	);
-	return result.rows;
+
+	const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
+	const unread_count = result.rows.length > 0 ? parseInt(result.rows[0].unread_count, 10) : 0;
+	const messages: MessageWithUsers[] = result.rows.map(({ total_count: _t, unread_count: _u, ...msg }) => msg);
+
+	return { messages, total, unread_count };
 };
 
-export const getSent = async (userId: number): Promise<MessageWithUsers[]> => {
+export const getSent = async (userId: number, page: number, limit: number): Promise<PaginatedSentResponse> => {
+	const offset = (page - 1) * limit;
 	const result = await query(
 		`SELECT m.*,
             s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
-            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
+            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name,
+            COUNT(*) OVER() AS total_count
      FROM messages m
      JOIN users s ON s.id = m.sender_id
      JOIN users r ON r.id = m.receiver_id
      WHERE m.sender_id = $1 AND m.deleted_by_sender = FALSE
-     ORDER BY m.sent_at DESC`,
-		[userId]
+     ORDER BY m.sent_at DESC
+     LIMIT $2 OFFSET $3`,
+		[userId, limit, offset]
 	);
-	return result.rows;
+
+	const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
+	const messages: MessageWithUsers[] = result.rows.map(({ total_count: _t, ...msg }) => msg);
+
+	return { messages, total };
 };
 
 export const markAsRead = async (messageId: number, userId: number): Promise<void> => {

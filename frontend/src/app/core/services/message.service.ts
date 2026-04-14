@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -28,6 +28,19 @@ export interface SendMessageRequest {
 	body: string;
 }
 
+export interface PaginatedInboxResponse {
+	messages: Message[];
+	total: number;
+	unread_count: number;
+}
+
+export interface PaginatedSentResponse {
+	messages: Message[];
+	total: number;
+}
+
+const PAGE_SIZE = 10;
+
 @Injectable({
 	providedIn: 'root'
 })
@@ -39,7 +52,7 @@ export class MessageService {
 
 	constructor(private http: HttpClient) {}
 
-	refreshUnreadCount(): void {
+	public refreshUnreadCount(): void {
 		this.http
 			.get<{ count: number }>(`${this.apiUrl}/unread-count`, {
 				context: new HttpContext().set(SKIP_LOADING, true)
@@ -47,30 +60,31 @@ export class MessageService {
 			.subscribe((res) => this._unreadCount.set(res.count));
 	}
 
-	getInbox(): Observable<Message[]> {
-		return this.http.get<Message[]>(`${this.apiUrl}/inbox`).pipe(
-			tap((messages) => {
-				const unreadCount = messages.filter((m) => !m.is_read).length;
-				this._unreadCount.set(unreadCount);
-			})
-		);
+	public getInbox(page = 1): Observable<PaginatedInboxResponse> {
+		const params = new HttpParams().set('page', page.toString());
+		return this.http
+			.get<PaginatedInboxResponse>(`${this.apiUrl}/inbox`, { params })
+			.pipe(tap((res) => this._unreadCount.set(res.unread_count)));
 	}
 
-	getSent(): Observable<Message[]> {
-		return this.http.get<Message[]>(`${this.apiUrl}/sent`);
+	public getSent(page = 1): Observable<PaginatedSentResponse> {
+		const params = new HttpParams().set('page', page.toString());
+		return this.http.get<PaginatedSentResponse>(`${this.apiUrl}/sent`, { params });
 	}
 
-	sendMessage(data: SendMessageRequest): Observable<Message> {
+	public sendMessage(data: SendMessageRequest): Observable<Message> {
 		return this.http.post<Message>(this.apiUrl, data);
 	}
 
-	deleteMessage(id: number): Observable<{ message: string }> {
+	public deleteMessage(id: number): Observable<{ message: string }> {
 		return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
 	}
 
-	markAsRead(id: number): Observable<{ message: string }> {
+	public markAsRead(id: number): Observable<{ message: string }> {
 		return this.http
 			.patch<{ message: string }>(`${this.apiUrl}/${id}/read`, {})
 			.pipe(tap(() => this.refreshUnreadCount()));
 	}
 }
+
+export { PAGE_SIZE };

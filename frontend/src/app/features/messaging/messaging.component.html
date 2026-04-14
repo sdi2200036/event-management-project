@@ -35,14 +35,17 @@
 		</li>
 	</ul>
 
-	@if (this.activeTab() === 'inbox' || this.activeTab() === 'sent') {
-		<div class="row">
-			<div class="col-md-4">
+	<div class="row">
+		@if (this.activeTab() === 'inbox' || this.activeTab() === 'sent') {
+			<div class="col-md-4 vh-100">
 				<app-message-list
 					[(selectedMessage)]="this.selectedMessage"
-					[messages]="this.activeTab() === Tab.INBOX ? this.inbox() : this.sent()"
+					[messages]="this.activeTab() === Tab.INBOX ? this.inboxMessages() : this.sentMessages()"
+					[totalItems]="this.activeTab() === Tab.INBOX ? this.inboxTotal() : this.sentTotal()"
+					[currentPage]="this.page()"
 					[highlightUnread]="this.activeTab() === Tab.INBOX"
 					(readMessage)="this.markAsRead($event)"
+					(pageChange)="this.onPageChange($event)"
 				></app-message-list>
 			</div>
 			<div class="col-md-8">
@@ -54,8 +57,11 @@
 					></app-message-details>
 				}
 			</div>
-		</div>
-	} @else {
-		<app-message-compose [prefillReceiver]="this.prefillReceiver()" (sendMessage)="this.sendMessage($event)"></app-message-compose>
-	}
+		} @else {
+			<app-message-compose
+				[prefillReceiver]="this.prefillReceiver()"
+				(sendMessage)="this.sendMessage($event)"
+			></app-message-compose>
+		}
+	</div>
 </div>
