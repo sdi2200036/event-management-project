@@ -19,7 +19,9 @@ export class EventDetailComponent {
 
 	public readonly event: Signal<EventModel | undefined> = this.eventData;
 	public readonly isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
-	public readonly isParticipant: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'participant');
+	public readonly isParticipant: Signal<boolean> = computed(
+		() => this.authService.currentUser()?.role === 'participant'
+	);
 	public readonly isOrganizer: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'organizer');
 	public readonly isOwner: Signal<boolean> = computed(() => {
 		const user = this.authService.currentUser();
@@ -103,7 +105,7 @@ export class EventDetailComponent {
 		if (!ev || !confirm('Are you sure you want to cancel this event?')) return;
 		this.eventService.cancelEvent(ev.id).subscribe({
 			next: () => {
-				this.toastService.success('Event cancelled');
+				this.toastService.warning('Event cancelled');
 				this.router.navigate(['/events/manage', ev.id]);
 			},
 			error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel')
@@ -115,7 +117,7 @@ export class EventDetailComponent {
 		if (!ev || !confirm('Are you sure you want to delete this event?')) return;
 		this.eventService.deleteEvent(ev.id).subscribe({
 			next: () => {
-				this.toastService.success('Event deleted');
+				this.toastService.warning('Event deleted');
 				this.router.navigate(['/events/manage']);
 			},
 			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')

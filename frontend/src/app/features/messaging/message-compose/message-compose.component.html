@@ -1,0 +1,43 @@
+<div>
+	<div class="row justify-content-center">
+		<div class="col-md-7">
+			<div class="card border-0 shadow-sm">
+				<div class="card-body p-4">
+					<h5 class="card-title mb-4">New Message</h5>
+					<form (submit)="this.onSendMessage($event)" novalidate>
+						<div class="mb-3">
+							<label class="form-label">Recipient User ID</label>
+							<input
+								type="number"
+								class="form-control"
+								[formField]="this.composeForm.receiver_id"
+								placeholder="Enter user ID"
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="form-label">Subject</label>
+							<input
+								type="text"
+								class="form-control"
+								[formField]="this.composeForm.subject"
+								placeholder="Message subject"
+							/>
+						</div>
+						<div class="mb-4">
+							<label class="form-label">Message</label>
+							<textarea
+								class="form-control"
+								[formField]="this.composeForm.body"
+								rows="6"
+								placeholder="Write your message..."
+							></textarea>
+						</div>
+						<button type="submit" class="btn btn-primary px-5" [disabled]="!this.composeForm().valid()">
+							Send Message
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

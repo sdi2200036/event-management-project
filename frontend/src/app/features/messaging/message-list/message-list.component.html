@@ -1,0 +1,19 @@
+<div class="list-group">
+	@if (this.messages().length === 0) {
+		<div class="text-muted text-center py-4">No messages</div>
+	}
+	@for (msg of this.messages(); track msg.id) {
+		<button
+			class="list-group-item list-group-item-action"
+			[class.fw-bold]="this.highlightUnread() && !msg.is_read"
+			[class.active]="this.selectedMessage()?.id === msg.id"
+			(click)="this.onOpenMessage(msg)"
+		>
+			<div class="d-flex justify-content-between">
+				<span class="small">{{ msg.sender_first_name }} {{ msg.sender_last_name }}</span>
+				<span class="small text-muted">{{ msg.sent_at | date: 'shortDate' }}</span>
+			</div>
+			<div class="text-truncate small">{{ msg.subject }}</div>
+		</button>
+	}
+</div>

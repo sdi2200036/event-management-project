@@ -11,7 +11,8 @@ import { Event as EventModel, EventsResponseExtended } from 'src/app/shared/mode
 	templateUrl: './my-events-list.component.html'
 })
 export class MyEventsListComponent {
-	public readonly eventsData: InputSignal<EventsResponseExtended | null | undefined> = input<EventsResponseExtended | null>();
+	public readonly eventsData: InputSignal<EventsResponseExtended | null | undefined> =
+		input<EventsResponseExtended | null>();
 	public events: Signal<EventModel[]> = computed(() => this.eventsData()?.events || []);
 
 	constructor(
@@ -40,7 +41,7 @@ export class MyEventsListComponent {
 		if (!confirm(`Cancel "${event.title}"? This cannot be undone.`)) return;
 		this.eventService.cancelEvent(event.id).subscribe({
 			next: () => {
-				this.toastService.success(`"${event.title}" cancelled`);
+				this.toastService.warning(`"${event.title}" cancelled`);
 				this.router.navigate([], {
 					relativeTo: this.activateRoute,
 					queryParamsHandling: 'preserve',
@@ -55,7 +56,7 @@ export class MyEventsListComponent {
 		if (!confirm(`Delete "${event.title}"? This is permanent.`)) return;
 		this.eventService.deleteEvent(event.id).subscribe({
 			next: () => {
-				this.toastService.success(`"${event.title}" deleted`);
+				this.toastService.warning(`"${event.title}" deleted`);
 				this.router.navigate([], {
 					relativeTo: this.activateRoute,
 					queryParamsHandling: 'preserve',

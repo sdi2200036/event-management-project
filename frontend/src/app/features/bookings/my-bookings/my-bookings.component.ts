@@ -27,7 +27,7 @@ export class MyBookingsComponent {
 		this.cancellingId.set(booking.id);
 		this.bookingService.cancelBooking(booking.id).subscribe({
 			next: () => {
-				this.toastService.success('Booking cancelled successfully');
+				this.toastService.warning('Booking cancelled successfully');
 				this.router.navigate([], { onSameUrlNavigation: 'reload' });
 				this.cancellingId.set(null);
 			},
