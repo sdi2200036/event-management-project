@@ -1,11 +1,13 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, computed, input, InputSignal, Signal } from '@angular/core';
+import { Component, computed, effect, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { BookingService } from '../../../core/services/booking.service';
 import { EventService } from '../../../core/services/event.service';
 import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { MapViewComponent } from '../../../shared/components/map-view/map-view.component';
+import { Booking } from '../../../shared/models/booking.model';
 import { Event as EventModel } from '../../../shared/models/event.model';
 
 @Component({
@@ -35,13 +37,35 @@ export class EventDetailComponent {
 		return Math.min(...ev.ticket_types.map((t) => t.price));
 	});
 
+	public readonly bookings: WritableSignal<Booking[]> = signal([]);
+	public readonly bookingsLoading: WritableSignal<boolean> = signal(false);
+
 	constructor(
 		private router: Router,
 		private eventService: EventService,
 		private authService: AuthService,
+		private bookingService: BookingService,
 		private toastService: ToastService,
 		private modalService: ModalService
-	) {}
+	) {
+		effect(() => {
+			const isOwner = this.isOwner();
+			const ev = this.event();
+			if (isOwner && ev) {
+				this.bookingsLoading.set(true);
+				this.bookingService.getEventBookings(ev.id).subscribe({
+					next: (b) => {
+						this.bookings.set(b);
+						this.bookingsLoading.set(false);
+					},
+					error: () => {
+						this.bookings.set([]);
+						this.bookingsLoading.set(false);
+					}
+				});
+			}
+		});
+	}
 
 	public goToEditEvent(): void {
 		const ev = this.event();
@@ -61,6 +85,12 @@ export class EventDetailComponent {
 
 	public goToEvents(): void {
 		this.router.navigate(['/events']);
+	}
+
+	public messageOrganizer(): void {
+		const ev = this.event();
+		if (!ev?.organizer_username) return;
+		this.router.navigate(['/messages'], { queryParams: { receiver: ev.organizer_username } });
 	}
 
 	public publishEvent(): void {

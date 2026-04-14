@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Message, MessageService, SendMessageRequest } from '../../core/services/message.service';
 import { ModalService } from '../../core/services/modal.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -33,13 +33,21 @@ export class MessagingComponent {
 	public sent: Signal<Message[]> = computed(() => this.messagesData().sent);
 	public unreadCount: Signal<number> = this.messageService.unreadCount;
 	public selectedMessage: WritableSignal<Message | null> = signal(null);
+	public prefillReceiver: WritableSignal<string | undefined> = signal(undefined);
 	public Tab: typeof Tab = Tab;
 
 	constructor(
 		private messageService: MessageService,
-		private router: Router
+		private router: Router,
+		private route: ActivatedRoute
 	) {
 		this.messageService.refreshUnreadCount();
+
+		const receiver = this.route.snapshot.queryParamMap.get('receiver');
+		if (receiver) {
+			this.prefillReceiver.set(receiver);
+			this.activeTab.set(Tab.COMPOSE);
+		}
 	}
 
 	public switchTab(tab: Tab): void {

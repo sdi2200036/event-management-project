@@ -49,6 +49,9 @@ export interface Event {
 	categories?: EventCategory[];
 	photos?: string[];
 	ticket_types?: TicketType[];
+	organizer_username?: string;
+	organizer_first_name?: string;
+	organizer_last_name?: string;
 }
 
 export interface EventFilters {

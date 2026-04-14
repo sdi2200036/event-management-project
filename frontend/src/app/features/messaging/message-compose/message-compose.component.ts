@@ -1,4 +1,4 @@
-import { Component, output, OutputEmitterRef, signal, WritableSignal } from '@angular/core';
+import { Component, effect, input, InputSignal, output, OutputEmitterRef, signal, WritableSignal } from '@angular/core';
 import { form, FormField, maxLength, required, submit } from '@angular/forms/signals';
 import { SendMessageRequest } from 'src/app/core/services/message.service';
 
@@ -9,6 +9,7 @@ import { SendMessageRequest } from 'src/app/core/services/message.service';
 	styleUrl: './message-compose.component.css'
 })
 export class ComposeComponent {
+	public readonly prefillReceiver: InputSignal<string | undefined> = input<string>();
 	public sendMessage: OutputEmitterRef<SendMessageRequest> = output<SendMessageRequest>();
 
 	public readonly composeModel: WritableSignal<{ receiver_username: string; subject: string; body: string }> = signal(
@@ -26,7 +27,14 @@ export class ComposeComponent {
 		required(p.body);
 	});
 
-	constructor() {}
+	constructor() {
+		effect(() => {
+			const receiver = this.prefillReceiver();
+			if (receiver) {
+				this.composeModel.set({ receiver_username: receiver, subject: '', body: '' });
+			}
+		});
+	}
 
 	public async onSendMessage(event: Event): Promise<void> {
 		event.preventDefault();

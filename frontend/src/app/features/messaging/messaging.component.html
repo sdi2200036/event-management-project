@@ -56,6 +56,6 @@
 			</div>
 		</div>
 	} @else {
-		<app-message-compose (sendMessage)="this.sendMessage($event)"></app-message-compose>
+		<app-message-compose [prefillReceiver]="this.prefillReceiver()" (sendMessage)="this.sendMessage($event)"></app-message-compose>
 	}
 </div>

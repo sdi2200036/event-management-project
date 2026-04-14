@@ -136,7 +136,14 @@ export const getEvents = async (filters: EventFilters = {}): Promise<{ events: E
 };
 
 export const getEventById = async (id: number): Promise<Event | null> => {
-  const result = await query('SELECT * FROM events WHERE id = $1', [id]);
+  const result = await query(
+    `SELECT e.*, u.username AS organizer_username,
+            u.first_name AS organizer_first_name, u.last_name AS organizer_last_name
+     FROM events e
+     JOIN users u ON u.id = e.organizer_id
+     WHERE e.id = $1`,
+    [id]
+  );
   if (result.rows.length === 0) return null;
 
   const event = result.rows[0];

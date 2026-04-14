@@ -93,6 +93,61 @@
 					}
 					</div>
 				</div>
+				<!-- Attendees (owner only) -->
+				@if (this.isOwner()) {
+					<div class="card border-0 shadow-sm mb-4">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Attendees</h5>
+							@if (this.bookingsLoading()) {
+								<div class="text-center text-muted py-3">Loading attendees...</div>
+							} @else if (this.bookings().length === 0) {
+								<div class="text-muted">No bookings yet.</div>
+							} @else {
+								<div class="table-responsive">
+									<table class="table table-sm align-middle mb-0">
+										<thead class="table-light">
+											<tr>
+												<th>Attendee</th>
+												<th>Booked At</th>
+												<th>Ticket Type</th>
+												<th class="text-center">Qty</th>
+												<th class="text-end">Total</th>
+												<th class="text-center">Status</th>
+											</tr>
+										</thead>
+										<tbody>
+											@for (booking of this.bookings(); track booking.id) {
+												<tr>
+													<td>
+														<div class="fw-semibold">{{ booking.attendee_username }}</div>
+														<small class="text-muted">{{ booking.attendee_email }}</small>
+													</td>
+													<td>
+														<small>{{ booking.booked_at | date: 'dd MMM y, HH:mm' }}</small>
+													</td>
+													<td>{{ booking.ticket_type_name }}</td>
+													<td class="text-center">{{ booking.number_of_tickets }}</td>
+													<td class="text-end fw-semibold">€{{ booking.total_cost }}</td>
+													<td class="text-center">
+														<span
+															class="badge"
+															[ngClass]="{
+																'bg-success': booking.booking_status === 'CONFIRMED',
+																'bg-warning text-dark': booking.booking_status === 'PENDING',
+																'bg-danger': booking.booking_status === 'CANCELLED'
+															}"
+															>{{ booking.booking_status }}</span
+														>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+							}
+						</div>
+					</div>
+				}
 			</div>
 			<!-- Sidebar -->
 			<div class="col-lg-4">
@@ -118,6 +173,39 @@
 						</ul>
 					</div>
 				</div>
+				<!-- Organizer Card (visible to non-owners) -->
+				@if (!this.isOwner() && this.event()!.organizer_username) {
+					<div class="card border-0 shadow-sm mb-3">
+						<div class="card-body">
+							<h5 class="card-title mb-3">Organizer</h5>
+							<div class="d-flex align-items-center gap-3 mb-3">
+								<div
+									class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+									style="width: 48px; height: 48px; font-size: 1.2rem"
+								>
+									{{ (this.event()!.organizer_first_name || this.event()!.organizer_username)!.charAt(0).toUpperCase() }}
+								</div>
+								<div>
+									@if (this.event()!.organizer_first_name || this.event()!.organizer_last_name) {
+										<div class="fw-semibold">
+											{{ this.event()!.organizer_first_name }} {{ this.event()!.organizer_last_name }}
+										</div>
+									}
+									<div class="text-muted small">&#64;{{ this.event()!.organizer_username }}</div>
+								</div>
+							</div>
+							@if (this.isLoggedIn()) {
+								<button
+									type="button"
+									class="btn btn-outline-primary btn-sm w-100"
+									(click)="this.messageOrganizer()"
+								>
+									Message Organizer
+								</button>
+							}
+						</div>
+					</div>
+				}
 				<!-- Ticket Types -->
 				<div class="card border-0 shadow-sm mb-3">
 					<div class="card-body">
