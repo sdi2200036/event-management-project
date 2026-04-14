@@ -32,11 +32,6 @@
 							Sign In
 						</button>
 					</form>
-					<div class="d-flex flex-column mt-2">
-						@for (error of this.loginFields().errors(); track $index) {
-							<span class="text-danger">{{ error.message }}</span>
-						}
-					</div>
 
 					<hr />
 					<p class="text-center text-muted mb-0">

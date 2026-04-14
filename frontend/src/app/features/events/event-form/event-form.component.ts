@@ -24,6 +24,7 @@ import {
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { EventCategory, Event as EventModel } from '../../../shared/models/event.model';
 
 declare const L: any; // Leaflet global
@@ -114,8 +115,6 @@ export class EventFormComponent {
 
 	readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
 	photos: WritableSignal<string[]> = signal([]);
-	error: WritableSignal<string> = signal('');
-	success: WritableSignal<string> = signal('');
 
 	categories = Object.values(EventCategory);
 
@@ -127,7 +126,8 @@ export class EventFormComponent {
 
 	constructor(
 		private eventService: EventService,
-		private router: Router
+		private router: Router,
+		private toastService: ToastService
 	) {
 		// Initialize map after render
 		afterNextRender(() => {
@@ -207,12 +207,12 @@ export class EventFormComponent {
 					this.placeMarker(lat, lng);
 					this.updateGeoCoords(lat, lng);
 				} else {
-					alert('Address not found. Try a different search term.');
+					this.toastService.warning('Address not found. Try a different search term.');
 				}
 				this.searchingAddress.set(false);
 			})
 			.catch(() => {
-				alert('Failed to search address. Please try again.');
+				this.toastService.error('Failed to search address. Please try again.');
 				this.searchingAddress.set(false);
 			});
 	}
@@ -286,15 +286,13 @@ export class EventFormComponent {
 	}
 
 	cancel(): void {
-		this.router.navigate(['/manage/events']);
+		this.router.navigate(['/events/manage']);
 	}
 
 	async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 
 		await submit(this.eventForm, (form) => {
-			this.error.set('');
-
 			const formValue = form().value();
 			const payload = {
 				...formValue,
@@ -313,18 +311,13 @@ export class EventFormComponent {
 				return firstValueFrom(
 					this.eventService.updateEvent(eventData.id, payload).pipe(
 						switchMap(() => {
-							this.success.set('Event updated successfully!');
-							setTimeout(() => this.router.navigate(['/manage/events']), 1500);
+							this.toastService.success('Event updated successfully');
+							this.router.navigate(['/events/manage']);
 							return of(undefined);
 						}),
 						catchError((err) => {
-							return of([
-								{
-									kind: 'server',
-									field: 'form',
-									message: err.error?.message || 'Failed to update event'
-								}
-							]);
+							this.toastService.error(err.error?.message || 'Failed to update event');
+							return of(undefined);
 						})
 					)
 				);
@@ -332,18 +325,13 @@ export class EventFormComponent {
 				return firstValueFrom(
 					this.eventService.createEvent(payload).pipe(
 						switchMap(() => {
-							this.success.set('Event created successfully!');
-							setTimeout(() => this.router.navigate(['/manage/events']), 1500);
+							this.toastService.success('Event created successfully');
+							this.router.navigate(['/events/manage']);
 							return of(undefined);
 						}),
 						catchError((err) => {
-							return of([
-								{
-									kind: 'server',
-									field: 'form',
-									message: err.error?.message || 'Failed to create event'
-								}
-							]);
+							this.toastService.error(err.error?.message || 'Failed to create event');
+							return of(undefined);
 						})
 					)
 				);

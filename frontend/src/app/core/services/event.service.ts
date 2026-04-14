@@ -2,7 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateEventRequest, EventFilters, Event as EventModel, EventsResponse } from '../../shared/models/event.model';
+import {
+	CreateEventRequest,
+	EventFilters,
+	Event as EventModel,
+	EventsResponse,
+	EventsResponseExtended
+} from '../../shared/models/event.model';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,7 +18,7 @@ export class EventService {
 
 	constructor(private http: HttpClient) {}
 
-	getEvents(filters?: EventFilters): Observable<EventsResponse> {
+	getEvents(filters?: EventFilters): Observable<EventsResponseExtended> {
 		let params = new HttpParams();
 		if (filters) {
 			Object.entries(filters).forEach(([key, value]) => {
@@ -21,19 +27,19 @@ export class EventService {
 				}
 			});
 		}
-		return this.http.get<EventsResponse>(this.apiUrl, { params });
+		return this.http.get<EventsResponseExtended>(this.apiUrl, { params });
 	}
 
 	getEvent(id: number): Observable<EventModel> {
 		return this.http.get<EventModel>(`${this.apiUrl}/${id}`);
 	}
 
-	getMyEvents(): Observable<EventsResponse> {
-		return this.http.get<EventsResponse>(`${this.apiUrl}/my`);
+	getMyEvents(): Observable<EventsResponseExtended> {
+		return this.http.get<EventsResponseExtended>(`${this.apiUrl}/my`);
 	}
 
-	getRecommendations(topN: number = 10): Observable<{ events: EventModel[] }> {
-		return this.http.get<{ events: EventModel[] }>(`${this.apiUrl}/recommendations`, {
+	getRecommendations(topN: number = 10): Observable<EventsResponse> {
+		return this.http.get<EventsResponse>(`${this.apiUrl}/recommendations`, {
 			params: new HttpParams().set('topN', topN.toString())
 		});
 	}

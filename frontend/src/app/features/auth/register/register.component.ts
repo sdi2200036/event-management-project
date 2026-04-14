@@ -1,9 +1,10 @@
-import { Component, WritableSignal, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FieldState, FormField, email, form, maxLength, minLength, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { RegisterUserRole } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
 	selector: 'app-register',
@@ -12,6 +13,8 @@ import { AuthService } from '../../../core/services/auth.service';
 	imports: [FormField]
 })
 export class RegisterComponent {
+	private readonly toastService = inject(ToastService);
+
 	readonly registerModel = signal({
 		username: '',
 		password: '',
@@ -52,7 +55,6 @@ export class RegisterComponent {
 		maxLength(p.afm, 9, { message: 'AFM must be 9 characters' });
 		required(p.role, { message: 'Role is required' });
 	});
-	successMessage: WritableSignal<string> = signal('');
 
 	constructor(
 		private authService: AuthService,
@@ -68,32 +70,36 @@ export class RegisterComponent {
 
 		await submit(this.registerForm, async (form) => {
 			if (this.registerModel().password !== this.registerModel().confirmPassword) {
-				return [
-					{
-						kind: 'validation',
-						field: 'form',
-						message: 'Passwords do not match.'
-					}
-				];
+				this.toastService.error('Passwords do not match.');
+				return undefined;
 			}
-
-			this.successMessage.set('');
 
 			return await firstValueFrom(
 				this.authService.register(this.registerModel()).pipe(
 					switchMap((res) => {
-						this.successMessage.set(res.message);
-						setTimeout(() => this.router.navigate(['/login']), 2000);
+						this.registerForm().reset({
+							username: '',
+							password: '',
+							confirmPassword: '',
+							first_name: '',
+							last_name: '',
+							email: '',
+							phone: '',
+							address: '',
+							city: '',
+							country: '',
+							postal_code: '',
+							afm: '',
+							role: RegisterUserRole.Participant
+						});
+
+						this.toastService.success(res.message);
+						this.router.navigate(['/login']);
 						return of(undefined);
 					}),
 					catchError((err) => {
-						return of([
-							{
-								kind: 'server',
-								field: 'form',
-								message: err.error?.message || 'Registration failed. Please try again.'
-							}
-						]);
+						this.toastService.error(err.error?.message || 'Registration failed. Please try again.');
+						return of(undefined);
 					})
 				)
 			);

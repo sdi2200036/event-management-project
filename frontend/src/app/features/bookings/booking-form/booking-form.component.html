@@ -21,9 +21,6 @@
 				<div>
 					<h2 class="fw-bold mb-1">Book Tickets</h2>
 					<p class="text-muted mb-4">{{ event()?.title }}</p>
-					@if (error()) {
-						<div class="alert alert-danger">{{ error() }}</div>
-					}
 					<!-- Event Summary -->
 					<div class="card border-0 shadow-sm mb-4">
 						<div class="card-body">

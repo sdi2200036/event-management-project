@@ -3,6 +3,7 @@ import { Component, computed, input, linkedSignal, Signal, signal, WritableSigna
 import { form, FormField, max, min, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
 
 @Component({
@@ -25,7 +26,6 @@ export class BookingFormComponent {
 		max(p.number_of_tickets, 20);
 	});
 
-	error: WritableSignal<string> = signal('');
 	showConfirmation: WritableSignal<boolean> = signal(false);
 	bookingCreated: WritableSignal<boolean> = signal(false);
 
@@ -42,7 +42,8 @@ export class BookingFormComponent {
 
 	constructor(
 		private router: Router,
-		private bookingService: BookingService
+		private bookingService: BookingService,
+		private toastService: ToastService
 	) {}
 
 	async onSubmit(event: Event): Promise<void> {
@@ -56,7 +57,6 @@ export class BookingFormComponent {
 		const ev = this.event();
 		if (!ev) return;
 
-		this.error.set('');
 		this.bookingService
 			.createBooking({
 				event_id: ev.id,
@@ -67,9 +67,10 @@ export class BookingFormComponent {
 				next: () => {
 					this.bookingCreated.set(true);
 					this.showConfirmation.set(false);
+					this.toastService.success('Booking confirmed!');
 				},
 				error: (err) => {
-					this.error.set(err.error?.message || 'Booking failed');
+					this.toastService.error(err.error?.message || 'Booking failed');
 					this.showConfirmation.set(false);
 				}
 			});

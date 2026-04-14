@@ -1,6 +1,8 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
 	<div class="container">
-		<button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">EventHub</button>
+		<button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">
+			EventHub
+		</button>
 
 		<button
 			class="navbar-toggler"
@@ -17,7 +19,12 @@
 		<div class="collapse navbar-collapse" id="navbarNav">
 			<ul class="navbar-nav me-auto">
 				<li class="nav-item">
-					<button type="button" (click)="goToEvents()" class="nav-link border-0 bg-transparent" [class.active]="isExactRoute('/events')">
+					<button
+						type="button"
+						(click)="goToEvents()"
+						class="nav-link border-0 bg-transparent"
+						[class.active]="isExactRoute('/events')"
+					>
 						Events
 					</button>
 				</li>
@@ -29,7 +36,7 @@
 							type="button"
 							(click)="goToManageEvents()"
 							class="nav-link border-0 bg-transparent"
-							[class.active]="isExactRoute('/manage/events')"
+							[class.active]="isExactRoute('/events/manage')"
 						>
 							My Events
 						</button>
@@ -41,7 +48,7 @@
 							type="button"
 							(click)="goToCreateEvent()"
 							class="nav-link border-0 bg-transparent"
-							[class.active]="isExactRoute('/manage/events/new')"
+							[class.active]="isExactRoute('/events/manage/new')"
 						>
 							Create Event
 						</button>
@@ -75,8 +82,16 @@
 							Admin
 						</button>
 						<ul class="dropdown-menu" aria-labelledby="adminDropdown">
-							<li><button type="button" (click)="goToAdminUsers()" class="dropdown-item">User Management</button></li>
-							<li><button type="button" (click)="goToAdminExport()" class="dropdown-item">Export Data</button></li>
+							<li>
+								<button type="button" (click)="goToAdminUsers()" class="dropdown-item">
+									User Management
+								</button>
+							</li>
+							<li>
+								<button type="button" (click)="goToAdminExport()" class="dropdown-item">
+									Export Data
+								</button>
+							</li>
 						</ul>
 					</li>
 				}
@@ -106,7 +121,8 @@
 					</li>
 					<li class="nav-item">
 						<span class="nav-link text-light opacity-75">
-							{{ this.authService.currentUser()?.first_name }} {{ this.authService.currentUser()?.last_name }}
+							{{ this.authService.currentUser()?.first_name }}
+							{{ this.authService.currentUser()?.last_name }}
 							<small class="badge bg-secondary ms-1">{{ this.authService.currentUser()?.role }}</small>
 						</span>
 					</li>
@@ -115,10 +131,14 @@
 					</li>
 				} @else {
 					<li class="nav-item">
-						<button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">Login</button>
+						<button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">
+							Login
+						</button>
 					</li>
 					<li class="nav-item">
-						<button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">Register</button>
+						<button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">
+							Register
+						</button>
 					</li>
 				}
 			</ul>

@@ -1,29 +1,63 @@
 import { Routes } from '@angular/router';
-import { eventDetailResolver } from '../../core/resolvers/event-detail.resolver';
-import { eventFormResolver } from '../../core/resolvers/event-form.resolver';
-import { myEventsResolver } from '../../core/resolvers/my-events.resolver';
+import { RoleGuard } from 'src/app/core/guards/role.guard';
+import { recommendedEventsResolver } from 'src/app/core/resolvers/recommended-events.resolver';
+import { UserRole } from 'src/app/shared/models/user.model';
+import { eventListFiltersGuard } from '../../core/guards/event-list-filters.guard';
+import { eventResolver } from '../../core/resolvers/event.resolver';
+import { events } from '../../core/resolvers/events.resolver';
 import { EventDetailComponent } from './event-detail/event-detail.component';
 import { EventFormComponent } from './event-form/event-form.component';
-import { EventListComponent } from './event-list/event-list.component';
+import { MyEventsListComponent } from './my-events-list/my-events-list.component';
+import { PublicEventsListComponent } from './public-events-list/public-events-list.component';
 
 export const EVENTS_ROUTES: Routes = [
 	{
-		path: '',
-		component: EventListComponent,
-		resolve: { myEventsData: myEventsResolver }
+		path: 'public',
+		children: [
+			{
+				path: '',
+				component: PublicEventsListComponent,
+				canActivate: [eventListFiltersGuard],
+				resolve: { eventsData: events, recommendedEventsData: recommendedEventsResolver },
+				runGuardsAndResolvers: 'paramsOrQueryParamsChange'
+			},
+			{
+				path: ':id',
+				component: EventDetailComponent,
+				resolve: { eventData: eventResolver }
+			}
+		]
 	},
 	{
-		path: 'new',
-		component: EventFormComponent
+		path: 'manage',
+		canActivate: [RoleGuard],
+		data: { roles: [UserRole.Organizer] },
+		children: [
+			{
+				path: '',
+				component: MyEventsListComponent,
+				canActivate: [eventListFiltersGuard],
+				resolve: { eventsData: events },
+				runGuardsAndResolvers: 'always'
+			},
+			{
+				path: 'new',
+				component: EventFormComponent
+			},
+			{
+				path: ':id/edit',
+				component: EventFormComponent,
+				resolve: { eventData: eventResolver }
+			},
+			{
+				path: ':id',
+				component: EventDetailComponent,
+				resolve: { eventData: eventResolver }
+			}
+		]
 	},
 	{
-		path: ':id/edit',
-		component: EventFormComponent,
-		resolve: { eventData: eventFormResolver }
-	},
-	{
-		path: ':id',
-		component: EventDetailComponent,
-		resolve: { eventData: eventDetailResolver }
+		path: '**',
+		redirectTo: 'public'
 	}
 ];

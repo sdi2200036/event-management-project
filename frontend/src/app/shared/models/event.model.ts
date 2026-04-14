@@ -66,6 +66,9 @@ export interface EventFilters {
 
 export interface EventsResponse {
 	events: Event[];
+}
+
+export interface EventsResponseExtended extends EventsResponse {
 	total: number;
 }
 

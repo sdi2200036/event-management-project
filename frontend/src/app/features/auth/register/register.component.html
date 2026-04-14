@@ -5,12 +5,6 @@
 				<div class="card-body p-5">
 					<h2 class="card-title text-center mb-4 fw-bold">Create Account</h2>
 
-					@if (this.successMessage()) {
-						<div class="alert alert-success">
-							{{ this.successMessage() }}
-						</div>
-					}
-
 					<form
 						(submit)="onSubmit($event)"
 						novalidate
@@ -227,11 +221,6 @@
 							</button>
 						</div>
 					</form>
-					<div class="d-flex flex-column mt-2">
-						@for (error of this.registerForm().errors(); track $index) {
-							<span class="text-danger">{{ error.message }}</span>
-						}
-					</div>
 
 					<hr />
 					<p class="text-center text-muted mb-0">

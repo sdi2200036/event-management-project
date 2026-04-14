@@ -4,6 +4,7 @@ import { Component, computed, input, InputSignal, Signal, signal, WritableSignal
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { ToastService } from '../../../core/services/toast.service';
 import { User, UserStatus } from '../../../shared/models/user.model';
 
 @Component({
@@ -14,7 +15,6 @@ import { User, UserStatus } from '../../../shared/models/user.model';
 })
 export class UserManagementComponent {
 	users: InputSignal<User[]> = input<User[]>([], { alias: 'usersData' });
-	error: WritableSignal<string> = signal('');
 	filterStatus: WritableSignal<string> = signal('');
 	filterRole: WritableSignal<string> = signal('');
 	actionLoading: WritableSignal<number | null> = signal(null);
@@ -23,7 +23,8 @@ export class UserManagementComponent {
 
 	constructor(
 		private http: HttpClient,
-		private router: Router
+		private router: Router,
+		private toastService: ToastService
 	) {}
 
 	loadUsers(): void {
@@ -41,11 +42,12 @@ export class UserManagementComponent {
 		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
 			next: () => {
+				this.toastService.success(`User "${user.username}" approved`);
 				this.router.navigate([], { onSameUrlNavigation: 'reload' });
 				this.actionLoading.set(null);
 			},
 			error: (err) => {
-				alert(err.error?.message || 'Failed to approve');
+				this.toastService.error(err.error?.message || 'Failed to approve');
 				this.actionLoading.set(null);
 			}
 		});
@@ -56,11 +58,12 @@ export class UserManagementComponent {
 		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
 			next: () => {
+				this.toastService.success(`User "${user.username}" rejected`);
 				this.router.navigate([], { onSameUrlNavigation: 'reload' });
 				this.actionLoading.set(null);
 			},
 			error: (err) => {
-				alert(err.error?.message || 'Failed to reject');
+				this.toastService.error(err.error?.message || 'Failed to reject');
 				this.actionLoading.set(null);
 			}
 		});

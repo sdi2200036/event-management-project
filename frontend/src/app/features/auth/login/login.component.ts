@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormField, form, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
 	selector: 'app-login',
@@ -11,6 +12,8 @@ import { AuthService } from '../../../core/services/auth.service';
 	imports: [FormField]
 })
 export class LoginComponent {
+	private readonly toastService = inject(ToastService);
+
 	readonly loginModel = signal({
 		username: '',
 		password: ''
@@ -19,6 +22,7 @@ export class LoginComponent {
 		required(p.username);
 		required(p.password);
 	});
+
 	constructor(
 		private authService: AuthService,
 		private router: Router
@@ -39,13 +43,8 @@ export class LoginComponent {
 						return of(undefined);
 					}),
 					catchError((err) => {
-						return of([
-							{
-								kind: 'credentials',
-								field: 'form',
-								message: err.error?.message || 'Invalid username or password. Please try again.'
-							}
-						]);
+						this.toastService.error(err.error?.message || 'Invalid username or password. Please try again.');
+						return of(undefined);
 					})
 				)
 			);

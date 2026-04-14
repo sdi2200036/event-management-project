@@ -1,9 +1,9 @@
 import { Component, signal, WritableSignal } from '@angular/core';
-import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
+import { interval } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { MessageService } from '../../../core/services/message.service';
-import { interval } from 'rxjs';
 
 @Component({
 	selector: 'app-navbar',
@@ -68,39 +68,39 @@ export class NavbarComponent {
 	}
 
 	goToEvents(): void {
-		this.router.navigate(['/events']);
+		this.router.navigate(['events']);
 	}
 
 	goToManageEvents(): void {
-		this.router.navigate(['/manage/events']);
+		this.router.navigate(['events', 'manage']);
 	}
 
 	goToCreateEvent(): void {
-		this.router.navigate(['/manage/events/new']);
+		this.router.navigate(['events', 'manage', 'new']);
 	}
 
 	goToBookings(): void {
-		this.router.navigate(['/bookings']);
+		this.router.navigate(['bookings']);
 	}
 
 	goToAdminUsers(): void {
-		this.router.navigate(['/admin/users']);
+		this.router.navigate(['admin', 'users']);
 	}
 
 	goToAdminExport(): void {
-		this.router.navigate(['/admin/export']);
+		this.router.navigate(['admin', 'export']);
 	}
 
 	goToMessages(): void {
-		this.router.navigate(['/messages']);
+		this.router.navigate(['messages']);
 	}
 
 	goToLogin(): void {
-		this.router.navigate(['/login']);
+		this.router.navigate(['login']);
 	}
 
 	goToRegister(): void {
-		this.router.navigate(['/register']);
+		this.router.navigate(['register']);
 	}
 
 	logout(): void {

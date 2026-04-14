@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, input, InputSignal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Booking } from '../../../shared/models/booking.model';
 
 @Component({
@@ -12,12 +13,12 @@ import { Booking } from '../../../shared/models/booking.model';
 })
 export class MyBookingsComponent {
 	readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], { alias: 'bookingsData' });
-	error: WritableSignal<string> = signal('');
 	cancellingId: WritableSignal<number | null> = signal(null);
 
 	constructor(
 		private bookingService: BookingService,
-		private router: Router
+		private router: Router,
+		private toastService: ToastService
 	) {}
 
 	cancelBooking(booking: Booking): void {
@@ -26,11 +27,12 @@ export class MyBookingsComponent {
 		this.cancellingId.set(booking.id);
 		this.bookingService.cancelBooking(booking.id).subscribe({
 			next: () => {
+				this.toastService.success('Booking cancelled successfully');
 				this.router.navigate([], { onSameUrlNavigation: 'reload' });
 				this.cancellingId.set(null);
 			},
 			error: (err) => {
-				alert(err.error?.message || 'Failed to cancel booking');
+				this.toastService.error(err.error?.message || 'Failed to cancel booking');
 				this.cancellingId.set(null);
 			}
 		});

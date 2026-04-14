@@ -3,10 +3,6 @@
 		<div class="col-lg-9">
 			<h2 class="fw-bold mb-4">{{ isEditMode() ? 'Edit Event' : 'Create New Event' }}</h2>
 
-			@if (success()) {
-				<div class="alert alert-success">{{ success() }}</div>
-			}
-
 			<form (submit)="onSubmit($event)" novalidate>
 				<!-- Basic Info -->
 				<div class="card border-0 shadow-sm mb-4">

@@ -1,8 +1,9 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { afterNextRender, Component, computed, effect, input, Signal } from '@angular/core';
+import { afterNextRender, Component, computed, input, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { EventService } from '../../../core/services/event.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Event as EventModel } from '../../../shared/models/event.model';
 
 declare const L: any; // Leaflet global
@@ -37,7 +38,8 @@ export class EventDetailComponent {
 	constructor(
 		private router: Router,
 		private eventService: EventService,
-		private authService: AuthService
+		private authService: AuthService,
+		private toastService: ToastService
 	) {
 		afterNextRender(() => {
 			const ev = this.event();
@@ -50,7 +52,7 @@ export class EventDetailComponent {
 	goToEditEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
-		this.router.navigate(['/manage/events', ev.id, 'edit']);
+		this.router.navigate(['/events/manage', ev.id, 'edit']);
 	}
 
 	goToBookEvent(): void {
@@ -88,8 +90,11 @@ export class EventDetailComponent {
 		const ev = this.event();
 		if (!ev) return;
 		this.eventService.publishEvent(ev.id).subscribe({
-			next: () => this.router.navigate(['/manage/events', ev.id]),
-			error: (err) => alert(err.error?.message || 'Failed to publish')
+			next: () => {
+				this.toastService.success('Event published successfully');
+				this.router.navigate(['/events/manage', ev.id]);
+			},
+			error: (err) => this.toastService.error(err.error?.message || 'Failed to publish')
 		});
 	}
 
@@ -97,8 +102,11 @@ export class EventDetailComponent {
 		const ev = this.event();
 		if (!ev || !confirm('Are you sure you want to cancel this event?')) return;
 		this.eventService.cancelEvent(ev.id).subscribe({
-			next: () => this.router.navigate(['/manage/events', ev.id]),
-			error: (err) => alert(err.error?.message || 'Failed to cancel')
+			next: () => {
+				this.toastService.success('Event cancelled');
+				this.router.navigate(['/events/manage', ev.id]);
+			},
+			error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel')
 		});
 	}
 
@@ -106,8 +114,11 @@ export class EventDetailComponent {
 		const ev = this.event();
 		if (!ev || !confirm('Are you sure you want to delete this event?')) return;
 		this.eventService.deleteEvent(ev.id).subscribe({
-			next: () => this.router.navigate(['/manage/events']),
-			error: (err) => alert(err.error?.message || 'Failed to delete')
+			next: () => {
+				this.toastService.success('Event deleted');
+				this.router.navigate(['/events/manage']);
+			},
+			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
 		});
 	}
 }

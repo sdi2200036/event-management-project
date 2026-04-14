@@ -1,8 +1,9 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, OnInit, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, computed, inject, OnInit, Signal, signal, WritableSignal } from '@angular/core';
 import { form, FormField, maxLength, min, required, submit } from '@angular/forms/signals';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { Message, MessageService } from '../../core/services/message.service';
+import { ToastService } from '../../core/services/toast.service';
 
 enum Tab {
 	INBOX = 'inbox',
@@ -17,11 +18,11 @@ enum Tab {
 	imports: [DatePipe, FormField]
 })
 export class MessagingComponent implements OnInit {
+	private readonly toastService = inject(ToastService);
+
 	activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
 	inbox: WritableSignal<Message[]> = signal([]);
 	sent: WritableSignal<Message[]> = signal([]);
-	error: WritableSignal<string> = signal('');
-	success: WritableSignal<string> = signal('');
 	unreadCount: Signal<number> = computed(() => this.inbox().filter((m) => !m.is_read).length);
 	readonly composeModel = signal({
 		receiver_id: 0,
@@ -47,22 +48,20 @@ export class MessagingComponent implements OnInit {
 	loadInbox(): void {
 		this.messageService.getInbox().subscribe({
 			next: (msgs) => this.inbox.set(msgs),
-			error: () => this.error.set('Failed to load inbox')
+			error: () => this.toastService.error('Failed to load inbox')
 		});
 	}
 
 	loadSent(): void {
 		this.messageService.getSent().subscribe({
 			next: (msgs) => this.sent.set(msgs),
-			error: () => this.error.set('Failed to load sent messages')
+			error: () => this.toastService.error('Failed to load sent messages')
 		});
 	}
 
 	switchTab(tab: Tab): void {
 		this.activeTab.set(tab);
 		this.selectedMessage.set(null);
-		this.error.set('');
-		this.success.set('');
 
 		if (tab === Tab.INBOX) this.loadInbox();
 		if (tab === Tab.SENT) this.loadSent();
@@ -73,9 +72,7 @@ export class MessagingComponent implements OnInit {
 		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
 			this.messageService.markAsRead(msg.id).subscribe({
 				next: () => (msg.is_read = true),
-				error: (err) => {
-					this.error.set(err || 'Failed to mark as read');
-				}
+				error: () => this.toastService.error('Failed to mark as read')
 			});
 		}
 	}
@@ -93,7 +90,7 @@ export class MessagingComponent implements OnInit {
 					this.selectedMessage.set(null);
 				}
 			},
-			error: (err) => this.error.set(err.error?.message || 'Failed to delete')
+			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
 		});
 	}
 
@@ -104,20 +101,13 @@ export class MessagingComponent implements OnInit {
 			return firstValueFrom(
 				this.messageService.sendMessage(form().value()).pipe(
 					switchMap(() => {
-						this.success.set('Message sent successfully!');
-						this.composeModel.set({ receiver_id: 0, subject: '', body: '' });
-						setTimeout(() => this.switchTab(Tab.SENT), 1500);
+						this.toastService.success('Message sent successfully');
+						this.composeForm().reset({ receiver_id: 0, subject: '', body: '' });
 						return of(undefined);
 					}),
 					catchError((err) => {
-						this.error.set(err.error?.message || 'Failed to send message');
-						return of([
-							{
-								kind: 'server',
-								field: 'form',
-								message: err.error?.message || 'Failed to send message'
-							}
-						]);
+						this.toastService.error(err.error?.message || 'Failed to send message');
+						return of(undefined);
 					})
 				)
 			);

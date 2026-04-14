@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { UserRole } from './shared/models/user.model';
 
 export const appRoutes: Routes = [
 	{
@@ -16,15 +17,10 @@ export const appRoutes: Routes = [
 		loadChildren: () => import('./features/events/events.routes').then((m) => m.EVENTS_ROUTES)
 	},
 	{
-		path: 'manage/events',
-		loadChildren: () => import('./features/events/events.routes').then((m) => m.EVENTS_ROUTES),
-		canActivate: [AuthGuard]
-	},
-	{
 		path: 'bookings',
 		loadChildren: () => import('./features/bookings/bookings.routes').then((m) => m.BOOKINGS_ROUTES),
 		canActivate: [RoleGuard],
-		data: { roles: ['participant'] }
+		data: { roles: [UserRole.Participant] }
 	},
 	{
 		path: 'messages',
@@ -35,7 +31,7 @@ export const appRoutes: Routes = [
 		path: 'admin',
 		loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
 		canActivate: [RoleGuard],
-		data: { roles: ['admin'] }
+		data: { roles: [UserRole.Admin] }
 	},
 	{ path: '**', redirectTo: '' }
 ];
