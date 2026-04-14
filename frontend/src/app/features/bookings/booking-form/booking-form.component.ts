@@ -1,8 +1,19 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, input, linkedSignal, Signal, signal, WritableSignal } from '@angular/core';
+import {
+	Component,
+	computed,
+	input,
+	linkedSignal,
+	Signal,
+	signal,
+	TemplateRef,
+	viewChild,
+	WritableSignal
+} from '@angular/core';
 import { form, FormField, max, min, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
+import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
 
@@ -13,6 +24,8 @@ import { Event as EventModel, TicketType } from '../../../shared/models/event.mo
 	imports: [DatePipe, FormField]
 })
 export class BookingFormComponent {
+	private confirmTemplate: Signal<TemplateRef<any>> = viewChild.required('confirmTemplate');
+
 	public readonly event: Signal<EventModel | undefined> = input<EventModel>(undefined, { alias: 'eventData' });
 
 	public readonly bookingModel: WritableSignal<{ ticket_type_id: string; number_of_tickets: number }> = linkedSignal(
@@ -28,7 +41,6 @@ export class BookingFormComponent {
 		max(p.number_of_tickets, 20);
 	});
 
-	public showConfirmation: WritableSignal<boolean> = signal(false);
 	public bookingCreated: WritableSignal<boolean> = signal(false);
 
 	public readonly selectedTicketType: Signal<TicketType | undefined> = computed(() => {
@@ -45,17 +57,22 @@ export class BookingFormComponent {
 	constructor(
 		private router: Router,
 		private bookingService: BookingService,
-		private toastService: ToastService
+		private toastService: ToastService,
+		private modalService: ModalService
 	) {}
 
 	public async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 		await submit(this.bookingForm, async () => {
-			this.showConfirmation.set(true);
+			const btn = await this.modalService.open(this.confirmTemplate(), [
+				{ label: 'Cancel', class: 'btn-outline-secondary' },
+				{ label: 'Pay & Confirm', class: 'btn-primary' }
+			]);
+			if (btn === 'Pay & Confirm') this.confirmBooking();
 		});
 	}
 
-	public confirmBooking(): void {
+	private confirmBooking(): void {
 		const ev = this.event();
 		if (!ev) return;
 
@@ -68,12 +85,10 @@ export class BookingFormComponent {
 			.subscribe({
 				next: () => {
 					this.bookingCreated.set(true);
-					this.showConfirmation.set(false);
 					this.toastService.success('Booking confirmed!');
 				},
 				error: (err) => {
 					this.toastService.error(err.error?.message || 'Booking failed');
-					this.showConfirmation.set(false);
 				}
 			});
 	}

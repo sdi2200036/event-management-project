@@ -1,6 +1,7 @@
 import { DatePipe, NgClass } from '@angular/common';
 import { Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ModalService } from 'src/app/core/services/modal.service';
 import { EventService } from 'src/app/core/services/event.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { Event as EventModel, EventsResponseExtended } from 'src/app/shared/models/event.model';
@@ -19,51 +20,58 @@ export class MyEventsListComponent {
 		private router: Router,
 		private eventService: EventService,
 		private toastService: ToastService,
-		private activateRoute: ActivatedRoute
+		private activateRoute: ActivatedRoute,
+		private modalService: ModalService
 	) {}
 
 	public publishEvent(event: EventModel): void {
-		if (!confirm(`Publish "${event.title}"? It will become visible to all users.`)) return;
-		this.eventService.publishEvent(event.id).subscribe({
-			next: () => {
-				this.toastService.success(`"${event.title}" published successfully`);
-				this.router.navigate([], {
-					relativeTo: this.activateRoute,
-					queryParamsHandling: 'preserve',
-					onSameUrlNavigation: 'reload'
-				});
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+		this.modalService.confirm(`Publish "${event.title}"? It will become visible to all users.`, 'Publish').then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.publishEvent(event.id).subscribe({
+				next: () => {
+					this.toastService.success(`"${event.title}" published successfully`);
+					this.router.navigate([], {
+						relativeTo: this.activateRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+			});
 		});
 	}
 
 	public cancelEvent(event: EventModel): void {
-		if (!confirm(`Cancel "${event.title}"? This cannot be undone.`)) return;
-		this.eventService.cancelEvent(event.id).subscribe({
-			next: () => {
-				this.toastService.warning(`"${event.title}" cancelled`);
-				this.router.navigate([], {
-					relativeTo: this.activateRoute,
-					queryParamsHandling: 'preserve',
-					onSameUrlNavigation: 'reload'
-				});
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel event')
+		this.modalService.confirm(`Cancel "${event.title}"? This cannot be undone.`).then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.cancelEvent(event.id).subscribe({
+				next: () => {
+					this.toastService.warning(`"${event.title}" cancelled`);
+					this.router.navigate([], {
+						relativeTo: this.activateRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel event')
+			});
 		});
 	}
 
 	public deleteEvent(event: EventModel): void {
-		if (!confirm(`Delete "${event.title}"? This is permanent.`)) return;
-		this.eventService.deleteEvent(event.id).subscribe({
-			next: () => {
-				this.toastService.warning(`"${event.title}" deleted`);
-				this.router.navigate([], {
-					relativeTo: this.activateRoute,
-					queryParamsHandling: 'preserve',
-					onSameUrlNavigation: 'reload'
-				});
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete event')
+		this.modalService.confirm(`Delete "${event.title}"? This is permanent.`).then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.deleteEvent(event.id).subscribe({
+				next: () => {
+					this.toastService.warning(`"${event.title}" deleted`);
+					this.router.navigate([], {
+						relativeTo: this.activateRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete event')
+			});
 		});
 	}
 

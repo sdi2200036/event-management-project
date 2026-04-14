@@ -4,6 +4,7 @@ import { Component, computed, input, InputSignal, Signal, signal, WritableSignal
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { User, UserStatus } from '../../../shared/models/user.model';
 
@@ -24,7 +25,8 @@ export class UserManagementComponent {
 	constructor(
 		private http: HttpClient,
 		private router: Router,
-		private toastService: ToastService
+		private toastService: ToastService,
+		private modalService: ModalService
 	) {}
 
 	public loadUsers(): void {
@@ -54,18 +56,20 @@ export class UserManagementComponent {
 	}
 
 	public rejectUser(user: User): void {
-		if (!confirm(`Reject user "${user.username}"?`)) return;
-		this.actionLoading.set(user.id);
-		this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
-			next: () => {
-				this.toastService.success(`User "${user.username}" rejected`);
-				this.router.navigate([], { onSameUrlNavigation: 'reload' });
-				this.actionLoading.set(null);
-			},
-			error: (err) => {
-				this.toastService.error(err.error?.message || 'Failed to reject');
-				this.actionLoading.set(null);
-			}
+		this.modalService.confirm(`Reject user "${user.username}"?`).then((confirmed) => {
+			if (!confirmed) return;
+			this.actionLoading.set(user.id);
+			this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
+				next: () => {
+					this.toastService.success(`User "${user.username}" rejected`);
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.actionLoading.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to reject');
+					this.actionLoading.set(null);
+				}
+			});
 		});
 	}
 }

@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, input, InputSignal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
+import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Booking } from '../../../shared/models/booking.model';
 
@@ -18,23 +19,25 @@ export class MyBookingsComponent {
 	constructor(
 		private bookingService: BookingService,
 		private router: Router,
-		private toastService: ToastService
+		private toastService: ToastService,
+		private modalService: ModalService
 	) {}
 
 	public cancelBooking(booking: Booking): void {
-		if (!confirm(`Cancel booking for "${booking.event_title}"?`)) return;
-
-		this.cancellingId.set(booking.id);
-		this.bookingService.cancelBooking(booking.id).subscribe({
-			next: () => {
-				this.toastService.warning('Booking cancelled successfully');
-				this.router.navigate([], { onSameUrlNavigation: 'reload' });
-				this.cancellingId.set(null);
-			},
-			error: (err) => {
-				this.toastService.error(err.error?.message || 'Failed to cancel booking');
-				this.cancellingId.set(null);
-			}
+		this.modalService.confirm(`Cancel booking for "${booking.event_title}"?`).then((confirmed) => {
+			if (!confirmed) return;
+			this.cancellingId.set(booking.id);
+			this.bookingService.cancelBooking(booking.id).subscribe({
+				next: () => {
+					this.toastService.warning('Booking cancelled successfully');
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.cancellingId.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to cancel booking');
+					this.cancellingId.set(null);
+				}
+			});
 		});
 	}
 

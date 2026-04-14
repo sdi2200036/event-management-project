@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
+import { ModalService } from '../../core/services/modal.service';
 import { Message, MessageService, SendMessageRequest } from '../../core/services/message.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ComposeComponent } from './message-compose/message-compose.component';
@@ -25,6 +26,7 @@ export class MessagingComponent {
 	});
 
 	private readonly toastService: ToastService = inject(ToastService);
+	private readonly modalService: ModalService = inject(ModalService);
 
 	public activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
 	public inbox: Signal<Message[]> = computed(() => this.messagesData().inbox);
@@ -56,16 +58,18 @@ export class MessagingComponent {
 	}
 
 	public deleteMessage(msg: Message): void {
-		if (!confirm('Delete this message?')) return;
-		this.messageService.deleteMessage(msg.id).subscribe({
-			next: () => {
-				if (this.selectedMessage()?.id === msg.id) {
-					this.selectedMessage.set(null);
-				}
-				this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
-				this.toastService.warning('Message deleted successfully');
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+		this.modalService.confirm('Delete this message?').then((confirmed) => {
+			if (!confirmed) return;
+			this.messageService.deleteMessage(msg.id).subscribe({
+				next: () => {
+					if (this.selectedMessage()?.id === msg.id) {
+						this.selectedMessage.set(null);
+					}
+					this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
+					this.toastService.warning('Message deleted successfully');
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+			});
 		});
 	}
 

@@ -3,6 +3,7 @@ import { afterNextRender, Component, computed, input, InputSignal, Signal } from
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { EventService } from '../../../core/services/event.service';
+import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Event as EventModel } from '../../../shared/models/event.model';
 
@@ -41,7 +42,8 @@ export class EventDetailComponent {
 		private router: Router,
 		private eventService: EventService,
 		private authService: AuthService,
-		private toastService: ToastService
+		private toastService: ToastService,
+		private modalService: ModalService
 	) {
 		afterNextRender(() => {
 			const ev = this.event();
@@ -102,25 +104,31 @@ export class EventDetailComponent {
 
 	public cancelEvent(): void {
 		const ev = this.event();
-		if (!ev || !confirm('Are you sure you want to cancel this event?')) return;
-		this.eventService.cancelEvent(ev.id).subscribe({
-			next: () => {
-				this.toastService.warning('Event cancelled');
-				this.router.navigate(['/events/manage', ev.id]);
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel')
+		if (!ev) return;
+		this.modalService.confirm('Are you sure you want to cancel this event?').then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.cancelEvent(ev.id).subscribe({
+				next: () => {
+					this.toastService.warning('Event cancelled');
+					this.router.navigate(['/events/manage', ev.id]);
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel')
+			});
 		});
 	}
 
 	public deleteEvent(): void {
 		const ev = this.event();
-		if (!ev || !confirm('Are you sure you want to delete this event?')) return;
-		this.eventService.deleteEvent(ev.id).subscribe({
-			next: () => {
-				this.toastService.warning('Event deleted');
-				this.router.navigate(['/events/manage']);
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+		if (!ev) return;
+		this.modalService.confirm('Are you sure you want to delete this event?').then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.deleteEvent(ev.id).subscribe({
+				next: () => {
+					this.toastService.warning('Event deleted');
+					this.router.navigate(['/events/manage']);
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+			});
 		});
 	}
 }

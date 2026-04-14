@@ -11,7 +11,7 @@ export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> 
 	const router: Router = inject(Router);
 	const params: Params = route.queryParams;
 
-	const isManageMode: boolean = route.data['manageMode'] === true;
+	const isManageMode: boolean = route.url.toString().includes('manage');
 
 	const filters: EventFilters = {};
 	if (params['title']) filters.title = params['title'];
