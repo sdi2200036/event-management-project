@@ -6,12 +6,12 @@
 					<h5 class="card-title mb-4">New Message</h5>
 					<form (submit)="this.onSendMessage($event)" novalidate>
 						<div class="mb-3">
-							<label class="form-label">Recipient User ID</label>
+							<label class="form-label">Recipient Username</label>
 							<input
-								type="number"
+								type="text"
 								class="form-control"
-								[formField]="this.composeForm.receiver_id"
-								placeholder="Enter user ID"
+								[formField]="this.composeForm.receiver_username"
+								placeholder="Enter username"
 							/>
 						</div>
 						<div class="mb-3">

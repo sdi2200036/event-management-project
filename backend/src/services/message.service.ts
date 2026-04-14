@@ -2,11 +2,13 @@ import { query } from '../config/database';
 import { Message, MessageWithUsers, SendMessageDTO } from '../models/message.model';
 
 export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promise<Message> => {
-	const { receiver_id, booking_id, subject, body } = dto;
+	const { receiver_username, booking_id, subject, body } = dto;
 
-	// Verify receiver exists
-	const receiver = await query('SELECT id FROM users WHERE id = $1', [receiver_id]);
+	// Verify receiver exists by username
+	const receiver = await query('SELECT id FROM users WHERE username = $1', [receiver_username]);
 	if (receiver.rows.length === 0) throw new Error('Receiver not found');
+
+	const receiver_id = receiver.rows[0].id;
 
 	const result = await query(
 		`INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)

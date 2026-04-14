@@ -1,19 +1,18 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { afterNextRender, Component, computed, input, InputSignal, Signal } from '@angular/core';
+import { Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { EventService } from '../../../core/services/event.service';
 import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { MapViewComponent } from '../../../shared/components/map-view/map-view.component';
 import { Event as EventModel } from '../../../shared/models/event.model';
-
-declare const L: any; // Leaflet global
 
 @Component({
 	selector: 'app-event-detail',
 	templateUrl: './event-detail.component.html',
 	standalone: true,
-	imports: [NgClass, DatePipe]
+	imports: [NgClass, DatePipe, MapViewComponent]
 })
 export class EventDetailComponent {
 	public readonly eventData: InputSignal<EventModel | undefined> = input<EventModel>();
@@ -36,22 +35,13 @@ export class EventDetailComponent {
 		return Math.min(...ev.ticket_types.map((t) => t.price));
 	});
 
-	private mapInitialized: boolean = false;
-
 	constructor(
 		private router: Router,
 		private eventService: EventService,
 		private authService: AuthService,
 		private toastService: ToastService,
 		private modalService: ModalService
-	) {
-		afterNextRender(() => {
-			const ev = this.event();
-			if (ev?.geo_lat && ev?.geo_lng) {
-				this.initMap(ev.geo_lat, ev.geo_lng);
-			}
-		});
-	}
+	) {}
 
 	public goToEditEvent(): void {
 		const ev = this.event();
@@ -71,23 +61,6 @@ export class EventDetailComponent {
 
 	public goToEvents(): void {
 		this.router.navigate(['/events']);
-	}
-
-	public initMap(lat: number, lng: number): void {
-		if (this.mapInitialized || typeof L === 'undefined') return;
-		try {
-			const map = L.map('event-map').setView([lat, lng], 15);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			}).addTo(map);
-			L.marker([lat, lng])
-				.addTo(map)
-				.bindPopup(this.event()?.title || 'Event Location')
-				.openPopup();
-			this.mapInitialized = true;
-		} catch (e) {
-			console.warn('Map initialization failed:', e);
-		}
 	}
 
 	public publishEvent(): void {

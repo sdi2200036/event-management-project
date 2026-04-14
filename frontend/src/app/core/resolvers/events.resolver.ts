@@ -1,17 +1,27 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, Params, RedirectCommand, ResolveFn, Router } from '@angular/router';
+import {
+	ActivatedRouteSnapshot,
+	Params,
+	RedirectCommand,
+	ResolveFn,
+	Router,
+	RouterStateSnapshot
+} from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { EventCategory, EventFilters, EventsResponseExtended } from 'src/app/shared/models/event.model';
 import { EventService } from '../services/event.service';
 import { ToastService } from '../services/toast.service';
 
-export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> = (route: ActivatedRouteSnapshot) => {
+export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> = (
+	route: ActivatedRouteSnapshot,
+	state: RouterStateSnapshot
+) => {
 	const eventService: EventService = inject(EventService);
 	const toastService: ToastService = inject(ToastService);
 	const router: Router = inject(Router);
 	const params: Params = route.queryParams;
 
-	const isManageMode: boolean = route.url.toString().includes('manage');
+	const isManageMode: boolean = state.url.toString().includes('manage');
 
 	const filters: EventFilters = {};
 	if (params['title']) filters.title = params['title'];

@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_LOADING } from '../interceptors/loading.interceptor';
 
@@ -22,7 +22,7 @@ export interface Message {
 }
 
 export interface SendMessageRequest {
-	receiver_id: number;
+	receiver_username: string;
 	booking_id?: number;
 	subject: string;
 	body: string;
@@ -34,10 +34,26 @@ export interface SendMessageRequest {
 export class MessageService {
 	private apiUrl = `${environment.apiUrl}/messages`;
 
+	private readonly _unreadCount: WritableSignal<number> = signal(0);
+	public readonly unreadCount: Signal<number> = this._unreadCount.asReadonly();
+
 	constructor(private http: HttpClient) {}
 
+	refreshUnreadCount(): void {
+		this.http
+			.get<{ count: number }>(`${this.apiUrl}/unread-count`, {
+				context: new HttpContext().set(SKIP_LOADING, true)
+			})
+			.subscribe((res) => this._unreadCount.set(res.count));
+	}
+
 	getInbox(): Observable<Message[]> {
-		return this.http.get<Message[]>(`${this.apiUrl}/inbox`);
+		return this.http.get<Message[]>(`${this.apiUrl}/inbox`).pipe(
+			tap((messages) => {
+				const unreadCount = messages.filter((m) => !m.is_read).length;
+				this._unreadCount.set(unreadCount);
+			})
+		);
 	}
 
 	getSent(): Observable<Message[]> {
@@ -53,12 +69,8 @@ export class MessageService {
 	}
 
 	markAsRead(id: number): Observable<{ message: string }> {
-		return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/read`, {});
-	}
-
-	getUnreadCount(): Observable<{ count: number }> {
-		return this.http.get<{ count: number }>(`${this.apiUrl}/unread-count`, {
-			context: new HttpContext().set(SKIP_LOADING, true)
-		});
+		return this.http
+			.patch<{ message: string }>(`${this.apiUrl}/${id}/read`, {})
+			.pipe(tap(() => this.refreshUnreadCount()));
 	}
 }

@@ -118,49 +118,11 @@
 							<!-- Map Picker -->
 							<div class="col-12">
 								<label class="form-label">Pin Location on Map</label>
-								<div class="input-group mb-2">
-									<input
-										type="text"
-										class="form-control"
-										placeholder="Search address..."
-										#mapSearchInput
-										(keydown.enter)="$event.preventDefault(); this.searchAddress()"
-									/>
-									<button
-										type="button"
-										class="btn btn-outline-primary"
-										(click)="this.searchAddress()"
-										[disabled]="this.searchingAddress()"
-									>
-										@if (this.searchingAddress()) {
-											<span class="spinner-border spinner-border-sm"></span>
-										} @else {
-											<i class="bi bi-search"></i> Search
-										}
-									</button>
-								</div>
-								<div
-									id="form-map"
-									style="height: 350px; border-radius: 8px; border: 1px solid #dee2e6"
-								></div>
-								@if (this.eventModel().geo_lat !== null && this.eventModel().geo_lng !== null) {
-									<div class="d-flex justify-content-between align-items-center mt-2">
-										<small class="text-muted">
-											📍 {{ this.eventModel().geo_lat }}, {{ this.eventModel().geo_lng }}
-										</small>
-										<button
-											type="button"
-											class="btn btn-sm btn-outline-danger"
-											(click)="this.clearMapSelection()"
-										>
-											<i class="bi bi-x-lg"></i> Clear pin
-										</button>
-									</div>
-								} @else {
-									<small class="text-muted mt-1 d-block">
-										Click on the map or search an address to set the event location.
-									</small>
-								}
+								<app-map-picker
+									[initialLat]="this.eventModel().geo_lat"
+									[initialLng]="this.eventModel().geo_lng"
+									(coordsChange)="this.onCoordsChange($event)"
+								></app-map-picker>
 							</div>
 						</div>
 					</div>

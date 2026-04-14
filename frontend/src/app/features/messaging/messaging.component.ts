@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ModalService } from '../../core/services/modal.service';
 import { Message, MessageService, SendMessageRequest } from '../../core/services/message.service';
+import { ModalService } from '../../core/services/modal.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ComposeComponent } from './message-compose/message-compose.component';
 import { MessageDetailsComponent } from './message-details/message-details.component';
@@ -31,14 +31,16 @@ export class MessagingComponent {
 	public activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
 	public inbox: Signal<Message[]> = computed(() => this.messagesData().inbox);
 	public sent: Signal<Message[]> = computed(() => this.messagesData().sent);
-	public unreadCount: Signal<number> = computed(() => this.inbox().filter((m) => !m.is_read).length);
+	public unreadCount: Signal<number> = this.messageService.unreadCount;
 	public selectedMessage: WritableSignal<Message | null> = signal(null);
 	public Tab: typeof Tab = Tab;
 
 	constructor(
 		private messageService: MessageService,
 		private router: Router
-	) {}
+	) {
+		this.messageService.refreshUnreadCount();
+	}
 
 	public switchTab(tab: Tab): void {
 		this.activeTab.set(tab);
@@ -51,7 +53,9 @@ export class MessagingComponent {
 	public markAsRead(msg: Message): void {
 		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
 			this.messageService.markAsRead(msg.id).subscribe({
-				next: () => this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true }),
+				next: () => {
+					this.router.navigate([], { onSameUrlNavigation: 'reload', replaceUrl: true });
+				},
 				error: () => this.toastService.error('Failed to mark as read')
 			});
 		}

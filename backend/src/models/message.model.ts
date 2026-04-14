@@ -21,7 +21,7 @@ export interface MessageWithUsers extends Message {
 }
 
 export interface SendMessageDTO {
-  receiver_id: number;
+  receiver_username: string;
   booking_id?: number;
   subject: string;
   body: string;

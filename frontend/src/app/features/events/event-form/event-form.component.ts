@@ -1,14 +1,11 @@
 import {
-	afterNextRender,
 	Component,
 	computed,
-	ElementRef,
 	input,
 	InputSignal,
 	linkedSignal,
 	Signal,
 	signal,
-	viewChild,
 	WritableSignal
 } from '@angular/core';
 import {
@@ -26,9 +23,8 @@ import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { MapPickerComponent, LatLng } from '../../../shared/components/map-picker/map-picker.component';
 import { EventCategory, Event as EventModel } from '../../../shared/models/event.model';
-
-declare const L: any; // Leaflet global
 
 type EventFormModel = {
 	title: string;
@@ -51,7 +47,7 @@ type EventFormModel = {
 	selector: 'app-event-form',
 	templateUrl: './event-form.component.html',
 	standalone: true,
-	imports: [FormField]
+	imports: [FormField, MapPickerComponent]
 })
 export class EventFormComponent {
 	// Resolved event data for edit mode (null/undefined for create mode)
@@ -67,10 +63,8 @@ export class EventFormComponent {
 		country: this.event()?.country || '',
 		geo_lat: this.event()?.geo_lat || null,
 		geo_lng: this.event()?.geo_lng || null,
-		start_datetime: this.event()?.start_datetime
-			? new Date(this.event()!.start_datetime).toISOString().slice(0, 16)
-			: '',
-		end_datetime: this.event()?.end_datetime ? new Date(this.event()!.end_datetime).toISOString().slice(0, 16) : '',
+		start_datetime: this.event()?.start_datetime ? this.toLocalDatetimeString(this.event()!.start_datetime) : '',
+		end_datetime: this.event()?.end_datetime ? this.toLocalDatetimeString(this.event()!.end_datetime) : '',
 		capacity: this.event()?.capacity || 100,
 		categories: this.event()?.categories || [],
 		ticket_types: (this.event()?.ticket_types || []).length
@@ -119,114 +113,23 @@ export class EventFormComponent {
 
 	public categories: EventCategory[] = Object.values(EventCategory);
 
-	// Map state
-	private map: any = null;
-	private marker: any = null;
-	public readonly mapSearchInput: Signal<ElementRef<HTMLInputElement> | undefined> = viewChild<ElementRef<HTMLInputElement>>('mapSearchInput');
-	public searchingAddress: WritableSignal<boolean> = signal(false);
-
 	constructor(
 		private eventService: EventService,
 		private router: Router,
 		private toastService: ToastService
-	) {
-		// Initialize map after render
-		afterNextRender(() => {
-			this.initFormMap();
-		});
+	) {}
+
+	private toLocalDatetimeString(isoString: string): string {
+		const d = new Date(isoString);
+		const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+		return local.toISOString().slice(0, 16);
 	}
 
-	// === Map Picker Logic ===
-
-	private initFormMap(): void {
-		if (typeof L === 'undefined') return;
-
-		const existingLat: number | null = this.eventModel().geo_lat;
-		const existingLng: number | null = this.eventModel().geo_lng;
-		const centerLat: number = existingLat ?? 37.9838;
-		const centerLng: number = existingLng ?? 23.7275;
-		const zoom: number = existingLat && existingLng ? 15 : 6;
-
-		try {
-			this.map = L.map('form-map').setView([centerLat, centerLng], zoom);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			}).addTo(this.map);
-
-			// Place marker if editing with existing coords
-			if (existingLat && existingLng) {
-				this.placeMarker(existingLat, existingLng);
-			}
-
-			// Click to place/move marker
-			this.map.on('click', (e: any) => {
-				this.placeMarker(e.latlng.lat, e.latlng.lng);
-				this.updateGeoCoords(e.latlng.lat, e.latlng.lng);
-			});
-		} catch (e) {
-			console.warn('Form map initialization failed:', e);
-		}
-	}
-
-	private placeMarker(lat: number, lng: number): void {
-		if (this.marker) {
-			this.marker.setLatLng([lat, lng]);
-		} else {
-			this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
-			// Update coords when marker is dragged
-			this.marker.on('dragend', () => {
-				const pos = this.marker.getLatLng();
-				this.updateGeoCoords(pos.lat, pos.lng);
-			});
-		}
-	}
-
-	private updateGeoCoords(lat: number, lng: number): void {
+	public onCoordsChange(coords: LatLng | null): void {
 		this.eventModel.update((current) => ({
 			...current,
-			geo_lat: Math.round(lat * 1000000) / 1000000,
-			geo_lng: Math.round(lng * 1000000) / 1000000
-		}));
-	}
-
-	public searchAddress(): void {
-		const inputEl = this.mapSearchInput();
-		if (!inputEl) return;
-
-		const query: string = inputEl.nativeElement.value.trim();
-		if (!query) return;
-
-		this.searchingAddress.set(true);
-
-		fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-			.then((res) => res.json())
-			.then((results: Array<{ lat: string; lon: string; display_name: string }>) => {
-				if (results.length > 0) {
-					const lat: number = parseFloat(results[0].lat);
-					const lng: number = parseFloat(results[0].lon);
-					this.map?.setView([lat, lng], 16);
-					this.placeMarker(lat, lng);
-					this.updateGeoCoords(lat, lng);
-				} else {
-					this.toastService.warning('Address not found. Try a different search term.');
-				}
-				this.searchingAddress.set(false);
-			})
-			.catch(() => {
-				this.toastService.error('Failed to search address. Please try again.');
-				this.searchingAddress.set(false);
-			});
-	}
-
-	public clearMapSelection(): void {
-		if (this.marker) {
-			this.map?.removeLayer(this.marker);
-			this.marker = null;
-		}
-		this.eventModel.update((current) => ({
-			...current,
-			geo_lat: null,
-			geo_lng: null
+			geo_lat: coords?.lat ?? null,
+			geo_lng: coords?.lng ?? null
 		}));
 	}
 

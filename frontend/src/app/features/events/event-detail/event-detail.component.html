@@ -83,7 +83,14 @@
 							{{ this.event()!.city }},
 							{{ this.event()!.country }}
 						</p>
-						<div id="event-map" style="height: 300px; border-radius: 8px"></div>
+						@if (this.event()!.geo_lat && this.event()!.geo_lng) {
+						<app-map-view
+							[lat]="this.event()!.geo_lat!"
+							[lng]="this.event()!.geo_lng!"
+							[label]="this.event()!.title"
+							height="300px"
+						></app-map-view>
+					}
 					</div>
 				</div>
 			</div>

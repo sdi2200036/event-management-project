@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal } from '@angular/core';
+import { Component, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { interval } from 'rxjs';
@@ -12,7 +12,7 @@ import { MessageService } from '../../../core/services/message.service';
 	imports: []
 })
 export class NavbarComponent {
-	public unreadCount: WritableSignal<number> = signal(0);
+	public readonly unreadCount: Signal<number> = this.messageService.unreadCount;
 
 	constructor(
 		protected authService: AuthService,
@@ -20,9 +20,7 @@ export class NavbarComponent {
 		private router: Router
 	) {
 		if (this.authService.currentUser()) {
-			this.loadUnreadCount();
-		} else {
-			this.unreadCount.set(0);
+			this.messageService.refreshUnreadCount();
 		}
 
 		// Poll unread count every 30 seconds when logged in
@@ -30,13 +28,9 @@ export class NavbarComponent {
 			.pipe(takeUntilDestroyed())
 			.subscribe(() => {
 				if (this.authService.currentUser()) {
-					this.loadUnreadCount();
+					this.messageService.refreshUnreadCount();
 				}
 			});
-	}
-
-	public loadUnreadCount(): void {
-		this.messageService.getUnreadCount().subscribe((res) => this.unreadCount.set(res.count));
 	}
 
 	public isLoggedIn(): boolean {
