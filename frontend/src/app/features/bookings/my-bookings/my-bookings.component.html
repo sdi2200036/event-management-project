@@ -1,15 +1,15 @@
 <div class="container py-4">
 	<h2 class="fw-bold mb-4">My Bookings</h2>
 
-	@if (bookings().length === 0) {
+	@if (this.bookings().length === 0) {
 		<div class="text-center py-5 text-muted">
 			<div class="display-3">🎟️</div>
 			<h5>No bookings yet</h5>
-			<button type="button" (click)="goToEvents()" class="btn btn-primary mt-3">Browse Events</button>
+			<button type="button" (click)="this.goToEvents()" class="btn btn-primary mt-3">Browse Events</button>
 		</div>
 	}
 
-	@if (bookings().length > 0) {
+	@if (this.bookings().length > 0) {
 		<div>
 			<div class="table-responsive">
 				<table class="table table-hover align-middle">
@@ -26,12 +26,12 @@
 						</tr>
 					</thead>
 					<tbody>
-						@for (b of bookings(); track b.id) {
+						@for (b of this.bookings(); track b.id) {
 							<tr>
 								<td>
 									<button
 										type="button"
-										(click)="goToEventDetail(b.event_id)"
+										(click)="this.goToEventDetail(b.event_id)"
 										class="btn btn-link p-0 text-decoration-none fw-semibold align-baseline"
 									>
 										{{ b.event_title }}
@@ -57,10 +57,10 @@
 									@if (b.booking_status !== 'CANCELLED') {
 										<button
 											class="btn btn-sm btn-outline-danger"
-											(click)="cancelBooking(b)"
-											[disabled]="cancellingId() === b.id"
+											(click)="this.cancelBooking(b)"
+											[disabled]="this.cancellingId() === b.id"
 										>
-											@if (cancellingId() === b.id) {
+											@if (this.cancellingId() === b.id) {
 												<span class="spinner-border spinner-border-sm me-1"></span>
 											}
 											Cancel

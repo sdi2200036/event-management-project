@@ -1,5 +1,5 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, computed, input, Signal } from '@angular/core';
+import { Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from 'src/app/core/services/event.service';
 import { ToastService } from 'src/app/core/services/toast.service';
@@ -11,8 +11,8 @@ import { Event as EventModel, EventsResponseExtended } from 'src/app/shared/mode
 	templateUrl: './my-events-list.component.html'
 })
 export class MyEventsListComponent {
-	readonly eventsData = input<EventsResponseExtended | null>();
-	events: Signal<EventModel[]> = computed(() => this.eventsData()?.events || []);
+	public readonly eventsData: InputSignal<EventsResponseExtended | null | undefined> = input<EventsResponseExtended | null>();
+	public events: Signal<EventModel[]> = computed(() => this.eventsData()?.events || []);
 
 	constructor(
 		private router: Router,
@@ -21,7 +21,7 @@ export class MyEventsListComponent {
 		private activateRoute: ActivatedRoute
 	) {}
 
-	publishEvent(event: EventModel): void {
+	public publishEvent(event: EventModel): void {
 		if (!confirm(`Publish "${event.title}"? It will become visible to all users.`)) return;
 		this.eventService.publishEvent(event.id).subscribe({
 			next: () => {
@@ -36,7 +36,7 @@ export class MyEventsListComponent {
 		});
 	}
 
-	cancelEvent(event: EventModel): void {
+	public cancelEvent(event: EventModel): void {
 		if (!confirm(`Cancel "${event.title}"? This cannot be undone.`)) return;
 		this.eventService.cancelEvent(event.id).subscribe({
 			next: () => {
@@ -51,7 +51,7 @@ export class MyEventsListComponent {
 		});
 	}
 
-	deleteEvent(event: EventModel): void {
+	public deleteEvent(event: EventModel): void {
 		if (!confirm(`Delete "${event.title}"? This is permanent.`)) return;
 		this.eventService.deleteEvent(event.id).subscribe({
 			next: () => {
@@ -66,19 +66,19 @@ export class MyEventsListComponent {
 		});
 	}
 
-	goToCreateEvent(): void {
+	public goToCreateEvent(): void {
 		this.router.navigate(['new'], { relativeTo: this.activateRoute });
 	}
 
-	goToViewEvent(eventId: number): void {
+	public goToViewEvent(eventId: number): void {
 		this.router.navigate([eventId], { relativeTo: this.activateRoute });
 	}
 
-	goToEditEvent(eventId: number): void {
+	public goToEditEvent(eventId: number): void {
 		this.router.navigate([eventId, 'edit'], { relativeTo: this.activateRoute });
 	}
 
-	statusBadgeClass(status: string): string {
+	public statusBadgeClass(status: string): string {
 		switch (status) {
 			case 'PUBLISHED':
 				return 'bg-success';

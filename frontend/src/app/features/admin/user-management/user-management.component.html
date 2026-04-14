@@ -15,7 +15,7 @@
 			<div class="row g-2 align-items-end">
 				<div class="col-md-3">
 					<label class="form-label">Filter by Status</label>
-					<select class="form-select" [(ngModel)]="filterStatus" (change)="loadUsers()">
+					<select class="form-select" [(ngModel)]="this.filterStatus" (change)="this.loadUsers()">
 						<option value>All Statuses</option>
 						<option value="pending">Pending</option>
 						<option value="approved">Approved</option>
@@ -24,7 +24,7 @@
 				</div>
 				<div class="col-md-3">
 					<label class="form-label">Filter by Role</label>
-					<select class="form-select" [(ngModel)]="filterRole" (change)="loadUsers()">
+					<select class="form-select" [(ngModel)]="this.filterRole" (change)="this.loadUsers()">
 						<option value>All Roles</option>
 						<option value="admin">Admin</option>
 						<option value="organizer">Organizer</option>
@@ -93,7 +93,7 @@
 										@if (user.status === 'pending') {
 											<button
 												class="btn btn-sm btn-success"
-												(click)="approveUser(user)"
+												(click)="this.approveUser(user)"
 												[disabled]="this.actionLoading() === user.id"
 											>
 												@if (this.actionLoading() === user.id) {
@@ -105,7 +105,7 @@
 										@if (user.status === 'pending' || user.status === 'approved') {
 											<button
 												class="btn btn-sm btn-outline-danger"
-												(click)="rejectUser(user)"
+												(click)="this.rejectUser(user)"
 												[disabled]="this.actionLoading() === user.id || user.role === 'admin'"
 											>
 												Reject

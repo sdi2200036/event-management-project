@@ -17,7 +17,7 @@
 						<li>Includes categories, ticket types, photos</li>
 						<li>Embedded DTD validation schema</li>
 					</ul>
-					<button class="btn btn-primary mt-2" (click)="exportXML()">
+					<button class="btn btn-primary mt-2" (click)="this.exportXML()">
 						Download XML
 					</button>
 				</div>
@@ -38,7 +38,7 @@
 						<li>Nested categories, ticket types, photos</li>
 						<li>Includes export timestamp and total count</li>
 					</ul>
-					<button class="btn btn-success mt-2" (click)="exportJSON()">
+					<button class="btn btn-success mt-2" (click)="this.exportJSON()">
 						Download JSON
 					</button>
 				</div>

@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
 	<div class="container">
-		<button type="button" (click)="goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">
+		<button type="button" (click)="this.goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">
 			EventHub
 		</button>
 
@@ -21,34 +21,34 @@
 				<li class="nav-item">
 					<button
 						type="button"
-						(click)="goToEvents()"
+						(click)="this.goToEvents()"
 						class="nav-link border-0 bg-transparent"
-						[class.active]="isExactRoute('/events')"
+						[class.active]="this.isExactRoute('/events')"
 					>
 						Events
 					</button>
 				</li>
 
 				<!-- Organizer links -->
-				@if (isOrganizer()) {
+				@if (this.isOrganizer()) {
 					<li class="nav-item">
 						<button
 							type="button"
-							(click)="goToManageEvents()"
+							(click)="this.goToManageEvents()"
 							class="nav-link border-0 bg-transparent"
-							[class.active]="isExactRoute('/events/manage')"
+							[class.active]="this.isExactRoute('/events/manage')"
 						>
 							My Events
 						</button>
 					</li>
 				}
-				@if (isOrganizer()) {
+				@if (this.isOrganizer()) {
 					<li class="nav-item">
 						<button
 							type="button"
-							(click)="goToCreateEvent()"
+							(click)="this.goToCreateEvent()"
 							class="nav-link border-0 bg-transparent"
-							[class.active]="isExactRoute('/events/manage/new')"
+							[class.active]="this.isExactRoute('/events/manage/new')"
 						>
 							Create Event
 						</button>
@@ -56,13 +56,13 @@
 				}
 
 				<!-- Participant links -->
-				@if (isParticipant()) {
+				@if (this.isParticipant()) {
 					<li class="nav-item">
 						<button
 							type="button"
-							(click)="goToBookings()"
+							(click)="this.goToBookings()"
 							class="nav-link border-0 bg-transparent"
-							[class.active]="isRoutePrefix('/bookings')"
+							[class.active]="this.isRoutePrefix('/bookings')"
 						>
 							My Bookings
 						</button>
@@ -70,7 +70,7 @@
 				}
 
 				<!-- Admin links -->
-				@if (isAdmin()) {
+				@if (this.isAdmin()) {
 					<li class="nav-item dropdown">
 						<button
 							type="button"
@@ -83,12 +83,12 @@
 						</button>
 						<ul class="dropdown-menu" aria-labelledby="adminDropdown">
 							<li>
-								<button type="button" (click)="goToAdminUsers()" class="dropdown-item">
+								<button type="button" (click)="this.goToAdminUsers()" class="dropdown-item">
 									User Management
 								</button>
 							</li>
 							<li>
-								<button type="button" (click)="goToAdminExport()" class="dropdown-item">
+								<button type="button" (click)="this.goToAdminExport()" class="dropdown-item">
 									Export Data
 								</button>
 							</li>
@@ -99,14 +99,14 @@
 
 			<!-- Right side -->
 			<ul class="navbar-nav ms-auto align-items-center">
-				@if (isLoggedIn()) {
+				@if (this.isLoggedIn()) {
 					<!-- Messages with badge -->
 					<li class="nav-item">
 						<button
 							type="button"
-							(click)="goToMessages()"
+							(click)="this.goToMessages()"
 							class="nav-link position-relative border-0 bg-transparent"
-							[class.active]="isRoutePrefix('/messages')"
+							[class.active]="this.isRoutePrefix('/messages')"
 						>
 							Messages
 							@if (this.unreadCount() > 0) {
@@ -127,16 +127,16 @@
 						</span>
 					</li>
 					<li class="nav-item">
-						<button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
+						<button class="btn btn-outline-light btn-sm ms-2" (click)="this.logout()">Logout</button>
 					</li>
 				} @else {
 					<li class="nav-item">
-						<button type="button" (click)="goToLogin()" class="nav-link border-0 bg-transparent">
+						<button type="button" (click)="this.goToLogin()" class="nav-link border-0 bg-transparent">
 							Login
 						</button>
 					</li>
 					<li class="nav-item">
-						<button type="button" (click)="goToRegister()" class="btn btn-outline-light btn-sm ms-2">
+						<button type="button" (click)="this.goToRegister()" class="btn btn-outline-light btn-sm ms-2">
 							Register
 						</button>
 					</li>

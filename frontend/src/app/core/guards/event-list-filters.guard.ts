@@ -1,20 +1,20 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Params, Router, RouterStateSnapshot } from '@angular/router';
 import { EventCategory } from '../../shared/models/event.model';
 
-const validCategories = new Set<string>(Object.values(EventCategory));
+const validCategories: Set<string> = new Set<string>(Object.values(EventCategory));
 
 function isValidDate(value: string): boolean {
 	return !isNaN(Date.parse(value));
 }
 
 function isNonNegativeNumber(value: string): boolean {
-	const n = Number(value);
+	const n: number = Number(value);
 	return !isNaN(n) && n >= 0;
 }
 
 function isPositiveInteger(value: string): boolean {
-	const n = Number(value);
+	const n: number = Number(value);
 	return !isNaN(n) && Number.isInteger(n) && n >= 1;
 }
 
@@ -23,10 +23,10 @@ export const eventListFiltersGuard: CanActivateFn = (route: ActivatedRouteSnapsh
 		return true;
 	}
 
-	const router = inject(Router);
-	const params = route.queryParams;
-	const cleaned: Record<string, string | null> = { ...params };
-	let hasInvalid = false;
+	const router: Router = inject(Router);
+	const params: Params = route.queryParams;
+	const cleaned: Params = { ...params };
+	let hasInvalid: boolean = false;
 
 	if (params['category'] && !validCategories.has(params['category'])) {
 		cleaned['category'] = null;

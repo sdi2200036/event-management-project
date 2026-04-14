@@ -1,10 +1,26 @@
-import { Component, inject, signal } from '@angular/core';
-import { FieldState, FormField, email, form, maxLength, minLength, required, submit } from '@angular/forms/signals';
+import { Component, inject, signal, WritableSignal } from '@angular/core';
+import { email, FieldState, form, FormField, maxLength, minLength, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { RegisterUserRole } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+
+interface RegisterFormModel {
+	username: string;
+	password: string;
+	confirmPassword: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	phone: string;
+	address: string;
+	city: string;
+	country: string;
+	postal_code: string;
+	afm: string;
+	role: RegisterUserRole;
+}
 
 @Component({
 	selector: 'app-register',
@@ -13,9 +29,9 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: [FormField]
 })
 export class RegisterComponent {
-	private readonly toastService = inject(ToastService);
+	private readonly toastService: ToastService = inject(ToastService);
 
-	readonly registerModel = signal({
+	public readonly registerModel: WritableSignal<RegisterFormModel> = signal({
 		username: '',
 		password: '',
 		confirmPassword: '',
@@ -30,7 +46,7 @@ export class RegisterComponent {
 		afm: '',
 		role: RegisterUserRole.Participant
 	});
-	readonly registerForm = form(this.registerModel, (p) => {
+	public readonly registerForm = form(this.registerModel, (p) => {
 		required(p.username, { message: 'Username is required' });
 		minLength(p.username, 3, {
 			message: 'Username must be at least 3 characters'
@@ -61,11 +77,11 @@ export class RegisterComponent {
 		private router: Router
 	) {}
 
-	goToLogin(): void {
+	public goToLogin(): void {
 		this.router.navigate(['/login']);
 	}
 
-	async onSubmit(event: Event): Promise<void> {
+	public async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 
 		await submit(this.registerForm, async (form) => {
@@ -106,7 +122,7 @@ export class RegisterComponent {
 		});
 	}
 
-	protected isFieldInvalid(field: FieldState<any>): boolean {
+	public isFieldInvalid(field: FieldState<any>): boolean {
 		return field.touched() && !field.valid();
 	}
 }

@@ -6,10 +6,10 @@ import { EventService } from '../services/event.service';
 import { ToastService } from '../services/toast.service';
 
 export const recommendedEventsResolver: ResolveFn<EventsResponse> = () => {
-	const recommendationsToFetch = 6;
+	const recommendationsToFetch: number = 6;
 
-	const eventService = inject(EventService);
-	const toastService = inject(ToastService);
+	const eventService: EventService = inject(EventService);
+	const toastService: ToastService = inject(ToastService);
 
 	return eventService.getRecommendations(recommendationsToFetch).pipe(
 		catchError(() => {

@@ -10,26 +10,26 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: []
 })
 export class ExportComponent {
-	private readonly toastService = inject(ToastService);
+	private readonly toastService: ToastService = inject(ToastService);
 
 	constructor(private http: HttpClient) {}
 
-	exportXML(): void {
+	public exportXML(): void {
 		this.http
 			.get(`${environment.apiUrl}/export/xml`, { responseType: 'text', observe: 'response' })
 			.subscribe({
 				next: (response: HttpResponse<string>) => {
-					const blob = new Blob([response.body || ''], { type: 'application/xml' });
+					const blob: Blob = new Blob([response.body || ''], { type: 'application/xml' });
 					this.downloadFile(blob, 'events.xml');
 				},
 				error: (err) => this.toastService.error(err.error?.message || 'Failed to export XML')
 			});
 	}
 
-	exportJSON(): void {
+	public exportJSON(): void {
 		this.http.get(`${environment.apiUrl}/export/json`, { observe: 'response' }).subscribe({
 			next: (response: HttpResponse<any>) => {
-				const blob = new Blob([JSON.stringify(response.body, null, 2)], { type: 'application/json' });
+				const blob: Blob = new Blob([JSON.stringify(response.body, null, 2)], { type: 'application/json' });
 				this.downloadFile(blob, 'events.json');
 			},
 			error: (err) => this.toastService.error(err.error?.message || 'Failed to export JSON')
@@ -37,8 +37,8 @@ export class ExportComponent {
 	}
 
 	private downloadFile(blob: Blob, filename: string): void {
-		const url = window.URL.createObjectURL(blob);
-		const link = document.createElement('a');
+		const url: string = window.URL.createObjectURL(blob);
+		const link: HTMLAnchorElement = document.createElement('a');
 		link.href = url;
 		link.download = filename;
 		link.click();

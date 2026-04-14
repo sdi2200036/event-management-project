@@ -12,7 +12,7 @@ import { MessageService } from '../../../core/services/message.service';
 	imports: []
 })
 export class NavbarComponent {
-	unreadCount: WritableSignal<number> = signal(0);
+	public unreadCount: WritableSignal<number> = signal(0);
 
 	constructor(
 		protected authService: AuthService,
@@ -35,75 +35,75 @@ export class NavbarComponent {
 			});
 	}
 
-	loadUnreadCount(): void {
+	public loadUnreadCount(): void {
 		this.messageService.getUnreadCount().subscribe((res) => this.unreadCount.set(res.count));
 	}
 
-	isLoggedIn(): boolean {
+	public isLoggedIn(): boolean {
 		return this.authService.isLoggedIn();
 	}
 
-	isAdmin(): boolean {
+	public isAdmin(): boolean {
 		return this.authService.currentUser()?.role === 'admin';
 	}
 
-	isOrganizer(): boolean {
+	public isOrganizer(): boolean {
 		return this.authService.currentUser()?.role === 'organizer';
 	}
 
-	isParticipant(): boolean {
+	public isParticipant(): boolean {
 		return this.authService.currentUser()?.role === 'participant';
 	}
 
-	isExactRoute(path: string): boolean {
+	public isExactRoute(path: string): boolean {
 		return this.router.url === path;
 	}
 
-	isRoutePrefix(path: string): boolean {
+	public isRoutePrefix(path: string): boolean {
 		return this.router.url.startsWith(path);
 	}
 
-	goToHome(): void {
+	public goToHome(): void {
 		this.router.navigate(['/']);
 	}
 
-	goToEvents(): void {
+	public goToEvents(): void {
 		this.router.navigate(['events']);
 	}
 
-	goToManageEvents(): void {
+	public goToManageEvents(): void {
 		this.router.navigate(['events', 'manage']);
 	}
 
-	goToCreateEvent(): void {
+	public goToCreateEvent(): void {
 		this.router.navigate(['events', 'manage', 'new']);
 	}
 
-	goToBookings(): void {
+	public goToBookings(): void {
 		this.router.navigate(['bookings']);
 	}
 
-	goToAdminUsers(): void {
+	public goToAdminUsers(): void {
 		this.router.navigate(['admin', 'users']);
 	}
 
-	goToAdminExport(): void {
+	public goToAdminExport(): void {
 		this.router.navigate(['admin', 'export']);
 	}
 
-	goToMessages(): void {
+	public goToMessages(): void {
 		this.router.navigate(['messages']);
 	}
 
-	goToLogin(): void {
+	public goToLogin(): void {
 		this.router.navigate(['login']);
 	}
 
-	goToRegister(): void {
+	public goToRegister(): void {
 		this.router.navigate(['register']);
 	}
 
-	logout(): void {
+	public logout(): void {
 		this.authService.logout();
 		this.router.navigate(['/']);
 	}

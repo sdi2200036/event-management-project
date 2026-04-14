@@ -1,9 +1,9 @@
 <div class="container py-4">
 	<div class="row justify-content-center">
 		<div class="col-lg-9">
-			<h2 class="fw-bold mb-4">{{ isEditMode() ? 'Edit Event' : 'Create New Event' }}</h2>
+			<h2 class="fw-bold mb-4">{{ this.isEditMode() ? 'Edit Event' : 'Create New Event' }}</h2>
 
-			<form (submit)="onSubmit($event)" novalidate>
+			<form (submit)="this.onSubmit($event)" novalidate>
 				<!-- Basic Info -->
 				<div class="card border-0 shadow-sm mb-4">
 					<div class="card-body">
@@ -14,10 +14,10 @@
 								<input
 									type="text"
 									class="form-control"
-									[formField]="eventForm.title"
-									[class.is-invalid]="isFieldInvalid(eventForm.title())"
+									[formField]="this.eventForm.title"
+									[class.is-invalid]="this.isFieldInvalid(this.eventForm.title())"
 								/>
-								@for (error of eventForm.title().errors(); track $index) {
+								@for (error of this.eventForm.title().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -28,14 +28,14 @@
 								<input
 									type="text"
 									class="form-control"
-									[formField]="eventForm.event_type"
+									[formField]="this.eventForm.event_type"
 									placeholder="e.g. Conference, Concert..."
 								/>
 							</div>
 							<div class="col-md-6">
 								<label class="form-label">Capacity *</label>
-								<input type="number" class="form-control" [formField]="eventForm.capacity" />
-								@for (error of eventForm.capacity().errors(); track $index) {
+								<input type="number" class="form-control" [formField]="this.eventForm.capacity" />
+								@for (error of this.eventForm.capacity().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -45,7 +45,7 @@
 								<label class="form-label">Description</label>
 								<textarea
 									class="form-control"
-									[formField]="eventForm.description"
+									[formField]="this.eventForm.description"
 									rows="4"
 									placeholder="Describe your event..."
 								></textarea>
@@ -63,10 +63,10 @@
 								<input
 									type="datetime-local"
 									class="form-control"
-									[formField]="eventForm.start_datetime"
-									[class.is-invalid]="isFieldInvalid(eventForm.start_datetime())"
+									[formField]="this.eventForm.start_datetime"
+									[class.is-invalid]="this.isFieldInvalid(this.eventForm.start_datetime())"
 								/>
-								@for (error of eventForm.start_datetime().errors(); track $index) {
+								@for (error of this.eventForm.start_datetime().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -77,10 +77,10 @@
 								<input
 									type="datetime-local"
 									class="form-control"
-									[formField]="eventForm.end_datetime"
-									[class.is-invalid]="isFieldInvalid(eventForm.end_datetime())"
+									[formField]="this.eventForm.end_datetime"
+									[class.is-invalid]="this.isFieldInvalid(this.eventForm.end_datetime())"
 								/>
-								@for (error of eventForm.end_datetime().errors(); track $index) {
+								@for (error of this.eventForm.end_datetime().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -99,21 +99,21 @@
 								<input
 									type="text"
 									class="form-control"
-									[formField]="eventForm.venue"
+									[formField]="this.eventForm.venue"
 									placeholder="e.g. Grand Arena"
 								/>
 							</div>
 							<div class="col-12">
 								<label class="form-label">Street Address</label>
-								<input type="text" class="form-control" [formField]="eventForm.address" />
+								<input type="text" class="form-control" [formField]="this.eventForm.address" />
 							</div>
 							<div class="col-md-6">
 								<label class="form-label">City</label>
-								<input type="text" class="form-control" [formField]="eventForm.city" />
+								<input type="text" class="form-control" [formField]="this.eventForm.city" />
 							</div>
 							<div class="col-md-6">
 								<label class="form-label">Country</label>
-								<input type="text" class="form-control" [formField]="eventForm.country" />
+								<input type="text" class="form-control" [formField]="this.eventForm.country" />
 							</div>
 							<!-- Map Picker -->
 							<div class="col-12">
@@ -124,15 +124,15 @@
 										class="form-control"
 										placeholder="Search address..."
 										#mapSearchInput
-										(keydown.enter)="$event.preventDefault(); searchAddress()"
+										(keydown.enter)="$event.preventDefault(); this.searchAddress()"
 									/>
 									<button
 										type="button"
 										class="btn btn-outline-primary"
-										(click)="searchAddress()"
-										[disabled]="searchingAddress()"
+										(click)="this.searchAddress()"
+										[disabled]="this.searchingAddress()"
 									>
-										@if (searchingAddress()) {
+										@if (this.searchingAddress()) {
 											<span class="spinner-border spinner-border-sm"></span>
 										} @else {
 											<i class="bi bi-search"></i> Search
@@ -143,15 +143,15 @@
 									id="form-map"
 									style="height: 350px; border-radius: 8px; border: 1px solid #dee2e6"
 								></div>
-								@if (eventModel().geo_lat !== null && eventModel().geo_lng !== null) {
+								@if (this.eventModel().geo_lat !== null && this.eventModel().geo_lng !== null) {
 									<div class="d-flex justify-content-between align-items-center mt-2">
 										<small class="text-muted">
-											📍 {{ eventModel().geo_lat }}, {{ eventModel().geo_lng }}
+											📍 {{ this.eventModel().geo_lat }}, {{ this.eventModel().geo_lng }}
 										</small>
 										<button
 											type="button"
 											class="btn btn-sm btn-outline-danger"
-											(click)="clearMapSelection()"
+											(click)="this.clearMapSelection()"
 										>
 											<i class="bi bi-x-lg"></i> Clear pin
 										</button>
@@ -170,13 +170,13 @@
 					<div class="card-body">
 						<h5 class="card-title mb-3">Categories</h5>
 						<div class="d-flex flex-wrap gap-2">
-							@for (cat of categories; track cat) {
+							@for (cat of this.categories; track cat) {
 								<button
 									type="button"
 									class="btn btn-sm"
-									[class.btn-primary]="isCategorySelected(cat)"
-									[class.btn-outline-secondary]="!isCategorySelected(cat)"
-									(click)="toggleCategory(cat)"
+									[class.btn-primary]="this.isCategorySelected(cat)"
+									[class.btn-outline-secondary]="!this.isCategorySelected(cat)"
+									(click)="this.toggleCategory(cat)"
 								>
 									{{ cat }}
 								</button>
@@ -189,23 +189,23 @@
 					<div class="card-body">
 						<div class="d-flex justify-content-between align-items-center mb-3">
 							<h5 class="card-title mb-0">Ticket Types</h5>
-							<button type="button" class="btn btn-sm btn-outline-primary" (click)="addTicketType()">
+							<button type="button" class="btn btn-sm btn-outline-primary" (click)="this.addTicketType()">
 								+ Add Type
 							</button>
 						</div>
 						<div>
-							@for (tt of eventModel().ticket_types; track $index; let i = $index) {
+							@for (tt of this.eventModel().ticket_types; track $index; let i = $index) {
 								<div class="row g-2 mb-3 p-3 bg-light rounded">
 									<div class="col-md-4">
 										<label class="form-label">Type Name *</label>
 										<input
 											type="text"
 											class="form-control"
-											[formField]="eventForm.ticket_types[i].name"
+											[formField]="this.eventForm.ticket_types[i].name"
 											placeholder="e.g. VIP, General"
-											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].name())"
+											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].name())"
 										/>
-										@for (error of eventForm.ticket_types[i].name().errors(); track $index) {
+										@for (error of this.eventForm.ticket_types[i].name().errors(); track $index) {
 											<div class="invalid-feedback">
 												{{ error.message }}
 											</div>
@@ -216,11 +216,11 @@
 										<input
 											type="number"
 											class="form-control"
-											[formField]="eventForm.ticket_types[i].price"
+											[formField]="this.eventForm.ticket_types[i].price"
 											step="0.01"
-											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].price())"
+											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].price())"
 										/>
-										@for (error of eventForm.ticket_types[i].price().errors(); track $index) {
+										@for (error of this.eventForm.ticket_types[i].price().errors(); track $index) {
 											<div class="invalid-feedback">
 												{{ error.message }}
 											</div>
@@ -231,10 +231,10 @@
 										<input
 											type="number"
 											class="form-control"
-											[formField]="eventForm.ticket_types[i].quantity"
-											[class.is-invalid]="isFieldInvalid(eventForm.ticket_types[i].quantity())"
+											[formField]="this.eventForm.ticket_types[i].quantity"
+											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].quantity())"
 										/>
-										@for (error of eventForm.ticket_types[i].quantity().errors(); track $index) {
+										@for (error of this.eventForm.ticket_types[i].quantity().errors(); track $index) {
 											<div class="invalid-feedback">
 												{{ error.message }}
 											</div>
@@ -244,8 +244,8 @@
 										<button
 											type="button"
 											class="btn btn-outline-danger w-100"
-											(click)="removeTicketType(i)"
-											[disabled]="eventModel().ticket_types.length <= 1"
+											(click)="this.removeTicketType(i)"
+											[disabled]="this.eventModel().ticket_types.length <= 1"
 										>
 											Remove
 										</button>
@@ -265,15 +265,15 @@
 								class="form-control"
 								accept="image/*"
 								multiple
-								(change)="onPhotosSelected($event)"
+								(change)="this.onPhotosSelected($event)"
 							/>
 							<small class="text-muted"
 								>Select one or more images (JPEG, PNG, WebP). They are stored with the event.</small
 							>
 						</div>
-						@if (photos().length > 0) {
+						@if (this.photos().length > 0) {
 							<div class="row g-2">
-								@for (photo of photos(); track $index; let i = $index) {
+								@for (photo of this.photos(); track $index; let i = $index) {
 									<div class="col-6 col-md-4 col-lg-3 position-relative">
 										<img
 											[src]="photo"
@@ -284,7 +284,7 @@
 										<button
 											type="button"
 											class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 lh-1"
-											(click)="removePhoto(i)"
+											(click)="this.removePhoto(i)"
 										>
 											&times;
 										</button>
@@ -295,14 +295,14 @@
 					</div>
 				</div>
 				<div class="d-flex gap-3">
-					<button type="submit" class="btn btn-primary px-5" [disabled]="!eventForm().valid()">
-						{{ isEditMode() ? 'Save Changes' : 'Create Event' }}
+					<button type="submit" class="btn btn-primary px-5" [disabled]="!this.eventForm().valid()">
+						{{ this.isEditMode() ? 'Save Changes' : 'Create Event' }}
 					</button>
-					<button type="button" (click)="cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
+					<button type="button" (click)="this.cancel()" class="btn btn-outline-secondary px-4">Cancel</button>
 				</div>
 			</form>
 			<div class="d-flex flex-column mt-3">
-				@for (error of eventForm().errors(); track $index) {
+				@for (error of this.eventForm().errors(); track $index) {
 					<span class="text-danger">{{ error.message }}</span>
 				}
 			</div>

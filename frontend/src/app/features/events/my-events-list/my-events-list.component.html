@@ -1,7 +1,7 @@
 <div class="container-fluid py-4">
 	<div class="d-flex justify-content-between align-items-center mb-4">
 		<h3 class="fw-bold mb-0">My Events</h3>
-		<button type="button" (click)="goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
+		<button type="button" (click)="this.goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
 	</div>
 	@if (this.events().length === 0) {
 		<div class="text-center py-5 text-muted">
@@ -35,34 +35,34 @@
 							</td>
 							<td class="small">{{ event.capacity }}</td>
 							<td>
-								<span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span>
+								<span class="badge" [ngClass]="this.statusBadgeClass(event.status)">{{ event.status }}</span>
 							</td>
 							<td>
 								<div class="d-flex gap-1 flex-wrap">
 									<button
 										type="button"
-										(click)="goToViewEvent(event.id)"
+										(click)="this.goToViewEvent(event.id)"
 										class="btn btn-sm btn-outline-secondary"
 									>
 										View
 									</button>
 									@if (event.status === 'DRAFT') {
-										<button class="btn btn-sm btn-success" (click)="publishEvent(event)">
+										<button class="btn btn-sm btn-success" (click)="this.publishEvent(event)">
 											Publish
 										</button>
 										<button
 											type="button"
-											(click)="goToEditEvent(event.id)"
+											(click)="this.goToEditEvent(event.id)"
 											class="btn btn-sm btn-outline-primary"
 										>
 											Edit
 										</button>
-										<button class="btn btn-sm btn-danger" (click)="deleteEvent(event)">
+										<button class="btn btn-sm btn-danger" (click)="this.deleteEvent(event)">
 											Delete
 										</button>
 									}
 									@if (event.status === 'PUBLISHED') {
-										<button class="btn btn-sm btn-warning" (click)="cancelEvent(event)">
+										<button class="btn btn-sm btn-warning" (click)="this.cancelEvent(event)">
 											Cancel
 										</button>
 									}

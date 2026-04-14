@@ -5,14 +5,14 @@
 				<div class="card-body p-5">
 					<h2 class="card-title text-center mb-4 fw-bold">Sign In</h2>
 
-					<form (submit)="onSubmit($event)" novalidate>
+					<form (submit)="this.onSubmit($event)" novalidate>
 						<div class="mb-3">
 							<label for="username" class="form-label">Username</label>
 							<input
 								id="username"
 								type="text"
 								class="form-control"
-								[formField]="loginFields.username"
+								[formField]="this.loginFields.username"
 								placeholder="Enter your username"
 							/>
 						</div>
@@ -23,12 +23,12 @@
 								id="password"
 								type="password"
 								class="form-control"
-								[formField]="loginFields.password"
+								[formField]="this.loginFields.password"
 								placeholder="Enter your password"
 							/>
 						</div>
 
-						<button type="submit" class="btn btn-primary w-100" [disabled]="!loginFields().valid()">
+						<button type="submit" class="btn btn-primary w-100" [disabled]="!this.loginFields().valid()">
 							Sign In
 						</button>
 					</form>
@@ -38,7 +38,7 @@
 						Don't have an account?
 						<button
 							type="button"
-							(click)="goToRegister()"
+							(click)="this.goToRegister()"
 							class="btn btn-link p-0 text-decoration-none align-baseline"
 						>
 							Register here

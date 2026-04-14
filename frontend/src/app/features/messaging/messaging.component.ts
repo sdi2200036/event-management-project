@@ -18,48 +18,48 @@ enum Tab {
 	imports: [DatePipe, FormField]
 })
 export class MessagingComponent implements OnInit {
-	private readonly toastService = inject(ToastService);
+	private readonly toastService: ToastService = inject(ToastService);
 
-	activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
-	inbox: WritableSignal<Message[]> = signal([]);
-	sent: WritableSignal<Message[]> = signal([]);
-	unreadCount: Signal<number> = computed(() => this.inbox().filter((m) => !m.is_read).length);
-	readonly composeModel = signal({
+	public activeTab: WritableSignal<Tab> = signal(Tab.INBOX);
+	public inbox: WritableSignal<Message[]> = signal([]);
+	public sent: WritableSignal<Message[]> = signal([]);
+	public unreadCount: Signal<number> = computed(() => this.inbox().filter((m) => !m.is_read).length);
+	public readonly composeModel: WritableSignal<{ receiver_id: number; subject: string; body: string }> = signal({
 		receiver_id: 0,
 		subject: '',
 		body: ''
 	});
-	readonly composeForm = form(this.composeModel, (p) => {
+	public readonly composeForm = form(this.composeModel, (p) => {
 		required(p.receiver_id);
 		min(p.receiver_id, 1);
 		required(p.subject);
 		maxLength(p.subject, 255);
 		required(p.body);
 	});
-	selectedMessage: WritableSignal<Message | null> = signal(null);
-	Tab = Tab;
+	public selectedMessage: WritableSignal<Message | null> = signal(null);
+	public Tab: typeof Tab = Tab;
 
 	constructor(private messageService: MessageService) {}
 
-	ngOnInit(): void {
+	public ngOnInit(): void {
 		this.loadInbox();
 	}
 
-	loadInbox(): void {
+	public loadInbox(): void {
 		this.messageService.getInbox().subscribe({
 			next: (msgs) => this.inbox.set(msgs),
 			error: () => this.toastService.error('Failed to load inbox')
 		});
 	}
 
-	loadSent(): void {
+	public loadSent(): void {
 		this.messageService.getSent().subscribe({
 			next: (msgs) => this.sent.set(msgs),
 			error: () => this.toastService.error('Failed to load sent messages')
 		});
 	}
 
-	switchTab(tab: Tab): void {
+	public switchTab(tab: Tab): void {
 		this.activeTab.set(tab);
 		this.selectedMessage.set(null);
 
@@ -67,7 +67,7 @@ export class MessagingComponent implements OnInit {
 		if (tab === Tab.SENT) this.loadSent();
 	}
 
-	openMessage(msg: Message): void {
+	public openMessage(msg: Message): void {
 		this.selectedMessage.set(msg);
 		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
 			this.messageService.markAsRead(msg.id).subscribe({
@@ -77,7 +77,7 @@ export class MessagingComponent implements OnInit {
 		}
 	}
 
-	deleteMessage(msg: Message): void {
+	public deleteMessage(msg: Message): void {
 		if (!confirm('Delete this message?')) return;
 		this.messageService.deleteMessage(msg.id).subscribe({
 			next: () => {
@@ -94,7 +94,7 @@ export class MessagingComponent implements OnInit {
 		});
 	}
 
-	async sendMessage(event: Event): Promise<void> {
+	public async sendMessage(event: Event): Promise<void> {
 		event.preventDefault();
 
 		await submit(this.composeForm, (form) => {

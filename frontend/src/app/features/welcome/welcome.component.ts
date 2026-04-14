@@ -19,15 +19,15 @@ export class WelcomeComponent {
 		}
 	}
 
-	goToLogin(): void {
+	public goToLogin(): void {
 		this.router.navigate(['/login']);
 	}
 
-	goToRegister(): void {
+	public goToRegister(): void {
 		this.router.navigate(['/register']);
 	}
 
-	goToEvents(): void {
+	public goToEvents(): void {
 		this.router.navigate(['/events']);
 	}
 }

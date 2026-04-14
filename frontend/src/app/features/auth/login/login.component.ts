@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormField, form, required, submit } from '@angular/forms/signals';
+import { Component, inject, signal, WritableSignal } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
+import { LoginRequest } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -12,13 +13,13 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: [FormField]
 })
 export class LoginComponent {
-	private readonly toastService = inject(ToastService);
+	private readonly toastService: ToastService = inject(ToastService);
 
-	readonly loginModel = signal({
+	public readonly loginModel: WritableSignal<LoginRequest> = signal({
 		username: '',
 		password: ''
 	});
-	readonly loginFields = form(this.loginModel, (p) => {
+	public readonly loginFields = form(this.loginModel, (p) => {
 		required(p.username);
 		required(p.password);
 	});
@@ -28,11 +29,11 @@ export class LoginComponent {
 		private router: Router
 	) {}
 
-	goToRegister(): void {
+	public goToRegister(): void {
 		this.router.navigate(['/register']);
 	}
 
-	async onSubmit(event: Event): Promise<void> {
+	public async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 
 		await submit(this.loginFields, async (form) => {
@@ -43,7 +44,9 @@ export class LoginComponent {
 						return of(undefined);
 					}),
 					catchError((err) => {
-						this.toastService.error(err.error?.message || 'Invalid username or password. Please try again.');
+						this.toastService.error(
+							err.error?.message || 'Invalid username or password. Please try again.'
+						);
 						return of(undefined);
 					})
 				)

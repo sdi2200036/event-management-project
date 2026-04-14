@@ -10,5 +10,5 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: [NgClass]
 })
 export class ToastComponent {
-	readonly toastService = inject(ToastService);
+	public readonly toastService: ToastService = inject(ToastService);
 }

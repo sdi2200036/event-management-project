@@ -14,12 +14,12 @@ import { User, UserStatus } from '../../../shared/models/user.model';
 	imports: [ReactiveFormsModule, FormsModule, NgClass, DatePipe]
 })
 export class UserManagementComponent {
-	users: InputSignal<User[]> = input<User[]>([], { alias: 'usersData' });
-	filterStatus: WritableSignal<string> = signal('');
-	filterRole: WritableSignal<string> = signal('');
-	actionLoading: WritableSignal<number | null> = signal(null);
+	public users: InputSignal<User[]> = input<User[]>([], { alias: 'usersData' });
+	public filterStatus: WritableSignal<string> = signal('');
+	public filterRole: WritableSignal<string> = signal('');
+	public actionLoading: WritableSignal<number | null> = signal(null);
 
-	pendingCount: Signal<number> = computed(() => this.users().filter((u) => u.status === UserStatus.Pending).length);
+	public pendingCount: Signal<number> = computed(() => this.users().filter((u) => u.status === UserStatus.Pending).length);
 
 	constructor(
 		private http: HttpClient,
@@ -27,7 +27,7 @@ export class UserManagementComponent {
 		private toastService: ToastService
 	) {}
 
-	loadUsers(): void {
+	public loadUsers(): void {
 		this.router.navigate([], {
 			queryParams: {
 				status: this.filterStatus() || null,
@@ -38,7 +38,7 @@ export class UserManagementComponent {
 		});
 	}
 
-	approveUser(user: User): void {
+	public approveUser(user: User): void {
 		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
 			next: () => {
@@ -53,7 +53,7 @@ export class UserManagementComponent {
 		});
 	}
 
-	rejectUser(user: User): void {
+	public rejectUser(user: User): void {
 		if (!confirm(`Reject user "${user.username}"?`)) return;
 		this.actionLoading.set(user.id);
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({

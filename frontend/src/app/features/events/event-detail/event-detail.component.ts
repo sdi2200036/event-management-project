@@ -1,5 +1,5 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { afterNextRender, Component, computed, input, Signal } from '@angular/core';
+import { afterNextRender, Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { EventService } from '../../../core/services/event.service';
@@ -15,25 +15,25 @@ declare const L: any; // Leaflet global
 	imports: [NgClass, DatePipe]
 })
 export class EventDetailComponent {
-	readonly eventData = input<EventModel>();
+	public readonly eventData: InputSignal<EventModel | undefined> = input<EventModel>();
 
-	readonly event: Signal<EventModel | undefined> = this.eventData;
-	readonly isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
-	readonly isParticipant: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'participant');
-	readonly isOrganizer: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'organizer');
-	readonly isOwner: Signal<boolean> = computed(() => {
+	public readonly event: Signal<EventModel | undefined> = this.eventData;
+	public readonly isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
+	public readonly isParticipant: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'participant');
+	public readonly isOrganizer: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'organizer');
+	public readonly isOwner: Signal<boolean> = computed(() => {
 		const user = this.authService.currentUser();
 		const ev = this.event();
 		return !!user && !!ev && user.id === ev.organizer_id;
 	});
 
-	readonly minTicketPrice: Signal<number> = computed(() => {
+	public readonly minTicketPrice: Signal<number> = computed(() => {
 		const ev = this.event();
 		if (!ev || !ev.ticket_types || ev.ticket_types.length === 0) return 0;
 		return Math.min(...ev.ticket_types.map((t) => t.price));
 	});
 
-	private mapInitialized = false;
+	private mapInitialized: boolean = false;
 
 	constructor(
 		private router: Router,
@@ -49,27 +49,27 @@ export class EventDetailComponent {
 		});
 	}
 
-	goToEditEvent(): void {
+	public goToEditEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
 		this.router.navigate(['/events/manage', ev.id, 'edit']);
 	}
 
-	goToBookEvent(): void {
+	public goToBookEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
 		this.router.navigate(['/bookings', 'new', ev.id]);
 	}
 
-	goToLogin(): void {
+	public goToLogin(): void {
 		this.router.navigate(['/login']);
 	}
 
-	goToEvents(): void {
+	public goToEvents(): void {
 		this.router.navigate(['/events']);
 	}
 
-	initMap(lat: number, lng: number): void {
+	public initMap(lat: number, lng: number): void {
 		if (this.mapInitialized || typeof L === 'undefined') return;
 		try {
 			const map = L.map('event-map').setView([lat, lng], 15);
@@ -86,7 +86,7 @@ export class EventDetailComponent {
 		}
 	}
 
-	publishEvent(): void {
+	public publishEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
 		this.eventService.publishEvent(ev.id).subscribe({
@@ -98,7 +98,7 @@ export class EventDetailComponent {
 		});
 	}
 
-	cancelEvent(): void {
+	public cancelEvent(): void {
 		const ev = this.event();
 		if (!ev || !confirm('Are you sure you want to cancel this event?')) return;
 		this.eventService.cancelEvent(ev.id).subscribe({
@@ -110,7 +110,7 @@ export class EventDetailComponent {
 		});
 	}
 
-	deleteEvent(): void {
+	public deleteEvent(): void {
 		const ev = this.event();
 		if (!ev || !confirm('Are you sure you want to delete this event?')) return;
 		this.eventService.deleteEvent(ev.id).subscribe({

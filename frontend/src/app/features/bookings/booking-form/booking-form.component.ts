@@ -13,28 +13,30 @@ import { Event as EventModel, TicketType } from '../../../shared/models/event.mo
 	imports: [DatePipe, FormField]
 })
 export class BookingFormComponent {
-	readonly event: Signal<EventModel | undefined> = input<EventModel>(undefined, { alias: 'eventData' });
+	public readonly event: Signal<EventModel | undefined> = input<EventModel>(undefined, { alias: 'eventData' });
 
-	readonly bookingModel = linkedSignal(() => ({
-		ticket_type_id: String(this.event()?.ticket_types?.[0]?.id),
-		number_of_tickets: 1
-	}));
-	readonly bookingForm = form(this.bookingModel, (p) => {
+	public readonly bookingModel: WritableSignal<{ ticket_type_id: string; number_of_tickets: number }> = linkedSignal(
+		() => ({
+			ticket_type_id: String(this.event()?.ticket_types?.[0]?.id),
+			number_of_tickets: 1
+		})
+	);
+	public readonly bookingForm = form(this.bookingModel, (p) => {
 		required(p.ticket_type_id);
 		required(p.number_of_tickets);
 		min(p.number_of_tickets, 1);
 		max(p.number_of_tickets, 20);
 	});
 
-	showConfirmation: WritableSignal<boolean> = signal(false);
-	bookingCreated: WritableSignal<boolean> = signal(false);
+	public showConfirmation: WritableSignal<boolean> = signal(false);
+	public bookingCreated: WritableSignal<boolean> = signal(false);
 
-	readonly selectedTicketType: Signal<TicketType | undefined> = computed(() => {
-		const id = Number(this.bookingModel().ticket_type_id);
+	public readonly selectedTicketType: Signal<TicketType | undefined> = computed(() => {
+		const id: number = Number(this.bookingModel().ticket_type_id);
 		return this.event()?.ticket_types?.find((t) => t.id == id);
 	});
 
-	readonly totalCost: Signal<number> = computed(() => {
+	public readonly totalCost: Signal<number> = computed(() => {
 		const ticket = this.selectedTicketType();
 		if (!ticket) return 0;
 		return ticket.price * (this.bookingModel().number_of_tickets || 1);
@@ -46,14 +48,14 @@ export class BookingFormComponent {
 		private toastService: ToastService
 	) {}
 
-	async onSubmit(event: Event): Promise<void> {
+	public async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 		await submit(this.bookingForm, async () => {
 			this.showConfirmation.set(true);
 		});
 	}
 
-	confirmBooking(): void {
+	public confirmBooking(): void {
 		const ev = this.event();
 		if (!ev) return;
 
@@ -76,11 +78,11 @@ export class BookingFormComponent {
 			});
 	}
 
-	goToBookings(): void {
+	public goToBookings(): void {
 		this.router.navigate(['/bookings']);
 	}
 
-	goToEvents(): void {
+	public goToEvents(): void {
 		this.router.navigate(['/events']);
 	}
 }

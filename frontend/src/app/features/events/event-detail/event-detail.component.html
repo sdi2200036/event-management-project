@@ -1,26 +1,26 @@
-@if (event()) {
+@if (this.event()) {
 	<div class="container py-4">
 		<div class="row">
 			<!-- Main Content -->
 			<div class="col-lg-8">
 				<!-- Photos -->
-				@if (event()?.photos && event()!.photos!.length > 0) {
+				@if (this.event()?.photos && this.event()!.photos!.length > 0) {
 					<div class="mb-4">
 						<img
-							[src]="event()!.photos![0]"
+							[src]="this.event()!.photos![0]"
 							class="img-fluid rounded shadow-sm w-100"
 							style="max-height: 400px; object-fit: cover"
-							[alt]="event()!.title"
+							[alt]="this.event()!.title"
 						/>
-						@if (event()!.photos!.length > 1) {
+						@if (this.event()!.photos!.length > 1) {
 							<div class="row g-2 mt-2">
-								@for (photo of event()!.photos!.slice(1); track $index) {
+								@for (photo of this.event()!.photos!.slice(1); track $index) {
 									<div class="col-4">
 										<img
 											[src]="photo"
 											class="img-fluid rounded shadow-sm"
 											style="height: 130px; width: 100%; object-fit: cover"
-											[alt]="event()!.title"
+											[alt]="this.event()!.title"
 										/>
 									</div>
 								}
@@ -31,36 +31,36 @@
 				<!-- Header -->
 				<div class="d-flex justify-content-between align-items-start mb-3">
 					<div>
-						<h1 class="fw-bold mb-1">{{ event()!.title }}</h1>
+						<h1 class="fw-bold mb-1">{{ this.event()!.title }}</h1>
 						<div class="d-flex gap-2 flex-wrap mb-2">
-							<span class="badge bg-primary">{{ event()!.event_type }}</span>
+							<span class="badge bg-primary">{{ this.event()!.event_type }}</span>
 							<span
 								class="badge"
 								[ngClass]="{
-									'bg-success': event()!.status === 'PUBLISHED',
-									'bg-secondary': event()!.status === 'DRAFT',
-									'bg-danger': event()!.status === 'CANCELLED',
-									'bg-info': event()!.status === 'COMPLETED'
+									'bg-success': this.event()!.status === 'PUBLISHED',
+									'bg-secondary': this.event()!.status === 'DRAFT',
+									'bg-danger': this.event()!.status === 'CANCELLED',
+									'bg-info': this.event()!.status === 'COMPLETED'
 								}"
-								>{{ event()!.status }}</span
+								>{{ this.event()!.status }}</span
 							>
-							@for (cat of event()!.categories; track cat) {
+							@for (cat of this.event()!.categories; track cat) {
 								<span class="badge bg-light text-dark border">{{ cat }}</span>
 							}
 						</div>
 					</div>
 					<!-- Organizer Actions -->
-					@if (isOwner()) {
+					@if (this.isOwner()) {
 						<div class="d-flex gap-2">
-							@if (event()!.status === 'DRAFT') {
-								<button class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
-								<button type="button" (click)="goToEditEvent()" class="btn btn-sm btn-outline-primary">
+							@if (this.event()!.status === 'DRAFT') {
+								<button class="btn btn-sm btn-success" (click)="this.publishEvent()">Publish</button>
+								<button type="button" (click)="this.goToEditEvent()" class="btn btn-sm btn-outline-primary">
 									Edit
 								</button>
-								<button class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
+								<button class="btn btn-sm btn-danger" (click)="this.deleteEvent()">Delete</button>
 							}
-							@if (event()!.status === 'PUBLISHED') {
-								<button class="btn btn-sm btn-warning" (click)="cancelEvent()">Cancel Event</button>
+							@if (this.event()!.status === 'PUBLISHED') {
+								<button class="btn btn-sm btn-warning" (click)="this.cancelEvent()">Cancel Event</button>
 							}
 						</div>
 					}
@@ -70,7 +70,7 @@
 					<div class="card-body">
 						<h5 class="card-title">About this Event</h5>
 						<p class="card-text" style="white-space: pre-line">
-							{{ event()!.description || 'No description provided.' }}
+							{{ this.event()!.description || 'No description provided.' }}
 						</p>
 					</div>
 				</div>
@@ -79,9 +79,9 @@
 					<div class="card-body">
 						<h5 class="card-title">Location</h5>
 						<p class="text-muted mb-2">
-							{{ event()!.venue ? event()!.venue + ', ' : '' }}{{ event()!.address }},
-							{{ event()!.city }},
-							{{ event()!.country }}
+							{{ this.event()!.venue ? this.event()!.venue + ', ' : '' }}{{ this.event()!.address }},
+							{{ this.event()!.city }},
+							{{ this.event()!.country }}
 						</p>
 						<div id="event-map" style="height: 300px; border-radius: 8px"></div>
 					</div>
@@ -96,18 +96,18 @@
 						<ul class="list-unstyled">
 							<li class="mb-2">
 								<strong>Date:</strong>
-								{{ event()!.start_datetime | date: 'EEEE, MMMM d, y' }}
+								{{ this.event()!.start_datetime | date: 'EEEE, MMMM d, y' }}
 							</li>
 							<li class="mb-2">
 								<strong>Time:</strong>
-								{{ event()!.start_datetime | date: 'HH:mm' }} -
-								{{ event()!.end_datetime | date: 'HH:mm' }}
+								{{ this.event()!.start_datetime | date: 'HH:mm' }} -
+								{{ this.event()!.end_datetime | date: 'HH:mm' }}
 							</li>
-							<li class="mb-2"><strong>Venue:</strong> {{ event()!.venue || 'TBA' }}</li>
+							<li class="mb-2"><strong>Venue:</strong> {{ this.event()!.venue || 'TBA' }}</li>
 							<li class="mb-2">
-								<strong>City:</strong> {{ event()!.city }}, {{ event()!.country }}
+								<strong>City:</strong> {{ this.event()!.city }}, {{ this.event()!.country }}
 							</li>
-							<li class="mb-2"><strong>Capacity:</strong> {{ event()!.capacity }} attendees</li>
+							<li class="mb-2"><strong>Capacity:</strong> {{ this.event()!.capacity }} attendees</li>
 						</ul>
 					</div>
 				</div>
@@ -115,10 +115,10 @@
 				<div class="card border-0 shadow-sm mb-3">
 					<div class="card-body">
 						<h5 class="card-title mb-3">Ticket Types</h5>
-						@if (!event()!.ticket_types || event()!.ticket_types?.length === 0) {
+						@if (!this.event()!.ticket_types || this.event()!.ticket_types?.length === 0) {
 							<div class="text-success fw-semibold">Free Entry</div>
 						}
-						@for (tt of event()!.ticket_types; track tt) {
+						@for (tt of this.event()!.ticket_types; track tt) {
 							<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
 								<div>
 									<div class="fw-semibold">{{ tt.name }}</div>
@@ -130,17 +130,17 @@
 					</div>
 				</div>
 				<!-- Book Now Button (Participant only, published events) -->
-				@if (isLoggedIn() && isParticipant() && event()!.status === 'PUBLISHED') {
+				@if (this.isLoggedIn() && this.isParticipant() && this.event()!.status === 'PUBLISHED') {
 					<div>
-						<button type="button" (click)="goToBookEvent()" class="btn btn-primary btn-lg w-100">
-							Book Now {{ minTicketPrice() > 0 ? 'from €' + minTicketPrice() : '(Free)' }}
+						<button type="button" (click)="this.goToBookEvent()" class="btn btn-primary btn-lg w-100">
+							Book Now {{ this.minTicketPrice() > 0 ? 'from €' + this.minTicketPrice() : '(Free)' }}
 						</button>
 					</div>
 				}
 				<!-- Guest prompt -->
-				@else if (!isLoggedIn()) {
+				@else if (!this.isLoggedIn()) {
 					<div>
-						<button type="button" (click)="goToLogin()" class="btn btn-outline-primary btn-lg w-100">
+						<button type="button" (click)="this.goToLogin()" class="btn btn-outline-primary btn-lg w-100">
 							Login to Book
 						</button>
 					</div>

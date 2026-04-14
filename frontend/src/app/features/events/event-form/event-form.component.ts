@@ -4,6 +4,7 @@ import {
 	computed,
 	ElementRef,
 	input,
+	InputSignal,
 	linkedSignal,
 	Signal,
 	signal,
@@ -54,9 +55,9 @@ type EventFormModel = {
 })
 export class EventFormComponent {
 	// Resolved event data for edit mode (null/undefined for create mode)
-	readonly event = input<EventModel | null>(null, { alias: 'eventData' });
+	public readonly event: InputSignal<EventModel | null> = input<EventModel | null>(null, { alias: 'eventData' });
 
-	readonly eventModel = linkedSignal<EventFormModel>(() => ({
+	public readonly eventModel: WritableSignal<EventFormModel> = linkedSignal<EventFormModel>(() => ({
 		title: this.event()?.title || '',
 		event_type: this.event()?.event_type || '',
 		description: this.event()?.description || '',
@@ -81,7 +82,7 @@ export class EventFormComponent {
 			: [{ name: '', price: 0, quantity: 100 }]
 	}));
 
-	readonly eventForm = form(this.eventModel, (p) => {
+	public readonly eventForm = form(this.eventModel, (p) => {
 		required(p.title, { message: 'Title is required' });
 		maxLength(p.title, 255, { message: 'Title must be at most 255 characters' });
 
@@ -113,16 +114,16 @@ export class EventFormComponent {
 		});
 	});
 
-	readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
-	photos: WritableSignal<string[]> = signal([]);
+	public readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
+	public photos: WritableSignal<string[]> = signal([]);
 
-	categories = Object.values(EventCategory);
+	public categories: EventCategory[] = Object.values(EventCategory);
 
 	// Map state
 	private map: any = null;
 	private marker: any = null;
-	readonly mapSearchInput = viewChild<ElementRef<HTMLInputElement>>('mapSearchInput');
-	searchingAddress: WritableSignal<boolean> = signal(false);
+	public readonly mapSearchInput: Signal<ElementRef<HTMLInputElement> | undefined> = viewChild<ElementRef<HTMLInputElement>>('mapSearchInput');
+	public searchingAddress: WritableSignal<boolean> = signal(false);
 
 	constructor(
 		private eventService: EventService,
@@ -140,11 +141,11 @@ export class EventFormComponent {
 	private initFormMap(): void {
 		if (typeof L === 'undefined') return;
 
-		const existingLat = this.eventModel().geo_lat;
-		const existingLng = this.eventModel().geo_lng;
-		const centerLat = existingLat ?? 37.9838;
-		const centerLng = existingLng ?? 23.7275;
-		const zoom = existingLat && existingLng ? 15 : 6;
+		const existingLat: number | null = this.eventModel().geo_lat;
+		const existingLng: number | null = this.eventModel().geo_lng;
+		const centerLat: number = existingLat ?? 37.9838;
+		const centerLng: number = existingLng ?? 23.7275;
+		const zoom: number = existingLat && existingLng ? 15 : 6;
 
 		try {
 			this.map = L.map('form-map').setView([centerLat, centerLng], zoom);
@@ -188,11 +189,11 @@ export class EventFormComponent {
 		}));
 	}
 
-	searchAddress(): void {
+	public searchAddress(): void {
 		const inputEl = this.mapSearchInput();
 		if (!inputEl) return;
 
-		const query = inputEl.nativeElement.value.trim();
+		const query: string = inputEl.nativeElement.value.trim();
 		if (!query) return;
 
 		this.searchingAddress.set(true);
@@ -201,8 +202,8 @@ export class EventFormComponent {
 			.then((res) => res.json())
 			.then((results: Array<{ lat: string; lon: string; display_name: string }>) => {
 				if (results.length > 0) {
-					const lat = parseFloat(results[0].lat);
-					const lng = parseFloat(results[0].lon);
+					const lat: number = parseFloat(results[0].lat);
+					const lng: number = parseFloat(results[0].lon);
 					this.map?.setView([lat, lng], 16);
 					this.placeMarker(lat, lng);
 					this.updateGeoCoords(lat, lng);
@@ -217,7 +218,7 @@ export class EventFormComponent {
 			});
 	}
 
-	clearMapSelection(): void {
+	public clearMapSelection(): void {
 		if (this.marker) {
 			this.map?.removeLayer(this.marker);
 			this.marker = null;
@@ -231,7 +232,7 @@ export class EventFormComponent {
 
 	// === Photo Management ===
 
-	onPhotosSelected(event: Event): void {
+	public onPhotosSelected(event: Event): void {
 		const input = event.target as HTMLInputElement;
 		if (!input.files) return;
 
@@ -247,20 +248,20 @@ export class EventFormComponent {
 		input.value = '';
 	}
 
-	removePhoto(index: number): void {
+	public removePhoto(index: number): void {
 		this.photos.update((current) => current.filter((_, i) => i !== index));
 	}
 
 	// === Form Actions ===
 
-	addTicketType(): void {
+	public addTicketType(): void {
 		this.eventModel.update((current) => ({
 			...current,
 			ticket_types: [...current.ticket_types, { name: '', price: 0, quantity: 100 }]
 		}));
 	}
 
-	removeTicketType(index: number): void {
+	public removeTicketType(index: number): void {
 		this.eventModel.update((current) => ({
 			...current,
 			ticket_types:
@@ -270,9 +271,9 @@ export class EventFormComponent {
 		}));
 	}
 
-	toggleCategory(cat: EventCategory): void {
-		const current = [...this.eventModel().categories];
-		const idx = current.indexOf(cat);
+	public toggleCategory(cat: EventCategory): void {
+		const current: EventCategory[] = [...this.eventModel().categories];
+		const idx: number = current.indexOf(cat);
 		if (idx > -1) {
 			current.splice(idx, 1);
 		} else {
@@ -281,15 +282,15 @@ export class EventFormComponent {
 		this.eventModel.update((value) => ({ ...value, categories: current }));
 	}
 
-	isCategorySelected(cat: EventCategory): boolean {
+	public isCategorySelected(cat: EventCategory): boolean {
 		return this.eventModel().categories.includes(cat);
 	}
 
-	cancel(): void {
+	public cancel(): void {
 		this.router.navigate(['/events/manage']);
 	}
 
-	async onSubmit(event: Event): Promise<void> {
+	public async onSubmit(event: Event): Promise<void> {
 		event.preventDefault();
 
 		await submit(this.eventForm, (form) => {

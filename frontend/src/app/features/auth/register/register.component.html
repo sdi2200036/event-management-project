@@ -6,9 +6,9 @@
 					<h2 class="card-title text-center mb-4 fw-bold">Create Account</h2>
 
 					<form
-						(submit)="onSubmit($event)"
+						(submit)="this.onSubmit($event)"
 						novalidate
-						[class.is-invalid]="this.isFieldInvalid(registerForm())"
+						[class.is-invalid]="this.isFieldInvalid(this.registerForm())"
 					>
 						<!-- Account Type -->
 						<div class="mb-4">
@@ -18,7 +18,7 @@
 									<input
 										class="form-check-input"
 										type="radio"
-										[formField]="registerForm.role"
+										[formField]="this.registerForm.role"
 										value="participant"
 										id="roleParticipant"
 									/>
@@ -28,7 +28,7 @@
 									<input
 										class="form-check-input"
 										type="radio"
-										[formField]="registerForm.role"
+										[formField]="this.registerForm.role"
 										value="organizer"
 										id="roleOrganizer"
 									/>
@@ -45,10 +45,10 @@
 									id="username"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.username"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.username())"
+									[formField]="this.registerForm.username"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.username())"
 								/>
-								@for (error of registerForm.username().errors(); track $index) {
+								@for (error of this.registerForm.username().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -62,10 +62,10 @@
 									id="email"
 									type="email"
 									class="form-control"
-									[formField]="registerForm.email"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.email())"
+									[formField]="this.registerForm.email"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.email())"
 								/>
-								@for (error of registerForm.email().errors(); track $index) {
+								@for (error of this.registerForm.email().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -79,10 +79,10 @@
 									id="password"
 									type="password"
 									class="form-control"
-									[formField]="registerForm.password"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.password())"
+									[formField]="this.registerForm.password"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.password())"
 								/>
-								@for (error of registerForm.password().errors(); track $index) {
+								@for (error of this.registerForm.password().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -96,10 +96,10 @@
 									id="confirmPassword"
 									type="password"
 									class="form-control"
-									[formField]="registerForm.confirmPassword"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.confirmPassword())"
+									[formField]="this.registerForm.confirmPassword"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.confirmPassword())"
 								/>
-								@for (error of registerForm.confirmPassword().errors(); track $index) {
+								@for (error of this.registerForm.confirmPassword().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -113,10 +113,10 @@
 									id="first_name"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.first_name"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.first_name())"
+									[formField]="this.registerForm.first_name"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.first_name())"
 								/>
-								@for (error of registerForm.first_name().errors(); track $index) {
+								@for (error of this.registerForm.first_name().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -130,10 +130,10 @@
 									id="last_name"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.last_name"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.last_name())"
+									[formField]="this.registerForm.last_name"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.last_name())"
 								/>
-								@for (error of registerForm.last_name().errors(); track $index) {
+								@for (error of this.registerForm.last_name().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -147,10 +147,10 @@
 									id="phone"
 									type="tel"
 									class="form-control"
-									[formField]="registerForm.phone"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.phone())"
+									[formField]="this.registerForm.phone"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.phone())"
 								/>
-								@for (error of registerForm.phone().errors(); track $index) {
+								@for (error of this.registerForm.phone().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -164,11 +164,11 @@
 									id="afm"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.afm"
+									[formField]="this.registerForm.afm"
 									placeholder="9 digits"
-									[class.is-invalid]="this.isFieldInvalid(registerForm.afm())"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.afm())"
 								/>
-								@for (error of registerForm.afm().errors(); track $index) {
+								@for (error of this.registerForm.afm().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
 									</div>
@@ -182,14 +182,14 @@
 									id="address"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.address"
+									[formField]="this.registerForm.address"
 								/>
 							</div>
 
 							<!-- City -->
 							<div class="col-md-4">
 								<label for="city" class="form-label">City</label>
-								<input id="city" type="text" class="form-control" [formField]="registerForm.city" />
+								<input id="city" type="text" class="form-control" [formField]="this.registerForm.city" />
 							</div>
 
 							<!-- Country -->
@@ -199,7 +199,7 @@
 									id="country"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.country"
+									[formField]="this.registerForm.country"
 								/>
 							</div>
 
@@ -210,13 +210,13 @@
 									id="postal_code"
 									type="text"
 									class="form-control"
-									[formField]="registerForm.postal_code"
+									[formField]="this.registerForm.postal_code"
 								/>
 							</div>
 						</div>
 
 						<div class="mt-4">
-							<button type="submit" class="btn btn-primary w-100" [disabled]="!registerForm().valid()">
+							<button type="submit" class="btn btn-primary w-100" [disabled]="!this.registerForm().valid()">
 								Create Account
 							</button>
 						</div>
@@ -227,7 +227,7 @@
 						Already have an account?
 						<button
 							type="button"
-							(click)="goToLogin()"
+							(click)="this.goToLogin()"
 							class="btn btn-link p-0 text-decoration-none align-baseline"
 						>
 							Sign in

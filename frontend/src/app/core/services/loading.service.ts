@@ -1,4 +1,4 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { EventType, Router } from '@angular/router';
 import { BehaviorSubject, debounceTime } from 'rxjs';
 
@@ -7,7 +7,7 @@ import { BehaviorSubject, debounceTime } from 'rxjs';
 })
 export class LoadingService {
 	private _loading: WritableSignal<boolean> = signal(false);
-	public loading = this._loading.asReadonly();
+	public loading: Signal<boolean> = this._loading.asReadonly();
 
 	private counter: BehaviorSubject<number> = new BehaviorSubject(0);
 
@@ -27,10 +27,6 @@ export class LoadingService {
 		this.counter.pipe(debounceTime(100)).subscribe((count) => {
 			this._loading.set(count > 0);
 		});
-	}
-
-	public setLoading(isLoading: boolean): void {
-		this._loading.set(isLoading);
 	}
 
 	public increment(): void {

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, input, linkedSignal, Signal } from '@angular/core';
+import { Component, computed, input, InputSignal, linkedSignal, Signal, WritableSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Params, Router } from '@angular/router';
@@ -17,22 +17,30 @@ import {
 	templateUrl: './public-events-list.component.html'
 })
 export class PublicEventsListComponent {
-	readonly pageSize = 12;
-	readonly eventsData = input<EventsResponseExtended | null>();
-	readonly recommendedEventsData = input<EventsResponse | null>();
+	public readonly pageSize: number = 12;
+	public readonly eventsData: InputSignal<EventsResponseExtended | null | undefined> = input<EventsResponseExtended | null>();
+	public readonly recommendedEventsData: InputSignal<EventsResponse | null | undefined> = input<EventsResponse | null>();
 
-	readonly queryParams = toSignal(this.activatedRoute.queryParams, { initialValue: {} as Params });
-	readonly currentPage: Signal<number> = computed(() => {
-		const p = Number(this.queryParams()['page']);
+	public readonly queryParams: Signal<Params> = toSignal(this.activatedRoute.queryParams, { initialValue: {} as Params });
+	public readonly currentPage: Signal<number> = computed(() => {
+		const p: number = Number(this.queryParams()['page']);
 		return p >= 1 ? p : 1;
 	});
 
-	recommendedEvents: Signal<EventModel[]> = computed(() => this.recommendedEventsData()?.events || []);
+	public recommendedEvents: Signal<EventModel[]> = computed(() => this.recommendedEventsData()?.events || []);
 
-	isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
+	public isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
 
-	readonly filterModel = linkedSignal(() => {
-		const queryParams = this.queryParams();
+	public readonly filterModel: WritableSignal<{
+		title: string;
+		category: string;
+		location: string;
+		dateFrom: string;
+		dateTo: string;
+		minPrice: string;
+		maxPrice: string;
+	}> = linkedSignal(() => {
+		const queryParams: Params = this.queryParams();
 		return {
 			title: queryParams['title'] || '',
 			category: queryParams['category'] || '',
@@ -43,21 +51,21 @@ export class PublicEventsListComponent {
 			maxPrice: queryParams['maxPrice'] || ''
 		};
 	});
-	readonly filterForm = form(this.filterModel);
+	public readonly filterForm = form(this.filterModel);
 
-	events: Signal<EventModel[]> = computed(() => this.eventsData()?.events || []);
-	total: Signal<number> = computed(() => this.eventsData()?.total || 0);
+	public events: Signal<EventModel[]> = computed(() => this.eventsData()?.events || []);
+	public total: Signal<number> = computed(() => this.eventsData()?.total || 0);
 
-	totalPages: Signal<number> = computed(() => Math.ceil(this.total() / this.pageSize));
-	pages: Signal<number[]> = computed(() => {
-		const pages = [];
+	public totalPages: Signal<number> = computed(() => Math.ceil(this.total() / this.pageSize));
+	public pages: Signal<number[]> = computed(() => {
+		const pages: number[] = [];
 		for (let i = 1; i <= this.totalPages(); i++) {
 			pages.push(i);
 		}
 		return pages;
 	});
 
-	categories = Object.values(EventCategory);
+	public categories: EventCategory[] = Object.values(EventCategory);
 
 	constructor(
 		private activatedRoute: ActivatedRoute,
@@ -65,7 +73,7 @@ export class PublicEventsListComponent {
 		private router: Router
 	) {}
 
-	onSearch(event: Event): void {
+	public onSearch(event: Event): void {
 		event.preventDefault();
 		const model = this.filterModel();
 		this.router.navigate([], {
@@ -83,7 +91,7 @@ export class PublicEventsListComponent {
 		});
 	}
 
-	onReset(): void {
+	public onReset(): void {
 		this.router.navigate([], {
 			relativeTo: this.activatedRoute,
 			queryParams: {
@@ -99,7 +107,7 @@ export class PublicEventsListComponent {
 		});
 	}
 
-	onPageChange(page: number): void {
+	public onPageChange(page: number): void {
 		this.router.navigate([], {
 			relativeTo: this.activatedRoute,
 			queryParams: { page: page > 1 ? page : null },
@@ -108,11 +116,11 @@ export class PublicEventsListComponent {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
-	goToEventDetail(eventId: number): void {
+	public goToEventDetail(eventId: number): void {
 		this.router.navigate([eventId], { relativeTo: this.activatedRoute.parent });
 	}
 
-	getMinPrice(event: EventModel): number {
+	public getMinPrice(event: EventModel): number {
 		if (!event.ticket_types || event.ticket_types.length === 0) return 0;
 		return Math.min(...event.ticket_types.map((t) => t.price));
 	}

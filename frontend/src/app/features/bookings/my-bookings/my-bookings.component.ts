@@ -12,8 +12,8 @@ import { Booking } from '../../../shared/models/booking.model';
 	imports: [NgClass, DecimalPipe, DatePipe]
 })
 export class MyBookingsComponent {
-	readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], { alias: 'bookingsData' });
-	cancellingId: WritableSignal<number | null> = signal(null);
+	public readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], { alias: 'bookingsData' });
+	public cancellingId: WritableSignal<number | null> = signal(null);
 
 	constructor(
 		private bookingService: BookingService,
@@ -21,7 +21,7 @@ export class MyBookingsComponent {
 		private toastService: ToastService
 	) {}
 
-	cancelBooking(booking: Booking): void {
+	public cancelBooking(booking: Booking): void {
 		if (!confirm(`Cancel booking for "${booking.event_title}"?`)) return;
 
 		this.cancellingId.set(booking.id);
@@ -38,11 +38,11 @@ export class MyBookingsComponent {
 		});
 	}
 
-	goToEvents(): void {
-		this.router.navigate(['/events']);
+	public goToEvents(): void {
+		this.router.navigate(['events']);
 	}
 
-	goToEventDetail(eventId: number): void {
-		this.router.navigate(['/events', eventId]);
+	public goToEventDetail(eventId: number): void {
+		this.router.navigate(['events', 'public', eventId]);
 	}
 }
