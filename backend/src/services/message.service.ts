@@ -1,4 +1,4 @@
-import { query } from '../config/database';
+import pool, { query } from '../config/database';
 import {
 	Message,
 	MessageWithUsers,
@@ -107,35 +107,65 @@ export const getUnreadCount = async (userId: number): Promise<number> => {
 };
 
 export const notifyEventCancellation = async (eventId: number): Promise<void> => {
-	// Get all confirmed bookings for this event
+	// Fetch confirmed bookings with all info needed for messages
 	const bookings = await query(
-		`SELECT b.attendee_id, b.id as booking_id, e.title as event_title, e.organizer_id,
-            u.first_name, u.last_name
-     FROM bookings b
-     JOIN events e ON e.id = b.event_id
-     JOIN users u ON u.id = b.attendee_id
-     WHERE b.event_id = $1 AND b.booking_status = 'CONFIRMED'`,
+		`SELECT b.id as booking_id, b.attendee_id, b.ticket_type_id, b.number_of_tickets,
+		        e.title as event_title, e.organizer_id,
+		        u.first_name, u.last_name
+		 FROM bookings b
+		 JOIN events e ON e.id = b.event_id
+		 JOIN users u ON u.id = b.attendee_id
+		 WHERE b.event_id = $1 AND b.booking_status = 'CONFIRMED'`,
 		[eventId]
 	);
 
-	// Send a message to each attendee about the cancellation
+	if (bookings.rows.length === 0) return;
+
+	// Atomically cancel bookings and restore ticket availability
+	const client = await pool.connect();
+	try {
+		await client.query('BEGIN');
+
+		// Restore available count per ticket type in one query
+		await client.query(
+			`UPDATE ticket_types tt
+			 SET available = tt.available + b.total
+			 FROM (
+			   SELECT ticket_type_id, SUM(number_of_tickets) AS total
+			   FROM bookings
+			   WHERE event_id = $1 AND booking_status = 'CONFIRMED'
+			   GROUP BY ticket_type_id
+			 ) b
+			 WHERE tt.id = b.ticket_type_id`,
+			[eventId]
+		);
+
+		await client.query(
+			`UPDATE bookings SET booking_status = 'CANCELLED'
+			 WHERE event_id = $1 AND booking_status = 'CONFIRMED'`,
+			[eventId]
+		);
+
+		await client.query('COMMIT');
+	} catch (err) {
+		await client.query('ROLLBACK');
+		throw err;
+	} finally {
+		client.release();
+	}
+
+	// Send notification messages after the transaction commits
 	for (const row of bookings.rows) {
 		await query(
 			`INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
-       VALUES ($1,$2,$3,$4,$5)`,
+			 VALUES ($1,$2,$3,$4,$5)`,
 			[
 				row.organizer_id,
 				row.attendee_id,
 				row.booking_id,
-				`Event Cancellation Notice`,
+				'Event Cancellation Notice',
 				`Dear ${row.first_name} ${row.last_name},\n\nWe regret to inform you that the event "${row.event_title}" has been cancelled.\nYour booking has been cancelled and a refund will be processed.\n\nWe apologize for any inconvenience.`
 			]
 		);
 	}
-
-	// Cancel all bookings for this event
-	await query(
-		`UPDATE bookings SET booking_status = 'CANCELLED' WHERE event_id = $1 AND booking_status = 'CONFIRMED'`,
-		[eventId]
-	);
 };
