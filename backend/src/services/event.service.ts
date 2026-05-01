@@ -1,4 +1,4 @@
-import { query } from '../config/database';
+import pool, { query } from '../config/database';
 import { Event, CreateEventDTO, EventFilters } from '../models/event.model';
 
 export const createEvent = async (organizerId: number, dto: CreateEventDTO): Promise<Event> => {
@@ -8,6 +8,7 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
     categories, photos, ticket_types,
   } = dto;
 
+  // Validations before opening a transaction
   if (capacity <= 0) {
     throw new Error('Capacity must be greater than 0');
   }
@@ -27,43 +28,60 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
     }
   }
 
-  const result = await query(
-    `INSERT INTO events (title, event_type, venue, address, city, country, geo_lat, geo_lng,
-      start_datetime, end_datetime, capacity, organizer_id, status, description)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT',$13) RETURNING *`,
-    [title, event_type, venue, address, city, country, geo_lat, geo_lng,
-     start_datetime, end_datetime, capacity, organizerId, description]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  const event: Event = result.rows[0];
+    const result = await client.query(
+      `INSERT INTO events (title, event_type, venue, address, city, country, geo_lat, geo_lng,
+        start_datetime, end_datetime, capacity, organizer_id, status, description)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT',$13) RETURNING *`,
+      [title, event_type, venue, address, city, country, geo_lat, geo_lng,
+       start_datetime, end_datetime, capacity, organizerId, description]
+    );
 
-  if (categories && categories.length > 0) {
-    for (const cat of categories) {
-      await query('INSERT INTO event_categories (event_id, category) VALUES ($1,$2)', [event.id, cat]);
+    const event: Event = result.rows[0];
+
+    if (categories && categories.length > 0) {
+      for (const cat of categories) {
+        await client.query(
+          'INSERT INTO event_categories (event_id, category) VALUES ($1,$2)',
+          [event.id, cat]
+        );
+      }
+      event.categories = categories;
     }
-    event.categories = categories;
-  }
 
-  if (photos && photos.length > 0) {
-    for (const url of photos) {
-      await query('INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)', [event.id, url]);
+    if (photos && photos.length > 0) {
+      for (const url of photos) {
+        await client.query(
+          'INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)',
+          [event.id, url]
+        );
+      }
+      event.photos = photos;
     }
-    event.photos = photos;
-  }
 
-  if (ticket_types && ticket_types.length > 0) {
-    const tts = [];
-    for (const tt of ticket_types) {
-      const ttResult = await query(
-        'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4) RETURNING *',
-        [event.id, tt.name, tt.price, tt.quantity]
-      );
-      tts.push(ttResult.rows[0]);
+    if (ticket_types && ticket_types.length > 0) {
+      const tts = [];
+      for (const tt of ticket_types) {
+        const ttResult = await client.query(
+          'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4) RETURNING *',
+          [event.id, tt.name, tt.price, tt.quantity]
+        );
+        tts.push(ttResult.rows[0]);
+      }
+      event.ticket_types = tts;
     }
-    event.ticket_types = tts;
-  }
 
-  return event;
+    await client.query('COMMIT');
+    return event;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const getEvents = async (filters: EventFilters = {}): Promise<{ events: Event[]; total: number }> => {
