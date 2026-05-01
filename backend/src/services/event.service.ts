@@ -8,6 +8,25 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
     categories, photos, ticket_types,
   } = dto;
 
+  if (capacity <= 0) {
+    throw new Error('Capacity must be greater than 0');
+  }
+
+  if (new Date(end_datetime) <= new Date(start_datetime)) {
+    throw new Error('End date/time must be after start date/time');
+  }
+
+  if (ticket_types && ticket_types.length > 0) {
+    for (const tt of ticket_types) {
+      if (tt.quantity <= 0) throw new Error(`Ticket type "${tt.name}": quantity must be greater than 0`);
+      if (tt.price < 0) throw new Error(`Ticket type "${tt.name}": price cannot be negative`);
+    }
+    const totalTickets = ticket_types.reduce((sum, tt) => sum + tt.quantity, 0);
+    if (totalTickets > capacity) {
+      throw new Error(`Total ticket quantity (${totalTickets}) exceeds event capacity (${capacity})`);
+    }
+  }
+
   const result = await query(
     `INSERT INTO events (title, event_type, venue, address, city, country, geo_lat, geo_lng,
       start_datetime, end_datetime, capacity, organizer_id, status, description)
@@ -180,6 +199,24 @@ export const updateEvent = async (id: number, organizerId: number, dto: Partial<
     title, event_type, venue, address, city, country,
     geo_lat, geo_lng, start_datetime, end_datetime, capacity, description, photos,
   } = dto;
+
+  if (start_datetime && end_datetime && new Date(end_datetime) <= new Date(start_datetime)) {
+    throw new Error('End date/time must be after start date/time');
+  }
+
+  if (capacity !== undefined) {
+    if (capacity <= 0) throw new Error('Capacity must be greater than 0');
+    const ttSum = await query(
+      'SELECT COALESCE(SUM(quantity), 0) AS total FROM ticket_types WHERE event_id = $1',
+      [id]
+    );
+    const currentTotal = parseInt(ttSum.rows[0].total, 10);
+    if (currentTotal > capacity) {
+      throw new Error(
+        `Cannot reduce capacity to ${capacity} — existing ticket types total ${currentTotal} tickets`
+      );
+    }
+  }
 
   await query(
     `UPDATE events SET
