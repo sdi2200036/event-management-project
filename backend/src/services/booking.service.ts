@@ -1,54 +1,63 @@
-import { query } from '../config/database';
+import pool, { query } from '../config/database';
 import { Booking, BookingWithDetails, CreateBookingDTO } from '../models/booking.model';
 
 export const createBooking = async (attendeeId: number, dto: CreateBookingDTO): Promise<Booking> => {
   const { event_id, ticket_type_id, number_of_tickets } = dto;
 
-  // Validate event exists and is published
+  // Validate event exists and is published (outside transaction — read-only check)
   const eventResult = await query(
-    "SELECT * FROM events WHERE id = $1 AND status = 'PUBLISHED'",
+    "SELECT id FROM events WHERE id = $1 AND status = 'PUBLISHED'",
     [event_id]
   );
   if (eventResult.rows.length === 0) {
     throw new Error('Event not found or not available for booking');
   }
 
-  // Validate ticket type belongs to event and has availability
-  const ttResult = await query(
-    'SELECT * FROM ticket_types WHERE id = $1 AND event_id = $2',
+  // Validate ticket type belongs to event (outside transaction — read-only check)
+  const ttCheck = await query(
+    'SELECT id FROM ticket_types WHERE id = $1 AND event_id = $2',
     [ticket_type_id, event_id]
   );
-  if (ttResult.rows.length === 0) {
+  if (ttCheck.rows.length === 0) {
     throw new Error('Ticket type not found for this event');
   }
 
-  const ticketType = ttResult.rows[0];
-  if (ticketType.available < number_of_tickets) {
-    throw new Error(`Only ${ticketType.available} ticket(s) available`);
-  }
-
-  const total_cost = ticketType.price * number_of_tickets;
-
-  // Create booking in a transaction
-  await query('BEGIN');
+  // Use a dedicated client so BEGIN/COMMIT/ROLLBACK stay on the same connection
+  const client = await pool.connect();
   try {
-    const bookingResult = await query(
+    await client.query('BEGIN');
+
+    // Lock the ticket_type row to prevent concurrent overbooking (fixes race condition)
+    const ttResult = await client.query(
+      'SELECT * FROM ticket_types WHERE id = $1 FOR UPDATE',
+      [ticket_type_id]
+    );
+    const ticketType = ttResult.rows[0];
+
+    if (ticketType.available < number_of_tickets) {
+      throw new Error(`Only ${ticketType.available} ticket(s) available`);
+    }
+
+    const total_cost = parseFloat(ticketType.price) * number_of_tickets;
+
+    const bookingResult = await client.query(
       `INSERT INTO bookings (event_id, attendee_id, ticket_type_id, number_of_tickets, total_cost, booking_status)
        VALUES ($1,$2,$3,$4,$5,'CONFIRMED') RETURNING *`,
       [event_id, attendeeId, ticket_type_id, number_of_tickets, total_cost]
     );
 
-    // Decrement available count
-    await query(
+    await client.query(
       'UPDATE ticket_types SET available = available - $1 WHERE id = $2',
       [number_of_tickets, ticket_type_id]
     );
 
-    await query('COMMIT');
+    await client.query('COMMIT');
     return bookingResult.rows[0];
   } catch (err) {
-    await query('ROLLBACK');
+    await client.query('ROLLBACK');
     throw err;
+  } finally {
+    client.release();
   }
 };
 
@@ -82,6 +91,7 @@ export const getBookingsByUser = async (userId: number): Promise<BookingWithDeta
 };
 
 export const cancelBooking = async (bookingId: number, userId: number): Promise<void> => {
+  // Read-only pre-checks outside the transaction
   const result = await query('SELECT * FROM bookings WHERE id = $1', [bookingId]);
   if (result.rows.length === 0) throw new Error('Booking not found');
 
@@ -89,16 +99,24 @@ export const cancelBooking = async (bookingId: number, userId: number): Promise<
   if (booking.attendee_id !== userId) throw new Error('Not authorized to cancel this booking');
   if (booking.booking_status === 'CANCELLED') throw new Error('Booking already cancelled');
 
-  await query('BEGIN');
+  const client = await pool.connect();
   try {
-    await query("UPDATE bookings SET booking_status = 'CANCELLED' WHERE id = $1", [bookingId]);
-    await query(
+    await client.query('BEGIN');
+
+    await client.query(
+      "UPDATE bookings SET booking_status = 'CANCELLED' WHERE id = $1",
+      [bookingId]
+    );
+    await client.query(
       'UPDATE ticket_types SET available = available + $1 WHERE id = $2',
       [booking.number_of_tickets, booking.ticket_type_id]
     );
-    await query('COMMIT');
+
+    await client.query('COMMIT');
   } catch (err) {
-    await query('ROLLBACK');
+    await client.query('ROLLBACK');
     throw err;
+  } finally {
+    client.release();
   }
 };
