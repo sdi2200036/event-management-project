@@ -278,7 +278,22 @@ export const deleteEvent = async (id: number, userId: number, userRole: string):
   const event = await getEventById(id);
   if (!event) throw new Error('Event not found');
   if (userRole !== 'admin' && event.organizer_id !== userId) throw new Error('Not authorized');
-  if (event.status === 'PUBLISHED') throw new Error('Cannot delete a published event. Cancel it first.');
+
+  if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
+    throw new Error('Cannot delete a cancelled or completed event');
+  }
+
+  // Per spec: deletion allowed before publication OR before first booking.
+  // A published event with existing bookings must be cancelled instead.
+  if (event.status === 'PUBLISHED') {
+    const bookingCount = await query(
+      "SELECT COUNT(*) FROM bookings WHERE event_id = $1 AND booking_status != 'CANCELLED'",
+      [id]
+    );
+    if (parseInt(bookingCount.rows[0].count, 10) > 0) {
+      throw new Error('Cannot delete a published event with existing bookings. Cancel it first.');
+    }
+  }
 
   await query('DELETE FROM events WHERE id = $1', [id]);
 };
