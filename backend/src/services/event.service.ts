@@ -52,8 +52,16 @@ export const getEvents = async (filters: EventFilters = {}): Promise<{ events: E
   const params: any[] = [];
   let paramIdx = 1;
 
-  // Default: only show published events (public search)
-  if (!filters.status) {
+  // Organizer searches see all their own statuses unless they filter by one.
+  // Public searches default to PUBLISHED only.
+  if (filters.organizerId) {
+    conditions.push(`e.organizer_id = $${paramIdx++}`);
+    params.push(filters.organizerId);
+    if (filters.status) {
+      conditions.push(`e.status = $${paramIdx++}`);
+      params.push(filters.status);
+    }
+  } else if (!filters.status) {
     conditions.push(`e.status = 'PUBLISHED'`);
   } else {
     conditions.push(`e.status = $${paramIdx++}`);

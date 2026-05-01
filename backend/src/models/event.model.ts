@@ -62,6 +62,7 @@ export interface EventFilters {
   maxPrice?: number;
   location?: string;
   status?: EventStatus;
+  organizerId?: number;
   page?: number;
   limit?: number;
 }

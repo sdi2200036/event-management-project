@@ -99,21 +99,14 @@ export const deleteEvent = async (req: AuthRequest, res: Response): Promise<void
 export const getOrganizerEvents = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const filters: EventFilters = {
+      organizerId: req.user!.id,
       status: req.query.status as any,
       page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 20,
     };
 
-    // Override to show all statuses for this organizer
-    const { query } = await import('../config/database');
-    const result = await query(
-      `SELECT e.* FROM events e
-       WHERE e.organizer_id = $1
-       ORDER BY e.created_at DESC`,
-      [req.user!.id]
-    );
-
-    res.json({ events: result.rows, total: result.rows.length });
+    const result = await eventService.getEvents(filters);
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
