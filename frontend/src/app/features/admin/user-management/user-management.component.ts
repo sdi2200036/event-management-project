@@ -29,6 +29,10 @@ export class UserManagementComponent {
 		private modalService: ModalService
 	) {}
 
+	public viewUser(id: number): void {
+		this.router.navigate(['/admin/users', id]);
+	}
+
 	public loadUsers(): void {
 		this.router.navigate([], {
 			queryParams: {
