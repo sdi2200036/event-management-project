@@ -16,6 +16,10 @@ backend/dist/
 *.log
 npm-debug.log*
 
+# SSL certificates (never commit private keys)
+*.pem
+backend/certs/
+
 # OS files
 .DS_Store
 Thumbs.db

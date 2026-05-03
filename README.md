@@ -177,7 +177,19 @@ UPDATE users SET password_hash='$2b$10$YOUR_HASH_HERE' WHERE username='admin';
 \q
 ```
 
-### 7. Configure backend environment
+### 7. Generate SSL certificates
+
+The backend requires HTTPS. Generate a self-signed certificate for development:
+
+```bash
+cd backend
+mkdir -p certs
+openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"
+```
+
+This creates `backend/certs/key.pem` and `backend/certs/cert.pem`. These files are gitignored and never committed.
+
+### 8. Configure backend environment
 
 ```bash
 cd backend
@@ -195,9 +207,11 @@ JWT_SECRET=any_long_random_string_here
 JWT_EXPIRES_IN=24h
 PORT=3000
 FRONTEND_URL=http://localhost:4200
+SSL_KEY_PATH=./certs/key.pem
+SSL_CERT_PATH=./certs/cert.pem
 ```
 
-### 8. Install frontend dependencies
+### 10. Install frontend dependencies
 
 ```bash
 cd frontend

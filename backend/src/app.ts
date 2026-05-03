@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/users.routes';
@@ -54,15 +57,25 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 const PORT = process.env.PORT || 3000;
+const keyPath = path.resolve(process.env.SSL_KEY_PATH || './certs/key.pem');
+const certPath = path.resolve(process.env.SSL_CERT_PATH || './certs/cert.pem');
 
-// NOTE: For production, use HTTPS with SSL certificates:
-// import https from 'https';
-// import fs from 'fs';
-// const options = { key: fs.readFileSync('key.pem'), cert: fs.readFileSync('cert.pem') };
-// https.createServer(options, app).listen(PORT, () => console.log(`HTTPS server on port ${PORT}`));
+if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+  console.error('SSL certificate files not found.');
+  console.error(`Expected key:  ${keyPath}`);
+  console.error(`Expected cert: ${certPath}`);
+  console.error('Generate them with:');
+  console.error('  mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"');
+  process.exit(1);
+}
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const sslOptions = {
+  key: fs.readFileSync(keyPath),
+  cert: fs.readFileSync(certPath),
+};
+
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`HTTPS server running on port ${PORT}`);
 });
 
 export default app;
