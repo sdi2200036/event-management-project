@@ -14,7 +14,8 @@ export enum UserRole {
 export enum UserStatus {
 	Pending = 'pending',
 	Approved = 'approved',
-	Rejected = 'rejected'
+	Rejected = 'rejected',
+	Suspended = 'suspended'
 }
 
 export interface User {

@@ -26,26 +26,26 @@ export const register = async (dto: RegisterDTO): Promise<{ message: string }> =
   return { message: 'Registration successful. Awaiting admin approval.' };
 };
 
+// Used to ensure constant-time comparison even when the user doesn't exist (prevents timing attacks)
+const DUMMY_HASH = '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012';
+
 export const login = async (dto: LoginDTO): Promise<{ token: string; user: Partial<User> }> => {
   const { username, password } = dto;
 
   const result = await query('SELECT * FROM users WHERE username = $1', [username]);
-  if (result.rows.length === 0) {
+  const user: User | null = result.rows[0] ?? null;
+
+  // Always run bcrypt.compare to prevent username enumeration via timing
+  const hash = user ? user.password_hash : DUMMY_HASH;
+  const valid = await bcrypt.compare(password, hash);
+
+  if (!user || !valid) {
     throw new Error('Invalid credentials');
   }
 
-  const user: User = result.rows[0];
-
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) {
+  // Generic message for non-approved accounts — don't reveal exact status
+  if (user.status !== 'approved') {
     throw new Error('Invalid credentials');
-  }
-
-  if (user.status === 'pending') {
-    throw new Error('Your account is pending admin approval');
-  }
-  if (user.status === 'rejected') {
-    throw new Error('Your account has been rejected');
   }
 
   const token = signToken({ id: user.id, username: user.username, role: user.role, status: user.status });
@@ -66,10 +66,20 @@ export const approveUser = async (userId: number): Promise<void> => {
 
 export const rejectUser = async (userId: number): Promise<void> => {
   const result = await query(
-    "UPDATE users SET status = 'rejected' WHERE id = $1 RETURNING id",
+    "UPDATE users SET status = 'rejected' WHERE id = $1 AND status = 'pending' RETURNING id",
     [userId]
   );
   if (result.rows.length === 0) {
-    throw new Error('User not found');
+    throw new Error('User not found or is not pending');
+  }
+};
+
+export const suspendUser = async (userId: number): Promise<void> => {
+  const result = await query(
+    "UPDATE users SET status = 'suspended' WHERE id = $1 AND status = 'approved' RETURNING id",
+    [userId]
+  );
+  if (result.rows.length === 0) {
+    throw new Error('User not found or is not approved');
   }
 };

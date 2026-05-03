@@ -3,7 +3,7 @@
 
 -- Create ENUM types
 CREATE TYPE user_role AS ENUM ('admin', 'organizer', 'participant');
-CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE user_status AS ENUM ('pending', 'approved', 'rejected', 'suspended');
 CREATE TYPE event_status AS ENUM ('DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED');
 CREATE TYPE booking_status AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED');
 

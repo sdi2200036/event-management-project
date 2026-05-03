@@ -6,6 +6,7 @@ import {
   getUserById,
   approveUser,
   rejectUser,
+  suspendUser,
   updateUser,
 } from '../controllers/users.controller';
 
@@ -23,7 +24,10 @@ router.patch('/:id', authenticate, updateUser);
 // PATCH /api/users/:id/approve - Admin only
 router.patch('/:id/approve', authenticate, requireRole('admin'), approveUser);
 
-// PATCH /api/users/:id/reject - Admin only
+// PATCH /api/users/:id/reject - Admin only (pending users only)
 router.patch('/:id/reject', authenticate, requireRole('admin'), rejectUser);
+
+// PATCH /api/users/:id/suspend - Admin only (approved users only)
+router.patch('/:id/suspend', authenticate, requireRole('admin'), suspendUser);
 
 export default router;

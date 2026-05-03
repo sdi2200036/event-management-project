@@ -16,7 +16,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
       maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined,
       location: req.query.location as string,
       page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 20,
+      limit: Math.min(req.query.limit ? parseInt(req.query.limit as string, 10) : 20, 100),
     };
 
     const result = await eventService.getEvents(filters);
@@ -57,7 +57,7 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
 
 export const updateEvent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const event = await eventService.updateEvent(parseInt(req.params.id, 10), req.user!.id, req.body);
+    const event = await eventService.updateEvent(parseInt(req.params.id, 10), req.user!.id, req.user!.role, req.body);
     res.json(event);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
@@ -102,7 +102,7 @@ export const getOrganizerEvents = async (req: AuthRequest, res: Response): Promi
       organizerId: req.user!.id,
       status: req.query.status as any,
       page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 20,
+      limit: Math.min(req.query.limit ? parseInt(req.query.limit as string, 10) : 20, 100),
     };
 
     const result = await eventService.getEvents(filters);

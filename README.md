@@ -95,7 +95,7 @@ project/
 | **Organizer** | Create/edit/publish/cancel events, view bookings for their events |
 | **Admin** | Approve/reject user accounts, manage all users, export data |
 
-New accounts start as `pending` and must be approved by an Admin before they can log in.
+New accounts start as `pending` and must be approved by an Admin before they can log in. Approved users can later be `suspended`, which revokes their access without deleting their account.
 
 ---
 
@@ -252,12 +252,17 @@ sudo service postgresql start
 | POST | `/api/auth/register` | Register new user |
 | POST | `/api/auth/login` | Login, returns JWT token |
 
-### Users (Admin only)
-| Method | URL | Description |
-|--------|-----|-------------|
-| GET | `/api/users` | List all users |
-| PATCH | `/api/users/:id/approve` | Approve a pending user |
-| PATCH | `/api/users/:id/reject` | Reject a pending user |
+> Both auth endpoints are rate-limited to **20 requests per 15 minutes** per IP.
+
+### Users
+| Method | URL | Auth | Description |
+|--------|-----|------|-------------|
+| GET | `/api/users` | Admin | List all users (filter by role/status) |
+| GET | `/api/users/:id` | Any | Get user profile (`afm` hidden unless self or admin) |
+| PATCH | `/api/users/:id` | Self or Admin | Update profile fields |
+| PATCH | `/api/users/:id/approve` | Admin | Approve a pending user |
+| PATCH | `/api/users/:id/reject` | Admin | Reject a pending user (only works if status is `pending`) |
+| PATCH | `/api/users/:id/suspend` | Admin | Suspend an approved user (only works if status is `approved`) |
 
 ### Events
 | Method | URL | Description |
@@ -282,11 +287,12 @@ sudo service postgresql start
 ### Messages
 | Method | URL | Description |
 |--------|-----|-------------|
-| GET | `/api/messages/inbox` | View inbox |
-| GET | `/api/messages/sent` | View sent messages |
+| GET | `/api/messages/inbox` | View inbox (paginated, unread first) |
+| GET | `/api/messages/sent` | View sent messages (paginated) |
+| GET | `/api/messages/unread-count` | Get number of unread messages |
 | POST | `/api/messages` | Send a message |
 | PATCH | `/api/messages/:id/read` | Mark as read |
-| DELETE | `/api/messages/:id` | Delete a message |
+| DELETE | `/api/messages/:id` | Delete a message (hard-deleted only when both sides delete) |
 
 ### Export (Admin only)
 | Method | URL | Description |

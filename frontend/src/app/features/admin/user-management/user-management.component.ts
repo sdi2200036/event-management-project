@@ -72,4 +72,22 @@ export class UserManagementComponent {
 			});
 		});
 	}
+
+	public suspendUser(user: User): void {
+		this.modalService.confirm(`Suspend user "${user.username}"? They will lose access immediately.`).then((confirmed) => {
+			if (!confirmed) return;
+			this.actionLoading.set(user.id);
+			this.http.patch(`${environment.apiUrl}/users/${user.id}/suspend`, {}).subscribe({
+				next: () => {
+					this.toastService.success(`User "${user.username}" suspended`);
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.actionLoading.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to suspend');
+					this.actionLoading.set(null);
+				}
+			});
+		});
+	}
 }

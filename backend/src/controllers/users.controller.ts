@@ -29,7 +29,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
 
 export const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
     const result = await query(
       'SELECT id, username, first_name, last_name, email, phone, address, city, country, postal_code, afm, role, status, created_at FROM users WHERE id = $1',
       [id]
@@ -38,7 +38,12 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
       res.status(404).json({ message: 'User not found' });
       return;
     }
-    res.json(result.rows[0]);
+    const user = result.rows[0];
+    const caller = req.user!;
+    if (caller.role !== 'admin' && caller.id !== id) {
+      delete user.afm;
+    }
+    res.json(user);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
@@ -57,6 +62,15 @@ export const rejectUser = async (req: AuthRequest, res: Response): Promise<void>
   try {
     await authService.rejectUser(parseInt(req.params.id, 10));
     res.json({ message: 'User rejected' });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const suspendUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await authService.suspendUser(parseInt(req.params.id, 10));
+    res.json({ message: 'User suspended' });
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }

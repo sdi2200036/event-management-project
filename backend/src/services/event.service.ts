@@ -205,10 +205,10 @@ export const getEventById = async (id: number): Promise<Event | null> => {
   return event;
 };
 
-export const updateEvent = async (id: number, organizerId: number, dto: Partial<CreateEventDTO>): Promise<Event> => {
+export const updateEvent = async (id: number, userId: number, userRole: string, dto: Partial<CreateEventDTO>): Promise<Event> => {
   const event = await getEventById(id);
   if (!event) throw new Error('Event not found');
-  if (event.organizer_id !== organizerId) throw new Error('Not authorized to edit this event');
+  if (userRole !== 'admin' && event.organizer_id !== userId) throw new Error('Not authorized to edit this event');
   if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
     throw new Error('Cannot edit a cancelled or completed event');
   }

@@ -20,6 +20,7 @@
 						<option value="pending">Pending</option>
 						<option value="approved">Approved</option>
 						<option value="rejected">Rejected</option>
+						<option value="suspended">Suspended</option>
 					</select>
 				</div>
 				<div class="col-md-3">
@@ -56,6 +57,7 @@
 							<tr
 								[class.table-warning]="user.status === 'pending'"
 								[class.table-danger]="user.status === 'rejected'"
+								[class.table-secondary]="user.status === 'suspended'"
 							>
 								<td class="text-muted small">{{ user.id }}</td>
 								<td class="fw-semibold">{{ user.username }}</td>
@@ -79,7 +81,8 @@
 										[ngClass]="{
 											'bg-warning text-dark': user.status === 'pending',
 											'bg-success': user.status === 'approved',
-											'bg-danger': user.status === 'rejected'
+											'bg-danger': user.status === 'rejected',
+											'bg-secondary': user.status === 'suspended'
 										}"
 									>
 										{{ user.status }}
@@ -101,14 +104,21 @@
 												}
 												Approve
 											</button>
-										}
-										@if (user.status === 'pending' || user.status === 'approved') {
 											<button
 												class="btn btn-sm btn-outline-danger"
 												(click)="this.rejectUser(user)"
-												[disabled]="this.actionLoading() === user.id || user.role === 'admin'"
+												[disabled]="this.actionLoading() === user.id"
 											>
 												Reject
+											</button>
+										}
+										@if (user.status === 'approved' && user.role !== 'admin') {
+											<button
+												class="btn btn-sm btn-outline-warning"
+												(click)="this.suspendUser(user)"
+												[disabled]="this.actionLoading() === user.id"
+											>
+												Suspend
 											</button>
 										}
 									</div>
