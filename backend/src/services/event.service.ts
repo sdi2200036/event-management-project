@@ -165,16 +165,41 @@ export const getEvents = async (filters: EventFilters = {}): Promise<{ events: E
 
   const events = eventsResult.rows;
 
-  // Attach categories, photos, ticket_types
-  for (const ev of events) {
-    const cats = await query('SELECT category FROM event_categories WHERE event_id = $1', [ev.id]);
-    ev.categories = cats.rows.map((r: any) => r.category);
+  if (events.length > 0) {
+    const eventIds = events.map((e: any) => e.id);
 
-    const phs = await query('SELECT photo_url FROM event_photos WHERE event_id = $1', [ev.id]);
-    ev.photos = phs.rows.map((r: any) => r.photo_url);
+    const [cats, phs, tts] = await Promise.all([
+      query('SELECT event_id, category FROM event_categories WHERE event_id = ANY($1)', [eventIds]),
+      query('SELECT event_id, photo_url FROM event_photos WHERE event_id = ANY($1)', [eventIds]),
+      query('SELECT * FROM ticket_types WHERE event_id = ANY($1)', [eventIds]),
+    ]);
 
-    const tts = await query('SELECT * FROM ticket_types WHERE event_id = $1', [ev.id]);
-    ev.ticket_types = tts.rows;
+    const categoriesByEvent = new Map<number, string[]>();
+    for (const r of cats.rows) {
+      const arr = categoriesByEvent.get(r.event_id) ?? [];
+      arr.push(r.category);
+      categoriesByEvent.set(r.event_id, arr);
+    }
+
+    const photosByEvent = new Map<number, string[]>();
+    for (const r of phs.rows) {
+      const arr = photosByEvent.get(r.event_id) ?? [];
+      arr.push(r.photo_url);
+      photosByEvent.set(r.event_id, arr);
+    }
+
+    const ticketsByEvent = new Map<number, any[]>();
+    for (const r of tts.rows) {
+      const arr = ticketsByEvent.get(r.event_id) ?? [];
+      arr.push(r);
+      ticketsByEvent.set(r.event_id, arr);
+    }
+
+    for (const ev of events) {
+      ev.categories = categoriesByEvent.get(ev.id) ?? [];
+      ev.photos = photosByEvent.get(ev.id) ?? [];
+      ev.ticket_types = ticketsByEvent.get(ev.id) ?? [];
+    }
   }
 
   return { events, total };

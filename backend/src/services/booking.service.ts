@@ -38,6 +38,21 @@ export const createBooking = async (attendeeId: number, dto: CreateBookingDTO): 
       throw new Error(`Only ${ticketType.available} ticket(s) available`);
     }
 
+    // Check total event capacity is not exceeded
+    const capacityResult = await client.query(
+      `SELECT e.capacity,
+              COALESCE(SUM(b.number_of_tickets), 0) AS booked
+       FROM events e
+       LEFT JOIN bookings b ON b.event_id = e.id AND b.booking_status = 'CONFIRMED'
+       WHERE e.id = $1
+       GROUP BY e.capacity`,
+      [event_id]
+    );
+    const { capacity, booked } = capacityResult.rows[0];
+    if (parseInt(booked, 10) + number_of_tickets > parseInt(capacity, 10)) {
+      throw new Error('Not enough capacity remaining for this event');
+    }
+
     const total_cost = parseFloat(ticketType.price) * number_of_tickets;
 
     const bookingResult = await client.query(
