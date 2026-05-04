@@ -98,6 +98,11 @@ export class EventFormComponent {
 			if (valueOf(p.categories).length === 0) {
 				return [{ kind: 'form', field: 'categories', message: 'At least one category is required' }];
 			}
+			const start = valueOf(p.start_datetime);
+			const end = valueOf(p.end_datetime);
+			if (start && end && new Date(end) <= new Date(start)) {
+				return [{ kind: 'form', field: 'end_datetime', message: 'End date/time must be after start date/time' }];
+			}
 			if (valueOf(p.capacity) < valueOf(p.ticket_types).reduce((sum, tt) => sum + tt.quantity, 0)) {
 				return [{ kind: 'form', field: 'capacity', message: 'Capacity cannot be less than total ticket quantity' }];
 			}
