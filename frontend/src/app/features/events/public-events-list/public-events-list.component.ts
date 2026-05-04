@@ -33,6 +33,7 @@ export class PublicEventsListComponent {
 
 	public readonly filterModel: WritableSignal<{
 		title: string;
+		description: string;
 		category: string;
 		location: string;
 		dateFrom: string;
@@ -43,6 +44,7 @@ export class PublicEventsListComponent {
 		const queryParams: Params = this.queryParams();
 		return {
 			title: queryParams['title'] || '',
+			description: queryParams['description'] || '',
 			category: queryParams['category'] || '',
 			location: queryParams['location'] || '',
 			dateFrom: queryParams['dateFrom'] || '',
@@ -80,6 +82,7 @@ export class PublicEventsListComponent {
 			relativeTo: this.activatedRoute,
 			queryParams: {
 				title: model.title || null,
+				description: model.description || null,
 				category: model.category || null,
 				location: model.location || null,
 				dateFrom: model.dateFrom || null,
@@ -96,6 +99,7 @@ export class PublicEventsListComponent {
 			relativeTo: this.activatedRoute,
 			queryParams: {
 				title: null,
+				description: null,
 				category: null,
 				location: null,
 				dateFrom: null,

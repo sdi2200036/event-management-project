@@ -63,8 +63,13 @@
 							<label class="form-label fw-semibold">Number of Tickets</label>
 							<div class="d-flex align-items-center gap-3">
 								<input type="number" class="form-control" style="max-width: 120px" [formField]="this.bookingForm.number_of_tickets" />
-								<span class="text-muted">Max 20 per booking</span>
+								@if (this.selectedTicketType()) {
+									<span class="text-muted">{{ this.selectedTicketType()!.available }} available</span>
+								}
 							</div>
+							@for (error of this.bookingForm().errors(); track $index) {
+								<div class="text-danger small mt-1">{{ error.message }}</div>
+							}
 						</div>
 						<!-- Total -->
 						<div class="card bg-light border-0 mb-4">

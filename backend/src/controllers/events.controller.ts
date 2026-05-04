@@ -34,10 +34,21 @@ export const getEventById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Track view for authenticated users
     const authReq = req as AuthRequest;
-    if (authReq.user) {
-      await eventService.trackView(authReq.user.id, event.id);
+    const user = authReq.user;
+
+    // Non-published events are only visible to the organizer or an admin
+    if (event.status !== 'PUBLISHED') {
+      const canView = user && (user.role === 'admin' || user.id === event.organizer_id);
+      if (!canView) {
+        res.status(404).json({ message: 'Event not found' });
+        return;
+      }
+    }
+
+    // Track views only for published events
+    if (user && event.status === 'PUBLISHED') {
+      await eventService.trackView(user.id, event.id);
     }
 
     res.json(event);

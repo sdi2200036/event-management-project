@@ -56,11 +56,11 @@ export const login = async (dto: LoginDTO): Promise<{ token: string; user: Parti
 
 export const approveUser = async (userId: number): Promise<void> => {
   const result = await query(
-    "UPDATE users SET status = 'approved' WHERE id = $1 RETURNING id",
+    "UPDATE users SET status = 'approved' WHERE id = $1 AND status = 'pending' RETURNING id",
     [userId]
   );
   if (result.rows.length === 0) {
-    throw new Error('User not found');
+    throw new Error('User not found or is not pending');
   }
 };
 

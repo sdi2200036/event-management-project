@@ -14,6 +14,14 @@
 								placeholder="Search by title..."
 							/>
 						</div>
+						<div class="col-md-3">
+							<input
+								type="text"
+								class="form-control"
+								[formField]="this.filterForm.description"
+								placeholder="Search by description..."
+							/>
+						</div>
 						<div class="col-md-2">
 							<select class="form-select" [formField]="this.filterForm.category">
 								<option value="">All Categories</option>
@@ -31,16 +39,16 @@
 							/>
 						</div>
 						<div class="col-md-2">
+							<button type="submit" class="btn btn-primary w-100">Search</button>
+						</div>
+					</div>
+					<div class="row g-2 mt-1">
+						<div class="col-md-2">
 							<input type="date" class="form-control" [formField]="this.filterForm.dateFrom" />
 						</div>
 						<div class="col-md-2">
 							<input type="date" class="form-control" [formField]="this.filterForm.dateTo" />
 						</div>
-						<div class="col-md-1">
-							<button type="submit" class="btn btn-primary w-100">Search</button>
-						</div>
-					</div>
-					<div class="row g-2 mt-1">
 						<div class="col-md-2">
 							<input
 								type="number"

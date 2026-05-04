@@ -5,7 +5,6 @@ import {
 	InputSignal,
 	linkedSignal,
 	Signal,
-	signal,
 	WritableSignal
 } from '@angular/core';
 import {
@@ -111,7 +110,7 @@ export class EventFormComponent {
 	});
 
 	public readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
-	public photos: WritableSignal<string[]> = signal([]);
+	public readonly photos: WritableSignal<string[]> = linkedSignal<string[]>(() => this.event()?.photos ?? []);
 
 	public categories: EventCategory[] = Object.values(EventCategory);
 

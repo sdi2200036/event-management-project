@@ -10,7 +10,7 @@ import {
 	viewChild,
 	WritableSignal
 } from '@angular/core';
-import { form, FormField, max, min, required, submit } from '@angular/forms/signals';
+import { form, FormField, min, required, submit, validate } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
 import { ModalService } from '../../../core/services/modal.service';
@@ -37,8 +37,16 @@ export class BookingFormComponent {
 	public readonly bookingForm = form(this.bookingModel, (p) => {
 		required(p.ticket_type_id);
 		required(p.number_of_tickets);
-		min(p.number_of_tickets, 1);
-		max(p.number_of_tickets, 20);
+		min(p.number_of_tickets, 1, { message: 'Must book at least 1 ticket' });
+		validate(p, ({ valueOf }) => {
+			const count = valueOf(p.number_of_tickets);
+			const ticketTypeId = valueOf(p.ticket_type_id);
+			const ticketType = this.event()?.ticket_types?.find((t) => String(t.id) === ticketTypeId);
+			if (ticketType && count > ticketType.available) {
+				return [{ kind: 'form', message: `Only ${ticketType.available} ticket(s) available for this type` }];
+			}
+			return undefined;
+		});
 	});
 
 	public bookingCreated: WritableSignal<boolean> = signal(false);

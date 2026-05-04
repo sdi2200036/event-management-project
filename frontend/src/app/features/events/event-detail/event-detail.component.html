@@ -60,6 +60,9 @@
 								<button class="btn btn-sm btn-danger" (click)="this.deleteEvent()">Delete</button>
 							}
 							@if (this.event()!.status === 'PUBLISHED') {
+								<button type="button" (click)="this.goToEditEvent()" class="btn btn-sm btn-outline-primary">
+									Edit
+								</button>
 								<button class="btn btn-sm btn-warning" (click)="this.cancelEvent()">Cancel Event</button>
 								@if (this.bookings().filter(b => b.booking_status !== 'CANCELLED').length === 0) {
 									<button class="btn btn-sm btn-danger" (click)="this.deleteEvent()">Delete</button>

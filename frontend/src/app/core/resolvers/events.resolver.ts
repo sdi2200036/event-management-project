@@ -25,6 +25,7 @@ export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> 
 
 	const filters: EventFilters = {};
 	if (params['title']) filters.title = params['title'];
+	if (params['description']) filters.description = params['description'];
 	if (params['category']) filters.category = params['category'] as EventCategory;
 	if (params['location']) filters.location = params['location'];
 	if (params['dateFrom']) filters.dateFrom = params['dateFrom'];

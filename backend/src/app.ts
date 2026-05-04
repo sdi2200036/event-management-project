@@ -13,6 +13,7 @@ import bookingRoutes from './routes/bookings.routes';
 import messageRoutes from './routes/messages.routes';
 import exportRoutes from './routes/export.routes';
 import { completeExpiredEvents } from './services/event.service';
+import { trainModel } from './services/recommendation.service';
 
 dotenv.config();
 
@@ -80,10 +81,17 @@ const runCompleteExpired = async () => {
   if (count > 0) console.log(`Marked ${count} expired event(s) as COMPLETED`);
 };
 
+const runTrainModel = async () => {
+  await trainModel();
+  console.log('Recommendation model trained');
+};
+
 https.createServer(sslOptions, app).listen(PORT, async () => {
   console.log(`HTTPS server running on port ${PORT}`);
   await runCompleteExpired();
+  await runTrainModel();
   setInterval(runCompleteExpired, 60 * 60 * 1000);
+  setInterval(runTrainModel, 60 * 60 * 1000);
 });
 
 export default app;

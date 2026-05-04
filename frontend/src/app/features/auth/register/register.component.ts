@@ -67,6 +67,7 @@ export class RegisterComponent {
 		required(p.email, { message: 'Email is required' });
 		email(p.email, { message: 'Invalid email format' });
 
+		required(p.afm, { message: 'AFM is required' });
 		minLength(p.afm, 9, { message: 'AFM must be 9 characters' });
 		maxLength(p.afm, 9, { message: 'AFM must be 9 characters' });
 		required(p.role, { message: 'Role is required' });

@@ -62,6 +62,13 @@
 										</button>
 									}
 									@if (event.status === 'PUBLISHED') {
+										<button
+											type="button"
+											(click)="this.goToEditEvent(event.id)"
+											class="btn btn-sm btn-outline-primary"
+										>
+											Edit
+										</button>
 										<button class="btn btn-sm btn-warning" (click)="this.cancelEvent(event)">
 											Cancel
 										</button>

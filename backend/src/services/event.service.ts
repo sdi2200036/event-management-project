@@ -13,6 +13,10 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
     throw new Error('At least one category is required');
   }
 
+  if (!ticket_types || ticket_types.length === 0) {
+    throw new Error('At least one ticket type is required');
+  }
+
   if (capacity <= 0) {
     throw new Error('Capacity must be greater than 0');
   }
@@ -245,11 +249,14 @@ export const updateEvent = async (id: number, userId: number, userRole: string, 
   const {
     title, event_type, venue, address, city, country,
     geo_lat, geo_lng, start_datetime, end_datetime, capacity, description, photos,
+    categories, ticket_types,
   } = dto;
 
   if (start_datetime && end_datetime && new Date(end_datetime) <= new Date(start_datetime)) {
     throw new Error('End date/time must be after start date/time');
   }
+
+  const effectiveCapacity = capacity ?? event.capacity;
 
   if (capacity !== undefined) {
     if (capacity <= 0) throw new Error('Capacity must be greater than 0');
@@ -273,14 +280,16 @@ export const updateEvent = async (id: number, userId: number, userRole: string, 
       address = COALESCE($4, address),
       city = COALESCE($5, city),
       country = COALESCE($6, country),
-      geo_lat = COALESCE($7, geo_lat),
-      geo_lng = COALESCE($8, geo_lng),
+      geo_lat = $7,
+      geo_lng = $8,
       start_datetime = COALESCE($9, start_datetime),
       end_datetime = COALESCE($10, end_datetime),
       capacity = COALESCE($11, capacity),
       description = COALESCE($12, description)
      WHERE id = $13`,
-    [title, event_type, venue, address, city, country, geo_lat, geo_lng,
+    [title, event_type, venue, address, city, country,
+     geo_lat !== undefined ? geo_lat : event.geo_lat,
+     geo_lng !== undefined ? geo_lng : event.geo_lng,
      start_datetime, end_datetime, capacity, description, id]
   );
 
@@ -289,6 +298,57 @@ export const updateEvent = async (id: number, userId: number, userRole: string, 
     await query('DELETE FROM event_photos WHERE event_id = $1', [id]);
     for (const url of photos) {
       await query('INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)', [id, url]);
+    }
+  }
+
+  // Replace categories if provided
+  if (categories !== undefined) {
+    await query('DELETE FROM event_categories WHERE event_id = $1', [id]);
+    for (const cat of categories) {
+      await query('INSERT INTO event_categories (event_id, category) VALUES ($1,$2)', [id, cat]);
+    }
+  }
+
+  // Update ticket types if provided
+  if (ticket_types !== undefined && ticket_types.length > 0) {
+    if (event.status === 'DRAFT') {
+      // DRAFT events have no bookings — safe to replace entirely
+      await query('DELETE FROM ticket_types WHERE event_id = $1', [id]);
+      for (const tt of ticket_types) {
+        await query(
+          'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4)',
+          [id, tt.name, tt.price, tt.quantity]
+        );
+      }
+    } else {
+      // PUBLISHED: match existing ticket types by name; update or insert, never delete
+      const existingTTs = await query('SELECT * FROM ticket_types WHERE event_id = $1', [id]);
+      for (const tt of ticket_types) {
+        const existing = existingTTs.rows.find((e: any) => e.name === tt.name);
+        if (existing) {
+          const sold = existing.quantity - existing.available;
+          const newAvailable = Math.max(0, tt.quantity - sold);
+          await query(
+            'UPDATE ticket_types SET price = $1, quantity = $2, available = $3 WHERE id = $4',
+            [tt.price, tt.quantity, newAvailable, existing.id]
+          );
+        } else {
+          await query(
+            'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4)',
+            [id, tt.name, tt.price, tt.quantity]
+          );
+        }
+      }
+    }
+
+    // Re-validate total ticket quantity vs capacity after changes
+    const ttSum = await query(
+      'SELECT COALESCE(SUM(quantity), 0) AS total FROM ticket_types WHERE event_id = $1',
+      [id]
+    );
+    const newTotal = parseInt(ttSum.rows[0].total, 10);
+    if (newTotal > effectiveCapacity) {
+      throw new Error(`Total ticket quantity (${newTotal}) exceeds event capacity (${effectiveCapacity})`);
     }
   }
 

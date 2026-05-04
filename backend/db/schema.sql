@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   postal_code     VARCHAR(20),
   geo_lat         DOUBLE PRECISION,
   geo_lng         DOUBLE PRECISION,
-  afm             VARCHAR(20),
+  afm             VARCHAR(20) UNIQUE NOT NULL,
   role            user_role NOT NULL DEFAULT 'participant',
   status          user_status NOT NULL DEFAULT 'pending',
   created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
