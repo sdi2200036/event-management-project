@@ -9,6 +9,10 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
   } = dto;
 
   // Validations before opening a transaction
+  if (!categories || categories.length === 0) {
+    throw new Error('At least one category is required');
+  }
+
   if (capacity <= 0) {
     throw new Error('Capacity must be greater than 0');
   }
@@ -347,4 +351,12 @@ export const trackView = async (userId: number, eventId: number): Promise<void> 
      ON CONFLICT (user_id, event_id) DO UPDATE SET viewed_at = NOW()`,
     [userId, eventId]
   );
+};
+
+export const completeExpiredEvents = async (): Promise<number> => {
+  const result = await query(
+    `UPDATE events SET status = 'COMPLETED'
+     WHERE status = 'PUBLISHED' AND end_datetime < NOW()`
+  );
+  return result.rowCount ?? 0;
 };

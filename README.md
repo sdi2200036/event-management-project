@@ -273,7 +273,6 @@ sudo service postgresql start
 |--------|-----|------|-------------|
 | GET | `/api/users` | Admin | List all users (filter by role/status) |
 | GET | `/api/users/:id` | Any | Get user profile (`afm` hidden unless self or admin) |
-| PATCH | `/api/users/:id` | Self or Admin | Update profile fields |
 | PATCH | `/api/users/:id/approve` | Admin | Approve a pending user |
 | PATCH | `/api/users/:id/reject` | Admin | Reject a pending user (only works if status is `pending`) |
 | PATCH | `/api/users/:id/suspend` | Admin | Suspend an approved user (only works if status is `approved`) |
@@ -340,7 +339,7 @@ The system uses **Biased Matrix Factorization** to suggest events to logged-in u
 - Bookings count as a rating of 5 (strong interest)
 - Event views count as a rating of 1 (weak interest)
 - The model learns user preferences and event characteristics from this data
-- New users with no history see the most popular and newest events instead
+- Users with no booking history get recommendations based on views only
 
 ---
 

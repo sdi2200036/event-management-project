@@ -95,14 +95,11 @@ export class EventFormComponent {
 		});
 
 		validate(p, ({ valueOf }) => {
+			if (valueOf(p.categories).length === 0) {
+				return [{ kind: 'form', field: 'categories', message: 'At least one category is required' }];
+			}
 			if (valueOf(p.capacity) < valueOf(p.ticket_types).reduce((sum, tt) => sum + tt.quantity, 0)) {
-				return [
-					{
-						kind: 'form',
-						field: 'capacity',
-						message: 'Capacity cannot be less than total ticket quantity'
-					}
-				];
+				return [{ kind: 'form', field: 'capacity', message: 'Capacity cannot be less than total ticket quantity' }];
 			}
 			return undefined;
 		});

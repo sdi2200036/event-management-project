@@ -16,6 +16,8 @@ export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promis
 
 	const receiver_id = receiver.rows[0].id;
 
+	if (receiver_id === senderId) throw new Error('You cannot send a message to yourself');
+
 	const result = await query(
 		`INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,

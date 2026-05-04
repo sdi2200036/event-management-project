@@ -39,8 +39,9 @@ export class LoginComponent {
 		await submit(this.loginFields, async (form) => {
 			return await firstValueFrom(
 				this.authService.login(form().value()).pipe(
-					switchMap(() => {
-						this.router.navigate(['/events']);
+					switchMap((response) => {
+						const destination = response.user.role === 'admin' ? '/admin/users' : '/events';
+						this.router.navigate([destination]);
 						return of(undefined);
 					}),
 					catchError((err) => {

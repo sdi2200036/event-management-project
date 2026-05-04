@@ -12,6 +12,7 @@ import eventRoutes from './routes/events.routes';
 import bookingRoutes from './routes/bookings.routes';
 import messageRoutes from './routes/messages.routes';
 import exportRoutes from './routes/export.routes';
+import { completeExpiredEvents } from './services/event.service';
 
 dotenv.config();
 
@@ -74,8 +75,15 @@ const sslOptions = {
   cert: fs.readFileSync(certPath),
 };
 
-https.createServer(sslOptions, app).listen(PORT, () => {
+const runCompleteExpired = async () => {
+  const count = await completeExpiredEvents();
+  if (count > 0) console.log(`Marked ${count} expired event(s) as COMPLETED`);
+};
+
+https.createServer(sslOptions, app).listen(PORT, async () => {
   console.log(`HTTPS server running on port ${PORT}`);
+  await runCompleteExpired();
+  setInterval(runCompleteExpired, 60 * 60 * 1000);
 });
 
 export default app;
