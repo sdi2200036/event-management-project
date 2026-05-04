@@ -10,18 +10,18 @@ Users can register, browse events, book tickets, and message each other. Organiz
 
 The app is split into two separate programs that run at the same time:
 
-- **Backend** — a REST API server (Node.js + Express) that handles all business logic, talks to the database, and responds to HTTP requests. Runs on port `3000`.
-- **Frontend** — an Angular app that runs in the browser and talks to the backend via HTTP. Runs on port `4200`.
+- **Backend** — a REST API server (Node.js + Express) that handles all business logic, talks to the database, and responds to HTTPS requests. Runs on port `3000` over **HTTPS**.
+- **Frontend** — an Angular app served over HTTP on port `4200`. It talks to the backend via HTTPS.
 - **Database** — PostgreSQL stores all data (users, events, bookings, messages).
 
-When you open `http://localhost:4200`, the Angular app loads in your browser. Every action (login, create event, book ticket) sends an HTTP request to `http://localhost:3000/api/...`, which the backend handles and responds to with JSON.
+When you open `http://localhost:4200`, the Angular app loads in your browser. Every action (login, create event, book ticket) sends an HTTPS request to `https://localhost:3000/api/...`, which the backend handles and responds to with JSON.
 
 ```
 Browser (localhost:4200)
         |
-        | HTTP requests (JSON)
+        | HTTPS requests (JSON)
         v
-Backend API (localhost:3000)
+Backend API (https://localhost:3000)
         |
         | SQL queries
         v
@@ -211,6 +211,15 @@ SSL_KEY_PATH=./certs/key.pem
 SSL_CERT_PATH=./certs/cert.pem
 ```
 
+### 9. Trust the self-signed certificate
+
+The backend uses a self-signed certificate which browsers block by default. You need to accept it once:
+
+1. Open **https://localhost:3000/api/health** in your browser
+2. Click **Advanced** → **Proceed to localhost** (or equivalent in your browser)
+
+You only need to do this once. After that, the frontend can talk to the backend normally.
+
 ### 10. Install frontend dependencies
 
 ```bash
@@ -230,7 +239,7 @@ sudo service postgresql start      # make sure DB is running
 cd backend
 npm run dev
 ```
-You should see: `Server running on port 3000`
+You should see: `HTTPS server running on port 3000`
 
 **Terminal 2 — Start the frontend:**
 ```bash
