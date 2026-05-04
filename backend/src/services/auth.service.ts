@@ -6,6 +6,10 @@ import { RegisterDTO, LoginDTO, User } from '../models/user.model';
 export const register = async (dto: RegisterDTO): Promise<{ message: string }> => {
   const { username, password, first_name, last_name, email, phone, address, city, country, postal_code, afm, role } = dto;
 
+  if (!afm || !/^\d{9}$/.test(afm)) {
+    throw new Error('AFM must be exactly 9 digits');
+  }
+
   // Check if username or email already exists
   const existing = await query(
     'SELECT id FROM users WHERE username = $1 OR email = $2',

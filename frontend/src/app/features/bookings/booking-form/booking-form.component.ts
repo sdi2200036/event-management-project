@@ -108,4 +108,10 @@ export class BookingFormComponent {
 	public goToEvents(): void {
 		this.router.navigate(['/events']);
 	}
+
+	public messageOrganizer(): void {
+		const username = this.event()?.organizer_username;
+		if (!username) return;
+		this.router.navigate(['/messages'], { queryParams: { receiver: username } });
+	}
 }

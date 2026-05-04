@@ -117,13 +117,14 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_event_views_user ON event_views(user_id);
 
 -- Default admin user (password: admin123)
-INSERT INTO users (username, password_hash, first_name, last_name, email, role, status)
+INSERT INTO users (username, password_hash, first_name, last_name, email, afm, role, status)
 VALUES (
   'admin',
   '$2a$10$UGUQxCZj.LzWwWLyg2ej7euJcOTPYT24.H32Wo4SgQV4T6MZQ1ukm',
   'System',
   'Admin',
   'admin@eventmanagement.com',
+  '000000000',
   'admin',
   'approved'
 ) ON CONFLICT (username) DO NOTHING;

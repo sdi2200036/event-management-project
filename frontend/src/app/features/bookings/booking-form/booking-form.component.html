@@ -11,6 +11,9 @@
 					</p>
 					<div class="d-flex gap-3 justify-content-center mt-4">
 						<button type="button" (click)="this.goToBookings()" class="btn btn-primary">My Bookings</button>
+						@if (this.event()?.organizer_username) {
+							<button type="button" (click)="this.messageOrganizer()" class="btn btn-outline-primary">Message Organizer</button>
+						}
 						<button type="button" (click)="this.goToEvents()" class="btn btn-outline-secondary">Browse More Events</button>
 					</div>
 				</div>
