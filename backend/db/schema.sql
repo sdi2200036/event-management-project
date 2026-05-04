@@ -120,7 +120,7 @@ CREATE INDEX IF NOT EXISTS idx_event_views_user ON event_views(user_id);
 INSERT INTO users (username, password_hash, first_name, last_name, email, role, status)
 VALUES (
   'admin',
-  '$2b$10$YourBcryptHashHere.ReplaceWithActualHashOfAdmin123',
+  '$2a$10$UGUQxCZj.LzWwWLyg2ej7euJcOTPYT24.H32Wo4SgQV4T6MZQ1ukm',
   'System',
   'Admin',
   'admin@eventmanagement.com',
@@ -128,5 +128,7 @@ VALUES (
   'approved'
 ) ON CONFLICT (username) DO NOTHING;
 
+
+--ignore below instructions , previous implementation , might revisit later
 -- NOTE: Generate a real bcrypt hash before deploying:
 -- node -e "const b=require('bcryptjs'); b.hash('admin123',10).then(h=>console.log(h))"

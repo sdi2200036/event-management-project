@@ -151,31 +151,14 @@ sudo -u postgres psql -d eventmanagement -f backend/db/schema.sql
 
 Run this from inside the cloned project folder (where `backend/` is visible).
 
-### 6. Set the admin password
+### 6. Install backend dependencies
 
-The schema creates an admin user with a placeholder hash. You need to replace it with a real bcrypt hash.
-
-First install backend dependencies:
 ```bash
 cd backend
 npm install
 ```
 
-Generate the hash:
-```bash
-node -e "const b=require('bcryptjs'); b.hash('admin123',10).then(h=>console.log(h))"
-```
-
-Copy the output (the full `$2b$10$...` string), then update the database:
-```bash
-sudo -u postgres psql -d eventmanagement
-```
-
-Inside psql (paste your actual hash):
-```sql
-UPDATE users SET password_hash='$2b$10$YOUR_HASH_HERE' WHERE username='admin';
-\q
-```
+The schema already includes a working admin account (`admin` / `admin123`). No manual password setup is needed.
 
 ### 7. Generate SSL certificates
 
