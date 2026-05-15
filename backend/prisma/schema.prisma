@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  organizer
+  participant
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  pending
+  approved
+  rejected
+  suspended
+
+  @@map("user_status")
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+
+  @@map("event_status")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+
+  @@map("booking_status")
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  username      String     @unique @db.VarChar(50)
+  password_hash String     @db.VarChar(255)
+  first_name    String     @db.VarChar(100)
+  last_name     String     @db.VarChar(100)
+  email         String     @unique @db.VarChar(150)
+  phone         String?    @db.VarChar(30)
+  address       String?    @db.VarChar(255)
+  city          String?    @db.VarChar(100)
+  country       String?    @db.VarChar(100)
+  postal_code   String?    @db.VarChar(20)
+  geo_lat       Float?
+  geo_lng       Float?
+  afm           String     @unique @db.VarChar(20)
+  role          UserRole   @default(participant)
+  status        UserStatus @default(pending)
+  created_at    DateTime   @default(now()) @db.Timestamptz
+
+  events           Event[]     @relation("OrganizerEvents")
+  bookings         Booking[]
+  sentMessages     Message[]   @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
+  eventViews       EventView[]
+
+  @@map("users")
+}
+
+model Event {
+  id             Int         @id @default(autoincrement())
+  title          String      @db.VarChar(255)
+  event_type     String?     @db.VarChar(100)
+  venue          String?     @db.VarChar(255)
+  address        String?     @db.VarChar(255)
+  city           String?     @db.VarChar(100)
+  country        String?     @db.VarChar(100)
+  geo_lat        Float?
+  geo_lng        Float?
+  start_datetime DateTime    @db.Timestamptz
+  end_datetime   DateTime    @db.Timestamptz
+  capacity       Int         @default(0)
+  organizer_id   Int
+  status         EventStatus @default(DRAFT)
+  description    String?
+  created_at     DateTime    @default(now()) @db.Timestamptz
+
+  organizer    User            @relation("OrganizerEvents", fields: [organizer_id], references: [id], onDelete: Cascade)
+  categories   EventCategory[]
+  photos       EventPhoto[]
+  ticket_types TicketType[]
+  bookings     Booking[]
+  eventViews   EventView[]
+
+  @@index([organizer_id])
+  @@index([status])
+  @@index([start_datetime])
+  @@map("events")
+}
+
+model EventCategory {
+  event_id Int
+  category String @db.VarChar(100)
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@id([event_id, category])
+  @@map("event_categories")
+}
+
+model EventPhoto {
+  id        Int    @id @default(autoincrement())
+  event_id  Int
+  photo_url String
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("event_photos")
+}
+
+model TicketType {
+  id        Int     @id @default(autoincrement())
+  event_id  Int
+  name      String  @db.VarChar(100)
+  price     Decimal @db.Decimal(10, 2)
+  quantity  Int     @default(0)
+  available Int     @default(0)
+
+  event    Event     @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("ticket_types")
+}
+
+model Booking {
+  id                Int           @id @default(autoincrement())
+  event_id          Int
+  attendee_id       Int
+  ticket_type_id    Int
+  number_of_tickets Int           @default(1)
+  total_cost        Decimal       @default(0) @db.Decimal(10, 2)
+  booking_status    BookingStatus @default(PENDING)
+  booked_at         DateTime      @default(now()) @db.Timestamptz
+
+  event       Event      @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  attendee    User       @relation(fields: [attendee_id], references: [id], onDelete: Cascade)
+  ticket_type TicketType @relation(fields: [ticket_type_id], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@index([event_id])
+  @@index([attendee_id])
+  @@map("bookings")
+}
+
+model Message {
+  id                  Int      @id @default(autoincrement())
+  sender_id           Int
+  receiver_id         Int
+  booking_id          Int?
+  subject             String   @db.VarChar(255)
+  body                String
+  is_read             Boolean  @default(false)
+  sent_at             DateTime @default(now()) @db.Timestamptz
+  deleted_by_sender   Boolean  @default(false)
+  deleted_by_receiver Boolean  @default(false)
+
+  sender   User     @relation("SentMessages", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver User     @relation("ReceivedMessages", fields: [receiver_id], references: [id], onDelete: Cascade)
+  booking  Booking? @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+
+  @@index([receiver_id])
+  @@index([sender_id])
+  @@map("messages")
+}
+
+model EventView {
+  user_id   Int
+  event_id  Int
+  viewed_at DateTime @default(now()) @db.Timestamptz
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, event_id])
+  @@index([user_id])
+  @@map("event_views")
+}

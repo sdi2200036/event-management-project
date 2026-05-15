@@ -1,5 +1,31 @@
-import pool, { query } from '../config/database';
+import { Prisma } from '@prisma/client';
+import prisma from '../config/prisma';
 import { Event, CreateEventDTO, EventFilters } from '../models/event.model';
+
+// Shape the Prisma event record into the flat Event model the rest of the app expects
+function mapEvent(raw: any): Event {
+  const { categories, photos, ticket_types, organizer, ...rest } = raw;
+  return {
+    ...rest,
+    categories: categories?.map((c: any) => c.category) ?? undefined,
+    photos: photos?.map((p: any) => p.photo_url) ?? undefined,
+    ticket_types: ticket_types ?? undefined,
+    organizer_username: organizer?.username,
+    organizer_first_name: organizer?.first_name,
+    organizer_last_name: organizer?.last_name,
+  };
+}
+
+const eventInclude = {
+  categories: true,
+  photos: true,
+  ticket_types: true,
+} satisfies Prisma.EventInclude;
+
+const eventIncludeWithOrganizer = {
+  ...eventInclude,
+  organizer: { select: { username: true, first_name: true, last_name: true } },
+} satisfies Prisma.EventInclude;
 
 export const createEvent = async (organizerId: number, dto: CreateEventDTO): Promise<Event> => {
   const {
@@ -8,243 +34,119 @@ export const createEvent = async (organizerId: number, dto: CreateEventDTO): Pro
     categories, photos, ticket_types,
   } = dto;
 
-  // Validations before opening a transaction
-  if (!categories || categories.length === 0) {
-    throw new Error('At least one category is required');
+  if (!categories || categories.length === 0) throw new Error('At least one category is required');
+  if (!ticket_types || ticket_types.length === 0) throw new Error('At least one ticket type is required');
+  if (capacity <= 0) throw new Error('Capacity must be greater than 0');
+  if (new Date(end_datetime) <= new Date(start_datetime)) throw new Error('End date/time must be after start date/time');
+
+  for (const tt of ticket_types) {
+    if (tt.quantity <= 0) throw new Error(`Ticket type "${tt.name}": quantity must be greater than 0`);
+    if (tt.price < 0) throw new Error(`Ticket type "${tt.name}": price cannot be negative`);
   }
+  const totalTickets = ticket_types.reduce((sum, tt) => sum + tt.quantity, 0);
+  if (totalTickets > capacity) throw new Error(`Total ticket quantity (${totalTickets}) exceeds event capacity (${capacity})`);
 
-  if (!ticket_types || ticket_types.length === 0) {
-    throw new Error('At least one ticket type is required');
-  }
+  const event = await prisma.event.create({
+    data: {
+      title, event_type, venue, address, city, country,
+      geo_lat, geo_lng,
+      start_datetime: new Date(start_datetime),
+      end_datetime: new Date(end_datetime),
+      capacity, description,
+      organizer_id: organizerId,
+      status: 'DRAFT',
+      categories: { create: categories.map((cat) => ({ category: cat })) },
+      photos: photos?.length ? { create: photos.map((url) => ({ photo_url: url })) } : undefined,
+      ticket_types: {
+        create: ticket_types.map((tt) => ({
+          name: tt.name,
+          price: tt.price,
+          quantity: tt.quantity,
+          available: tt.quantity,
+        })),
+      },
+    },
+    include: eventInclude,
+  });
 
-  if (capacity <= 0) {
-    throw new Error('Capacity must be greater than 0');
-  }
-
-  if (new Date(end_datetime) <= new Date(start_datetime)) {
-    throw new Error('End date/time must be after start date/time');
-  }
-
-  if (ticket_types && ticket_types.length > 0) {
-    for (const tt of ticket_types) {
-      if (tt.quantity <= 0) throw new Error(`Ticket type "${tt.name}": quantity must be greater than 0`);
-      if (tt.price < 0) throw new Error(`Ticket type "${tt.name}": price cannot be negative`);
-    }
-    const totalTickets = ticket_types.reduce((sum, tt) => sum + tt.quantity, 0);
-    if (totalTickets > capacity) {
-      throw new Error(`Total ticket quantity (${totalTickets}) exceeds event capacity (${capacity})`);
-    }
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const result = await client.query(
-      `INSERT INTO events (title, event_type, venue, address, city, country, geo_lat, geo_lng,
-        start_datetime, end_datetime, capacity, organizer_id, status, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT',$13) RETURNING *`,
-      [title, event_type, venue, address, city, country, geo_lat, geo_lng,
-       start_datetime, end_datetime, capacity, organizerId, description]
-    );
-
-    const event: Event = result.rows[0];
-
-    if (categories && categories.length > 0) {
-      for (const cat of categories) {
-        await client.query(
-          'INSERT INTO event_categories (event_id, category) VALUES ($1,$2)',
-          [event.id, cat]
-        );
-      }
-      event.categories = categories;
-    }
-
-    if (photos && photos.length > 0) {
-      for (const url of photos) {
-        await client.query(
-          'INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)',
-          [event.id, url]
-        );
-      }
-      event.photos = photos;
-    }
-
-    if (ticket_types && ticket_types.length > 0) {
-      const tts = [];
-      for (const tt of ticket_types) {
-        const ttResult = await client.query(
-          'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4) RETURNING *',
-          [event.id, tt.name, tt.price, tt.quantity]
-        );
-        tts.push(ttResult.rows[0]);
-      }
-      event.ticket_types = tts;
-    }
-
-    await client.query('COMMIT');
-    return event;
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
+  return mapEvent(event);
 };
 
 export const getEvents = async (filters: EventFilters = {}): Promise<{ events: Event[]; total: number }> => {
-  const conditions: string[] = [];
-  const params: any[] = [];
-  let paramIdx = 1;
+  const where: Prisma.EventWhereInput = {};
 
-  // Organizer searches see all their own statuses unless they filter by one.
-  // Public searches default to PUBLISHED only.
   if (filters.organizerId) {
-    conditions.push(`e.organizer_id = $${paramIdx++}`);
-    params.push(filters.organizerId);
-    if (filters.status) {
-      conditions.push(`e.status = $${paramIdx++}`);
-      params.push(filters.status);
-    }
+    where.organizer_id = filters.organizerId;
+    if (filters.status) where.status = filters.status as any;
   } else if (!filters.status) {
-    conditions.push(`e.status = 'PUBLISHED'`);
+    where.status = 'PUBLISHED';
   } else {
-    conditions.push(`e.status = $${paramIdx++}`);
-    params.push(filters.status);
+    where.status = filters.status as any;
   }
 
-  if (filters.title) {
-    conditions.push(`e.title ILIKE $${paramIdx++}`);
-    params.push(`%${filters.title}%`);
-  }
+  if (filters.title) where.title = { contains: filters.title, mode: 'insensitive' };
+  if (filters.description) where.description = { contains: filters.description, mode: 'insensitive' };
 
-  if (filters.description) {
-    conditions.push(`e.description ILIKE $${paramIdx++}`);
-    params.push(`%${filters.description}%`);
-  }
-
-  if (filters.dateFrom) {
-    conditions.push(`e.start_datetime >= $${paramIdx++}`);
-    params.push(filters.dateFrom);
-  }
-
-  if (filters.dateTo) {
-    conditions.push(`e.start_datetime <= $${paramIdx++}`);
-    params.push(filters.dateTo);
+  if (filters.dateFrom || filters.dateTo) {
+    where.start_datetime = {
+      ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
+      ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
+    };
   }
 
   if (filters.location) {
-    conditions.push(`(e.city ILIKE $${paramIdx} OR e.country ILIKE $${paramIdx} OR e.address ILIKE $${paramIdx})`);
-    params.push(`%${filters.location}%`);
-    paramIdx++;
+    where.OR = [
+      { city: { contains: filters.location, mode: 'insensitive' } },
+      { country: { contains: filters.location, mode: 'insensitive' } },
+      { address: { contains: filters.location, mode: 'insensitive' } },
+    ];
   }
 
   if (filters.category) {
-    conditions.push(`EXISTS (SELECT 1 FROM event_categories ec WHERE ec.event_id = e.id AND ec.category ILIKE $${paramIdx++})`);
-    params.push(`%${filters.category}%`);
+    where.categories = { some: { category: { contains: filters.category, mode: 'insensitive' } } };
   }
 
   if (filters.minPrice !== undefined) {
-    conditions.push(`EXISTS (SELECT 1 FROM ticket_types tt WHERE tt.event_id = e.id AND tt.price >= $${paramIdx++})`);
-    params.push(filters.minPrice);
+    where.ticket_types = { some: { price: { gte: filters.minPrice } } };
   }
-
   if (filters.maxPrice !== undefined) {
-    conditions.push(`EXISTS (SELECT 1 FROM ticket_types tt WHERE tt.event_id = e.id AND tt.price <= $${paramIdx++})`);
-    params.push(filters.maxPrice);
+    where.ticket_types = {
+      ...(where.ticket_types as any),
+      some: { price: { lte: filters.maxPrice } },
+    };
   }
-
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const page = filters.page || 1;
   const limit = filters.limit || 20;
   const offset = (page - 1) * limit;
 
-  const countResult = await query(
-    `SELECT COUNT(*) FROM events e ${whereClause}`,
-    params
-  );
-  const total = parseInt(countResult.rows[0].count, 10);
+  const [total, rows] = await Promise.all([
+    prisma.event.count({ where }),
+    prisma.event.findMany({
+      where,
+      include: eventInclude,
+      orderBy: { start_datetime: 'asc' },
+      skip: offset,
+      take: limit,
+    }),
+  ]);
 
-  const eventsResult = await query(
-    `SELECT e.* FROM events e ${whereClause} ORDER BY e.start_datetime ASC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`,
-    [...params, limit, offset]
-  );
-
-  const events = eventsResult.rows;
-
-  if (events.length > 0) {
-    const eventIds = events.map((e: any) => e.id);
-
-    const [cats, phs, tts] = await Promise.all([
-      query('SELECT event_id, category FROM event_categories WHERE event_id = ANY($1)', [eventIds]),
-      query('SELECT event_id, photo_url FROM event_photos WHERE event_id = ANY($1)', [eventIds]),
-      query('SELECT * FROM ticket_types WHERE event_id = ANY($1)', [eventIds]),
-    ]);
-
-    const categoriesByEvent = new Map<number, string[]>();
-    for (const r of cats.rows) {
-      const arr = categoriesByEvent.get(r.event_id) ?? [];
-      arr.push(r.category);
-      categoriesByEvent.set(r.event_id, arr);
-    }
-
-    const photosByEvent = new Map<number, string[]>();
-    for (const r of phs.rows) {
-      const arr = photosByEvent.get(r.event_id) ?? [];
-      arr.push(r.photo_url);
-      photosByEvent.set(r.event_id, arr);
-    }
-
-    const ticketsByEvent = new Map<number, any[]>();
-    for (const r of tts.rows) {
-      const arr = ticketsByEvent.get(r.event_id) ?? [];
-      arr.push(r);
-      ticketsByEvent.set(r.event_id, arr);
-    }
-
-    for (const ev of events) {
-      ev.categories = categoriesByEvent.get(ev.id) ?? [];
-      ev.photos = photosByEvent.get(ev.id) ?? [];
-      ev.ticket_types = ticketsByEvent.get(ev.id) ?? [];
-    }
-  }
-
-  return { events, total };
+  return { events: rows.map(mapEvent), total };
 };
 
 export const getEventById = async (id: number): Promise<Event | null> => {
-  const result = await query(
-    `SELECT e.*, u.username AS organizer_username,
-            u.first_name AS organizer_first_name, u.last_name AS organizer_last_name
-     FROM events e
-     JOIN users u ON u.id = e.organizer_id
-     WHERE e.id = $1`,
-    [id]
-  );
-  if (result.rows.length === 0) return null;
-
-  const event = result.rows[0];
-
-  const cats = await query('SELECT category FROM event_categories WHERE event_id = $1', [id]);
-  event.categories = cats.rows.map((r: any) => r.category);
-
-  const phs = await query('SELECT photo_url FROM event_photos WHERE event_id = $1', [id]);
-  event.photos = phs.rows.map((r: any) => r.photo_url);
-
-  const tts = await query('SELECT * FROM ticket_types WHERE event_id = $1', [id]);
-  event.ticket_types = tts.rows;
-
-  return event;
+  const event = await prisma.event.findUnique({
+    where: { id },
+    include: eventIncludeWithOrganizer,
+  });
+  return event ? mapEvent(event) : null;
 };
 
 export const updateEvent = async (id: number, userId: number, userRole: string, dto: Partial<CreateEventDTO>): Promise<Event> => {
   const event = await getEventById(id);
   if (!event) throw new Error('Event not found');
   if (userRole !== 'admin' && event.organizer_id !== userId) throw new Error('Not authorized to edit this event');
-  if (event.status === 'CANCELLED' || event.status === 'COMPLETED') {
-    throw new Error('Cannot edit a cancelled or completed event');
-  }
+  if (event.status === 'CANCELLED' || event.status === 'COMPLETED') throw new Error('Cannot edit a cancelled or completed event');
 
   const {
     title, event_type, venue, address, city, country,
@@ -260,93 +162,74 @@ export const updateEvent = async (id: number, userId: number, userRole: string, 
 
   if (capacity !== undefined) {
     if (capacity <= 0) throw new Error('Capacity must be greater than 0');
-    const ttSum = await query(
-      'SELECT COALESCE(SUM(quantity), 0) AS total FROM ticket_types WHERE event_id = $1',
-      [id]
-    );
-    const currentTotal = parseInt(ttSum.rows[0].total, 10);
+    const agg = await prisma.ticketType.aggregate({ where: { event_id: id }, _sum: { quantity: true } });
+    const currentTotal = agg._sum.quantity ?? 0;
     if (currentTotal > capacity) {
-      throw new Error(
-        `Cannot reduce capacity to ${capacity} — existing ticket types total ${currentTotal} tickets`
-      );
+      throw new Error(`Cannot reduce capacity to ${capacity} — existing ticket types total ${currentTotal} tickets`);
     }
   }
 
-  await query(
-    `UPDATE events SET
-      title = COALESCE($1, title),
-      event_type = COALESCE($2, event_type),
-      venue = COALESCE($3, venue),
-      address = COALESCE($4, address),
-      city = COALESCE($5, city),
-      country = COALESCE($6, country),
-      geo_lat = $7,
-      geo_lng = $8,
-      start_datetime = COALESCE($9, start_datetime),
-      end_datetime = COALESCE($10, end_datetime),
-      capacity = COALESCE($11, capacity),
-      description = COALESCE($12, description)
-     WHERE id = $13`,
-    [title, event_type, venue, address, city, country,
-     geo_lat !== undefined ? geo_lat : event.geo_lat,
-     geo_lng !== undefined ? geo_lng : event.geo_lng,
-     start_datetime, end_datetime, capacity, description, id]
-  );
+  await prisma.event.update({
+    where: { id },
+    data: {
+      ...(title !== undefined ? { title } : {}),
+      ...(event_type !== undefined ? { event_type } : {}),
+      ...(venue !== undefined ? { venue } : {}),
+      ...(address !== undefined ? { address } : {}),
+      ...(city !== undefined ? { city } : {}),
+      ...(country !== undefined ? { country } : {}),
+      geo_lat: geo_lat !== undefined ? geo_lat : event.geo_lat,
+      geo_lng: geo_lng !== undefined ? geo_lng : event.geo_lng,
+      ...(start_datetime !== undefined ? { start_datetime: new Date(start_datetime) } : {}),
+      ...(end_datetime !== undefined ? { end_datetime: new Date(end_datetime) } : {}),
+      ...(capacity !== undefined ? { capacity } : {}),
+      ...(description !== undefined ? { description } : {}),
+    },
+  });
 
-  // Replace photos if provided
   if (photos !== undefined) {
-    await query('DELETE FROM event_photos WHERE event_id = $1', [id]);
-    for (const url of photos) {
-      await query('INSERT INTO event_photos (event_id, photo_url) VALUES ($1,$2)', [id, url]);
+    await prisma.eventPhoto.deleteMany({ where: { event_id: id } });
+    if (photos.length > 0) {
+      await prisma.eventPhoto.createMany({ data: photos.map((url) => ({ event_id: id, photo_url: url })) });
     }
   }
 
-  // Replace categories if provided
   if (categories !== undefined) {
-    await query('DELETE FROM event_categories WHERE event_id = $1', [id]);
-    for (const cat of categories) {
-      await query('INSERT INTO event_categories (event_id, category) VALUES ($1,$2)', [id, cat]);
+    await prisma.eventCategory.deleteMany({ where: { event_id: id } });
+    if (categories.length > 0) {
+      await prisma.eventCategory.createMany({ data: categories.map((cat) => ({ event_id: id, category: cat })) });
     }
   }
 
-  // Update ticket types if provided
   if (ticket_types !== undefined && ticket_types.length > 0) {
     if (event.status === 'DRAFT') {
-      // DRAFT events have no bookings — safe to replace entirely
-      await query('DELETE FROM ticket_types WHERE event_id = $1', [id]);
-      for (const tt of ticket_types) {
-        await query(
-          'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4)',
-          [id, tt.name, tt.price, tt.quantity]
-        );
-      }
+      await prisma.ticketType.deleteMany({ where: { event_id: id } });
+      await prisma.ticketType.createMany({
+        data: ticket_types.map((tt) => ({
+          event_id: id, name: tt.name, price: tt.price, quantity: tt.quantity, available: tt.quantity,
+        })),
+      });
     } else {
-      // PUBLISHED: match existing ticket types by name; update or insert, never delete
-      const existingTTs = await query('SELECT * FROM ticket_types WHERE event_id = $1', [id]);
+      const existingTTs = await prisma.ticketType.findMany({ where: { event_id: id } });
       for (const tt of ticket_types) {
-        const existing = existingTTs.rows.find((e: any) => e.name === tt.name);
+        const existing = existingTTs.find((e: any) => e.name === tt.name);
         if (existing) {
           const sold = existing.quantity - existing.available;
           const newAvailable = Math.max(0, tt.quantity - sold);
-          await query(
-            'UPDATE ticket_types SET price = $1, quantity = $2, available = $3 WHERE id = $4',
-            [tt.price, tt.quantity, newAvailable, existing.id]
-          );
+          await prisma.ticketType.update({
+            where: { id: existing.id },
+            data: { price: tt.price, quantity: tt.quantity, available: newAvailable },
+          });
         } else {
-          await query(
-            'INSERT INTO ticket_types (event_id, name, price, quantity, available) VALUES ($1,$2,$3,$4,$4)',
-            [id, tt.name, tt.price, tt.quantity]
-          );
+          await prisma.ticketType.create({
+            data: { event_id: id, name: tt.name, price: tt.price, quantity: tt.quantity, available: tt.quantity },
+          });
         }
       }
     }
 
-    // Re-validate total ticket quantity vs capacity after changes
-    const ttSum = await query(
-      'SELECT COALESCE(SUM(quantity), 0) AS total FROM ticket_types WHERE event_id = $1',
-      [id]
-    );
-    const newTotal = parseInt(ttSum.rows[0].total, 10);
+    const agg = await prisma.ticketType.aggregate({ where: { event_id: id }, _sum: { quantity: true } });
+    const newTotal = agg._sum.quantity ?? 0;
     if (newTotal > effectiveCapacity) {
       throw new Error(`Total ticket quantity (${newTotal}) exceeds event capacity (${effectiveCapacity})`);
     }
@@ -361,11 +244,8 @@ export const publishEvent = async (id: number, organizerId: number): Promise<Eve
   if (event.organizer_id !== organizerId) throw new Error('Not authorized');
   if (event.status !== 'DRAFT') throw new Error('Only DRAFT events can be published');
 
-  const result = await query(
-    "UPDATE events SET status = 'PUBLISHED' WHERE id = $1 RETURNING *",
-    [id]
-  );
-  return result.rows[0];
+  const updated = await prisma.event.update({ where: { id }, data: { status: 'PUBLISHED' } });
+  return updated as unknown as Event;
 };
 
 export const cancelEvent = async (id: number, userId: number, userRole: string): Promise<Event> => {
@@ -374,11 +254,8 @@ export const cancelEvent = async (id: number, userId: number, userRole: string):
   if (userRole !== 'admin' && event.organizer_id !== userId) throw new Error('Not authorized');
   if (event.status === 'CANCELLED') throw new Error('Event is already cancelled');
 
-  const result = await query(
-    "UPDATE events SET status = 'CANCELLED' WHERE id = $1 RETURNING *",
-    [id]
-  );
-  return result.rows[0];
+  const updated = await prisma.event.update({ where: { id }, data: { status: 'CANCELLED' } });
+  return updated as unknown as Event;
 };
 
 export const deleteEvent = async (id: number, userId: number, userRole: string): Promise<void> => {
@@ -390,33 +267,28 @@ export const deleteEvent = async (id: number, userId: number, userRole: string):
     throw new Error('Cannot delete a cancelled or completed event');
   }
 
-  // Per spec: deletion allowed before publication OR before first booking.
-  // A published event with existing bookings must be cancelled instead.
   if (event.status === 'PUBLISHED') {
-    const bookingCount = await query(
-      "SELECT COUNT(*) FROM bookings WHERE event_id = $1 AND booking_status != 'CANCELLED'",
-      [id]
-    );
-    if (parseInt(bookingCount.rows[0].count, 10) > 0) {
-      throw new Error('Cannot delete a published event with existing bookings. Cancel it first.');
-    }
+    const bookingCount = await prisma.booking.count({
+      where: { event_id: id, booking_status: { not: 'CANCELLED' } },
+    });
+    if (bookingCount > 0) throw new Error('Cannot delete a published event with existing bookings. Cancel it first.');
   }
 
-  await query('DELETE FROM events WHERE id = $1', [id]);
+  await prisma.event.delete({ where: { id } });
 };
 
 export const trackView = async (userId: number, eventId: number): Promise<void> => {
-  await query(
-    `INSERT INTO event_views (user_id, event_id) VALUES ($1, $2)
-     ON CONFLICT (user_id, event_id) DO UPDATE SET viewed_at = NOW()`,
-    [userId, eventId]
-  );
+  await prisma.eventView.upsert({
+    where: { user_id_event_id: { user_id: userId, event_id: eventId } },
+    update: { viewed_at: new Date() },
+    create: { user_id: userId, event_id: eventId },
+  });
 };
 
 export const completeExpiredEvents = async (): Promise<number> => {
-  const result = await query(
-    `UPDATE events SET status = 'COMPLETED'
-     WHERE status = 'PUBLISHED' AND end_datetime < NOW()`
-  );
-  return result.rowCount ?? 0;
+  const result = await prisma.event.updateMany({
+    where: { status: 'PUBLISHED', end_datetime: { lt: new Date() } },
+    data: { status: 'COMPLETED' },
+  });
+  return result.count;
 };

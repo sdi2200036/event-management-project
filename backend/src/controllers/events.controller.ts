@@ -133,15 +133,13 @@ export const getRecommendations = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    // Fetch the actual event objects
-    const { query } = await import('../config/database');
-    const placeholders = recommendedIds.map((_, i) => `$${i + 1}`).join(',');
-    const result = await query(
-      `SELECT * FROM events WHERE id IN (${placeholders}) AND status = 'PUBLISHED'`,
-      recommendedIds
-    );
-
-    res.json({ events: result.rows });
+    const { default: prisma } = await import('../config/prisma');
+    const events = await prisma.event.findMany({
+      where: { id: { in: recommendedIds }, status: 'PUBLISHED' },
+    });
+    // Return in recommendation score order
+    const ordered = recommendedIds.map((id) => events.find((e) => e.id === id)).filter(Boolean);
+    res.json({ events: ordered });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

@@ -10,9 +10,9 @@ Users can register, browse events, book tickets, and message each other. Organiz
 
 The app is split into two separate programs that run at the same time:
 
-- **Backend** — a REST API server (Node.js + Express) that handles all business logic, talks to the database, and responds to HTTPS requests. Runs on port `3000` over **HTTPS**.
+- **Backend** — a REST API server (Node.js + Express + Prisma) that handles all business logic, talks to the database, and responds to HTTPS requests. Runs on port `3000` over **HTTPS**.
 - **Frontend** — an Angular app served over HTTP on port `4200`. It talks to the backend via HTTPS.
-- **Database** — PostgreSQL stores all data (users, events, bookings, messages).
+- **Database** — PostgreSQL stores all data (users, events, bookings, messages). Prisma is used as the ORM.
 
 When you open `http://localhost:4200`, the Angular app loads in your browser. Every action (login, create event, book ticket) sends an HTTPS request to `https://localhost:3000/api/...`, which the backend handles and responds to with JSON.
 
@@ -23,7 +23,7 @@ Browser (localhost:4200)
         v
 Backend API (https://localhost:3000)
         |
-        | SQL queries
+        | Prisma ORM
         v
 PostgreSQL Database
 ```
@@ -35,10 +35,12 @@ PostgreSQL Database
 ```
 project/
 ├── backend/
+│   ├── prisma/
+│   │   └── schema.prisma           # Prisma schema — defines all DB models and relations
 │   ├── src/
 │   │   ├── app.ts                  # Entry point — sets up Express, CORS, routes
 │   │   ├── config/
-│   │   │   └── database.ts         # PostgreSQL connection pool
+│   │   │   └── prisma.ts           # Prisma client singleton
 │   │   ├── routes/
 │   │   │   ├── auth.routes.ts      # /api/auth — login, register
 │   │   │   ├── users.routes.ts     # /api/users — admin user management
@@ -52,15 +54,13 @@ project/
 │   │   └── utils/
 │   │       └── jwt.utils.ts        # Sign and verify JWT tokens
 │   ├── db/
-│   │   └── schema.sql              # All database tables and the default admin user
+│   │   └── schema.sql              # Raw SQL to initialize the database (run once)
 │   ├── .env.example                # Template for environment variables
 │   └── package.json
 │
 └── frontend/
     └── src/
         └── app/
-            ├── app.module.ts               # Root Angular module
-            ├── app-routing.module.ts       # Top-level URL routes (lazy loaded)
             ├── core/
             │   ├── guards/
             │   │   ├── auth.guard.ts       # Blocks pages if not logged in
@@ -151,12 +151,15 @@ sudo -u postgres psql -d eventmanagement -f backend/db/schema.sql
 
 Run this from inside the cloned project folder (where `backend/` is visible).
 
-### 6. Install backend dependencies
+### 6. Install backend dependencies and generate Prisma client
 
 ```bash
 cd backend
 npm install
+npx prisma generate
 ```
+
+`npm install` installs all packages including Prisma. `npx prisma generate` reads `prisma/schema.prisma` and generates the fully-typed `PrismaClient` — this must be run once before starting the server (and again any time the schema changes).
 
 The schema already includes a working admin account (`admin` / `admin123`). No manual password setup is needed.
 
@@ -186,6 +189,9 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres123
 DB_NAME=eventmanagement
+
+DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/eventmanagement"
+
 JWT_SECRET=any_long_random_string_here
 JWT_EXPIRES_IN=24h
 PORT=3000
@@ -193,6 +199,8 @@ FRONTEND_URL=http://localhost:4200
 SSL_KEY_PATH=./certs/key.pem
 SSL_CERT_PATH=./certs/cert.pem
 ```
+
+> `DATABASE_URL` is used by Prisma. It must match your `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
 
 ### 9. Trust the self-signed certificate
 
@@ -287,6 +295,7 @@ sudo service postgresql start
 |--------|-----|-------------|
 | POST | `/api/bookings` | Book tickets (participant) |
 | GET | `/api/bookings/my` | View own bookings |
+| GET | `/api/bookings/event/:id` | View bookings for an event (organizer/admin) |
 | PATCH | `/api/bookings/:id/cancel` | Cancel a booking |
 
 ### Messages
@@ -309,7 +318,7 @@ sudo service postgresql start
 
 ## Database Schema
 
-The database has 8 tables:
+The database has 8 tables, defined in `prisma/schema.prisma`:
 
 | Table | Description |
 |-------|-------------|
@@ -317,7 +326,7 @@ The database has 8 tables:
 | `events` | Events with location, dates, capacity, status |
 | `event_categories` | Tags/categories per event (many per event) |
 | `event_photos` | Photo URLs per event |
-| `ticket_types` | Ticket tiers per event (name, price, quantity) |
+| `ticket_types` | Ticket tiers per event (name, price, quantity, available) |
 | `bookings` | Ticket bookings linking users to events |
 | `messages` | Internal messages between users |
 | `event_views` | Tracks which users viewed which events (for recommendations) |
@@ -332,6 +341,7 @@ The system uses **Biased Matrix Factorization** to suggest events to logged-in u
 - Event views count as a rating of 1 (weak interest)
 - The model learns user preferences and event characteristics from this data
 - Users with no booking history get recommendations based on views only
+- The model is trained at server startup and retrained every hour automatically
 
 ---
 
@@ -340,6 +350,7 @@ The system uses **Biased Matrix Factorization** to suggest events to logged-in u
 | Layer | Technology | Why |
 |-------|-----------|-----|
 | Backend | Node.js + Express + TypeScript | Fast, typed REST API |
+| ORM | Prisma | Type-safe database access, clean query API |
 | Database | PostgreSQL | Relational data, strong consistency |
 | Auth | JWT + bcryptjs | Stateless authentication, secure passwords |
 | Frontend | Angular 17 | Component-based SPA framework |

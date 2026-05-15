@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { query } from '../config/database';
+import prisma from '../config/prisma';
 import { verifyToken } from '../utils/jwt.utils';
 
 export interface AuthRequest extends Request {
@@ -16,8 +16,8 @@ export const optionalAuthenticate = async (req: AuthRequest, _res: Response, nex
   if (authHeader?.startsWith('Bearer ')) {
     try {
       const decoded = verifyToken(authHeader.split(' ')[1]) as any;
-      const result = await query('SELECT status FROM users WHERE id = $1', [decoded.id]);
-      if (result.rows.length > 0 && result.rows[0].status === 'approved') {
+      const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { status: true } });
+      if (user?.status === 'approved') {
         req.user = decoded;
       }
     } catch {
@@ -41,8 +41,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     const decoded = verifyToken(token) as any;
 
     // Check live status from DB so suspended/rejected users are blocked immediately
-    const result = await query('SELECT status FROM users WHERE id = $1', [decoded.id]);
-    if (result.rows.length === 0 || result.rows[0].status !== 'approved') {
+    const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { status: true } });
+    if (!user || user.status !== 'approved') {
       res.status(401).json({ message: 'Account is not active' });
       return;
     }

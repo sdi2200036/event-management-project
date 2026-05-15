@@ -17,9 +17,9 @@ export const getBookingsByEvent = async (req: AuthRequest, res: Response): Promi
 
     // Organizers can only see their own event bookings; admins see all
     if (req.user!.role === 'organizer') {
-      const { query } = await import('../config/database');
-      const event = await query('SELECT organizer_id FROM events WHERE id = $1', [eventId]);
-      if (event.rows.length === 0 || event.rows[0].organizer_id !== req.user!.id) {
+      const { default: prisma } = await import('../config/prisma');
+      const event = await prisma.event.findUnique({ where: { id: eventId }, select: { organizer_id: true } });
+      if (!event || event.organizer_id !== req.user!.id) {
         res.status(403).json({ message: 'Not authorized to view these bookings' });
         return;
       }
