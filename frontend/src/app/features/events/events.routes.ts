@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { RoleGuard } from 'src/app/core/guards/role.guard';
+import { bookingsResolver } from 'src/app/core/resolvers/bookings.resolver';
 import { recommendedEventsResolver } from 'src/app/core/resolvers/recommended-events.resolver';
 import { UserRole } from 'src/app/shared/models/user.model';
 import { eventListFiltersGuard } from '../../core/guards/event-list-filters.guard';
@@ -31,7 +32,7 @@ export const EVENTS_ROUTES: Routes = [
 	{
 		path: 'manage',
 		canActivate: [RoleGuard],
-		data: { roles: [UserRole.Organizer] },
+		data: { roles: [UserRole.Organizer], isManageMode: true },
 		children: [
 			{
 				path: '',
@@ -52,7 +53,7 @@ export const EVENTS_ROUTES: Routes = [
 			{
 				path: ':id',
 				component: EventDetailComponent,
-				resolve: { eventData: eventResolver }
+				resolve: { eventData: eventResolver, bookingsData: bookingsResolver }
 			}
 		]
 	},

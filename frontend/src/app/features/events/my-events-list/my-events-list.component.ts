@@ -1,8 +1,8 @@
 import { DatePipe, NgClass } from '@angular/common';
 import { Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ModalService } from 'src/app/core/services/modal.service';
 import { EventService } from 'src/app/core/services/event.service';
+import { ModalService } from 'src/app/core/services/modal.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { Event as EventModel, EventsResponseExtended } from 'src/app/shared/models/event.model';
 
@@ -20,25 +20,27 @@ export class MyEventsListComponent {
 		private router: Router,
 		private eventService: EventService,
 		private toastService: ToastService,
-		private activateRoute: ActivatedRoute,
+		private activatedRoute: ActivatedRoute,
 		private modalService: ModalService
 	) {}
 
 	public publishEvent(event: EventModel): void {
-		this.modalService.confirm(`Publish "${event.title}"? It will become visible to all users.`, 'Publish').then((confirmed) => {
-			if (!confirmed) return;
-			this.eventService.publishEvent(event.id).subscribe({
-				next: () => {
-					this.toastService.success(`"${event.title}" published successfully`);
-					this.router.navigate([], {
-						relativeTo: this.activateRoute,
-						queryParamsHandling: 'preserve',
-						onSameUrlNavigation: 'reload'
-					});
-				},
-				error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+		this.modalService
+			.confirm(`Publish "${event.title}"? It will become visible to all users.`, 'Publish')
+			.then((confirmed) => {
+				if (!confirmed) return;
+				this.eventService.publishEvent(event.id).subscribe({
+					next: () => {
+						this.toastService.success(`"${event.title}" published successfully`);
+						this.router.navigate([], {
+							relativeTo: this.activatedRoute,
+							queryParamsHandling: 'preserve',
+							onSameUrlNavigation: 'reload'
+						});
+					},
+					error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+				});
 			});
-		});
 	}
 
 	public cancelEvent(event: EventModel): void {
@@ -48,7 +50,7 @@ export class MyEventsListComponent {
 				next: () => {
 					this.toastService.warning(`"${event.title}" cancelled`);
 					this.router.navigate([], {
-						relativeTo: this.activateRoute,
+						relativeTo: this.activatedRoute,
 						queryParamsHandling: 'preserve',
 						onSameUrlNavigation: 'reload'
 					});
@@ -65,7 +67,7 @@ export class MyEventsListComponent {
 				next: () => {
 					this.toastService.warning(`"${event.title}" deleted`);
 					this.router.navigate([], {
-						relativeTo: this.activateRoute,
+						relativeTo: this.activatedRoute,
 						queryParamsHandling: 'preserve',
 						onSameUrlNavigation: 'reload'
 					});
@@ -76,15 +78,15 @@ export class MyEventsListComponent {
 	}
 
 	public goToCreateEvent(): void {
-		this.router.navigate(['new'], { relativeTo: this.activateRoute });
+		this.router.navigate(['new'], { relativeTo: this.activatedRoute });
 	}
 
 	public goToViewEvent(eventId: number): void {
-		this.router.navigate([eventId], { relativeTo: this.activateRoute });
+		this.router.navigate([eventId], { relativeTo: this.activatedRoute });
 	}
 
 	public goToEditEvent(eventId: number): void {
-		this.router.navigate([eventId, 'edit'], { relativeTo: this.activateRoute });
+		this.router.navigate([eventId, 'edit'], { relativeTo: this.activatedRoute });
 	}
 
 	public statusBadgeClass(status: string): string {

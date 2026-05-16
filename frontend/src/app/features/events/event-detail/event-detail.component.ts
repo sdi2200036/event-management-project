@@ -1,8 +1,7 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, computed, effect, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, computed, input, InputSignal, Signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { BookingService } from '../../../core/services/booking.service';
 import { EventService } from '../../../core/services/event.service';
 import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -17,9 +16,12 @@ import { Event as EventModel } from '../../../shared/models/event.model';
 	imports: [NgClass, DatePipe, MapViewComponent]
 })
 export class EventDetailComponent {
-	public readonly eventData: InputSignal<EventModel | undefined> = input<EventModel>();
+	public readonly event: InputSignal<EventModel> = input.required<EventModel>({ alias: 'eventData' });
+	public readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], {
+		alias: 'bookingsData'
+	});
+	public readonly isManageMode: InputSignal<boolean> = input<boolean>(false);
 
-	public readonly event: Signal<EventModel | undefined> = this.eventData;
 	public readonly isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
 	public readonly isParticipant: Signal<boolean> = computed(
 		() => this.authService.currentUser()?.role === 'participant'
@@ -37,100 +39,93 @@ export class EventDetailComponent {
 		return Math.min(...ev.ticket_types.map((t) => t.price));
 	});
 
-	public readonly bookings: WritableSignal<Booking[]> = signal([]);
-	public readonly bookingsLoading: WritableSignal<boolean> = signal(false);
-
 	constructor(
 		private router: Router,
 		private eventService: EventService,
 		private authService: AuthService,
-		private bookingService: BookingService,
 		private toastService: ToastService,
-		private modalService: ModalService
-	) {
-		effect(() => {
-			const isOwner = this.isOwner();
-			const ev = this.event();
-			if (isOwner && ev) {
-				this.bookingsLoading.set(true);
-				this.bookingService.getEventBookings(ev.id).subscribe({
-					next: (b) => {
-						this.bookings.set(b);
-						this.bookingsLoading.set(false);
-					},
-					error: () => {
-						this.bookings.set([]);
-						this.bookingsLoading.set(false);
-					}
-				});
-			}
-		});
-	}
+		private modalService: ModalService,
+		private activatedRoute: ActivatedRoute
+	) {}
 
 	public goToEditEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
-		this.router.navigate(['/events/manage', ev.id, 'edit']);
+		this.router.navigate(['events', 'manage', ev.id, 'edit']);
 	}
 
 	public goToBookEvent(): void {
 		const ev = this.event();
 		if (!ev) return;
-		this.router.navigate(['/bookings', 'new', ev.id]);
+		this.router.navigate(['bookings', 'new', ev.id]);
 	}
 
 	public goToLogin(): void {
-		this.router.navigate(['/login']);
+		this.router.navigate(['login']);
 	}
 
 	public goToEvents(): void {
-		this.router.navigate(['/events']);
+		this.router.navigate(['events']);
 	}
 
 	public messageOrganizer(): void {
 		const ev = this.event();
 		if (!ev?.organizer_username) return;
-		this.router.navigate(['/messages'], { queryParams: { receiver: ev.organizer_username } });
+		this.router.navigate(['messages'], { queryParams: { receiver: ev.organizer_username } });
 	}
 
 	public publishEvent(): void {
-		const ev = this.event();
-		if (!ev) return;
-		this.eventService.publishEvent(ev.id).subscribe({
-			next: () => {
-				this.toastService.success('Event published successfully');
-				this.router.navigate(['/events/manage', ev.id]);
-			},
-			error: (err) => this.toastService.error(err.error?.message || 'Failed to publish')
-		});
+		const event = this.event();
+		this.modalService
+			.confirm(`Publish "${event.title}"? It will become visible to all users.`, 'Publish')
+			.then((confirmed) => {
+				if (!confirmed) return;
+				this.eventService.publishEvent(event.id).subscribe({
+					next: () => {
+						this.toastService.success(`"${event.title}" published successfully`);
+						this.router.navigate([], {
+							relativeTo: this.activatedRoute,
+							queryParamsHandling: 'preserve',
+							onSameUrlNavigation: 'reload'
+						});
+					},
+					error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+				});
+			});
 	}
 
 	public cancelEvent(): void {
-		const ev = this.event();
-		if (!ev) return;
-		this.modalService.confirm('Are you sure you want to cancel this event?').then((confirmed) => {
+		const event = this.event();
+		this.modalService.confirm(`Cancel "${event.title}"? This cannot be undone.`).then((confirmed) => {
 			if (!confirmed) return;
-			this.eventService.cancelEvent(ev.id).subscribe({
+			this.eventService.cancelEvent(event.id).subscribe({
 				next: () => {
-					this.toastService.warning('Event cancelled');
-					this.router.navigate(['/events/manage', ev.id]);
+					this.toastService.warning(`"${event.title}" cancelled`);
+					this.router.navigate([], {
+						relativeTo: this.activatedRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
 				},
-				error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel')
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel event')
 			});
 		});
 	}
 
 	public deleteEvent(): void {
-		const ev = this.event();
-		if (!ev) return;
-		this.modalService.confirm('Are you sure you want to delete this event?').then((confirmed) => {
+		const event = this.event();
+		this.modalService.confirm(`Delete "${event.title}"? This is permanent.`).then((confirmed) => {
 			if (!confirmed) return;
-			this.eventService.deleteEvent(ev.id).subscribe({
+			this.eventService.deleteEvent(event.id).subscribe({
 				next: () => {
-					this.toastService.warning('Event deleted');
-					this.router.navigate(['/events/manage']);
+					this.toastService.warning(`"${event.title}" deleted`);
+					this.router.navigate([], {
+						relativeTo: this.activatedRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
 				},
-				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete event')
 			});
 		});
 	}
