@@ -1,43 +1,59 @@
-<div class="hero-section bg-primary text-white py-5">
+<div class="hero-section bg-primary text-white">
 	<div class="container text-center py-5">
 		<h1 class="display-3 fw-bold mb-3">Welcome to EventHub</h1>
-		<p class="lead mb-4">Discover amazing events near you. Book tickets, connect with organizers, and make memories that last a lifetime.</p>
+		<p class="lead mb-4">
+			Discover amazing events near you. Book tickets, connect with organizers, and make memories that last a
+			lifetime.
+		</p>
 		<div class="d-flex gap-3 justify-content-center">
 			<button type="button" (click)="this.goToLogin()" class="btn btn-light btn-lg px-5">Login</button>
-			<button type="button" (click)="this.goToRegister()" class="btn btn-outline-light btn-lg px-5">Register</button>
+			<button type="button" (click)="this.goToRegister()" class="btn btn-outline-light btn-lg px-5">
+				Register
+			</button>
 		</div>
 	</div>
 </div>
 
-<div class="container py-5">
-	<div class="row text-center g-4">
-		<div class="col-md-4">
-			<div class="card h-100 border-0 shadow-sm p-4">
-				<div class="card-body">
-					<div class="display-4 mb-3">🎉</div>
-					<h3 class="card-title">Browse Events</h3>
-					<p class="card-text text-muted">Explore a wide variety of events — concerts, conferences, workshops, sports, and more.</p>
-					<button type="button" (click)="this.goToEvents()" class="btn btn-primary mt-2">Explore Events</button>
+<div class="bg-secondary-subtle">
+	<div class="container py-5">
+		<div class="row text-center g-4">
+			<div class="col-md-4">
+				<div class="card h-100 border-0 shadow-sm p-4">
+					<div class="card-body">
+						<h3 class="card-title">Browse Events</h3>
+						<p class="card-text text-muted">
+							Explore a wide variety of events — concerts, conferences, workshops, sports, and more.
+						</p>
+						<button type="button" (click)="this.goToEvents()" class="btn btn-primary mt-2">
+							Explore Events
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="card h-100 border-0 shadow-sm p-4">
-				<div class="card-body">
-					<div class="display-4 mb-3">🎟️</div>
-					<h3 class="card-title">Book Tickets</h3>
-					<p class="card-text text-muted">Secure your spot instantly. Multiple ticket types available for every budget.</p>
-					<button type="button" (click)="this.goToRegister()" class="btn btn-primary mt-2">Get Started</button>
+			<div class="col-md-4">
+				<div class="card h-100 border-0 shadow-sm p-4">
+					<div class="card-body">
+						<h3 class="card-title">Book Tickets</h3>
+						<p class="card-text text-muted">
+							Secure your spot instantly. Multiple ticket types available for every budget.
+						</p>
+						<button type="button" (click)="this.goToRegister()" class="btn btn-primary mt-2">
+							Get Started
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="card h-100 border-0 shadow-sm p-4">
-				<div class="card-body">
-					<div class="display-4 mb-3">📅</div>
-					<h3 class="card-title">Organize Events</h3>
-					<p class="card-text text-muted">Create and manage your own events. Reach your audience and sell tickets online.</p>
-					<button type="button" (click)="this.goToRegister()" class="btn btn-primary mt-2">Become an Organizer</button>
+			<div class="col-md-4">
+				<div class="card h-100 border-0 shadow-sm p-4">
+					<div class="card-body">
+						<h3 class="card-title">Organize Events</h3>
+						<p class="card-text text-muted">
+							Create and manage your own events. Reach your audience and sell tickets online.
+						</p>
+						<button type="button" (click)="this.goToRegister()" class="btn btn-primary mt-2">
+							Become an Organizer
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

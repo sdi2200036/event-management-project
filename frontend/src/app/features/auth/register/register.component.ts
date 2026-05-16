@@ -60,7 +60,7 @@ export class RegisterComponent {
 			message: 'Password must be at least 6 characters'
 		});
 
-		required(p.confirmPassword);
+		required(p.confirmPassword, { message: 'Confirm Password is required' });
 
 		required(p.first_name, { message: 'First name is required' });
 		required(p.last_name, { message: 'Last name is required' });
