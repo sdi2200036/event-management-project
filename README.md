@@ -110,7 +110,22 @@ You need the following installed on your machine (WSL/Ubuntu):
 
 ---
 
-## Step-by-Step Setup (WSL / Ubuntu)
+## Setup (WSL / Ubuntu)
+
+### Option A — Automated (recommended)
+
+A setup script handles all steps below automatically (skips anything already done):
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+After it finishes, follow the [Trust the certificate](#10-trust-the-self-signed-certificate) step manually — that one requires browser interaction.
+
+---
+
+### Option B — Manual Step-by-Step
 
 ### 1. Install Node.js v20 via nvm
 
@@ -197,7 +212,7 @@ openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -da
 
 This creates `backend/certs/key.pem` and `backend/certs/cert.pem`. These files are gitignored and never committed.
 
-### 10. Trust the self-signed certificate
+### 10. Trust the self-signed certificate {#10-trust-the-self-signed-certificate}
 
 The backend uses a self-signed certificate which browsers block by default. You need to accept it once:
 
