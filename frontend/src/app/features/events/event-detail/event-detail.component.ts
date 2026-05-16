@@ -48,6 +48,10 @@ export class EventDetailComponent {
 		private activatedRoute: ActivatedRoute
 	) {}
 
+	public goBack(): void {
+		this.router.navigate(['..'], { relativeTo: this.activatedRoute });
+	}
+
 	public goToEditEvent(): void {
 		const ev = this.event();
 		if (!ev) return;

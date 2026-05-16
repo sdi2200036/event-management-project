@@ -1,12 +1,4 @@
-import {
-	Component,
-	computed,
-	input,
-	InputSignal,
-	linkedSignal,
-	Signal,
-	WritableSignal
-} from '@angular/core';
+import { Component, computed, input, InputSignal, linkedSignal, Signal, WritableSignal } from '@angular/core';
 import {
 	applyEach,
 	FieldState,
@@ -14,15 +6,16 @@ import {
 	FormField,
 	maxLength,
 	min,
+	minLength,
 	required,
 	submit,
 	validate
 } from '@angular/forms/signals';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { MapPickerComponent, LatLng } from '../../../shared/components/map-picker/map-picker.component';
+import { LatLng, MapPickerComponent } from '../../../shared/components/map-picker/map-picker.component';
 import { EventCategory, Event as EventModel } from '../../../shared/models/event.model';
 
 type EventFormModel = {
@@ -93,17 +86,24 @@ export class EventFormComponent {
 			min(tt.quantity, 1, { message: 'Quantity must be at least 1' });
 		});
 
-		validate(p, ({ valueOf }) => {
-			if (valueOf(p.categories).length === 0) {
-				return [{ kind: 'form', field: 'categories', message: 'At least one category is required' }];
-			}
+		minLength(p.categories, 1, { message: 'At least one category must be selected' });
+
+		validate(p.end_datetime, ({ valueOf }) => {
 			const start = valueOf(p.start_datetime);
 			const end = valueOf(p.end_datetime);
 			if (start && end && new Date(end) <= new Date(start)) {
-				return [{ kind: 'form', field: 'end_datetime', message: 'End date/time must be after start date/time' }];
+				return [
+					{ kind: 'field', field: p.end_datetime, message: 'End date/time must be after start date/time' }
+				];
 			}
+			return undefined;
+		});
+
+		validate(p.ticket_types, ({ valueOf }) => {
 			if (valueOf(p.capacity) < valueOf(p.ticket_types).reduce((sum, tt) => sum + tt.quantity, 0)) {
-				return [{ kind: 'form', field: 'capacity', message: 'Capacity cannot be less than total ticket quantity' }];
+				return [
+					{ kind: 'form', field: 'capacity', message: 'Capacity cannot be less than total ticket quantity' }
+				];
 			}
 			return undefined;
 		});
@@ -117,7 +117,8 @@ export class EventFormComponent {
 	constructor(
 		private eventService: EventService,
 		private router: Router,
-		private toastService: ToastService
+		private toastService: ToastService,
+		private activatedRoute: ActivatedRoute
 	) {}
 
 	private toLocalDatetimeString(isoString: string): string {
@@ -134,7 +135,7 @@ export class EventFormComponent {
 		}));
 	}
 
-	// === Photo Management ===
+	// Photo Management
 
 	public onPhotosSelected(event: Event): void {
 		const input = event.target as HTMLInputElement;
@@ -156,7 +157,7 @@ export class EventFormComponent {
 		this.photos.update((current) => current.filter((_, i) => i !== index));
 	}
 
-	// === Form Actions ===
+	// Form Actions
 
 	public addTicketType(): void {
 		this.eventModel.update((current) => ({
@@ -191,7 +192,7 @@ export class EventFormComponent {
 	}
 
 	public cancel(): void {
-		this.router.navigate(['/events/manage']);
+		this.router.navigate(['../'], { relativeTo: this.activatedRoute });
 	}
 
 	public async onSubmit(event: Event): Promise<void> {
@@ -217,7 +218,7 @@ export class EventFormComponent {
 					this.eventService.updateEvent(eventData.id, payload).pipe(
 						switchMap(() => {
 							this.toastService.success('Event updated successfully');
-							this.router.navigate(['/events/manage']);
+							this.router.navigate(['../'], { relativeTo: this.activatedRoute });
 							return of(undefined);
 						}),
 						catchError((err) => {
@@ -231,7 +232,7 @@ export class EventFormComponent {
 					this.eventService.createEvent(payload).pipe(
 						switchMap(() => {
 							this.toastService.success('Event created successfully');
-							this.router.navigate(['/events/manage']);
+							this.router.navigate(['../'], { relativeTo: this.activatedRoute });
 							return of(undefined);
 						}),
 						catchError((err) => {

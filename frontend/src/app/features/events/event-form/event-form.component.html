@@ -34,7 +34,12 @@
 							</div>
 							<div class="col-md-6">
 								<label class="form-label">Capacity *</label>
-								<input type="number" class="form-control" [formField]="this.eventForm.capacity" />
+								<input
+									type="number"
+									class="form-control"
+									[formField]="this.eventForm.capacity"
+									[class.is-invalid]="this.isFieldInvalid(this.eventForm.capacity())"
+								/>
 								@for (error of this.eventForm.capacity().errors(); track $index) {
 									<div class="invalid-feedback">
 										{{ error.message }}
@@ -144,6 +149,11 @@
 								</button>
 							}
 						</div>
+						@for (error of this.eventForm.categories().errors(); track $index) {
+							<div class="invalid-feedback d-block">
+								{{ error.message }}
+							</div>
+						}
 					</div>
 				</div>
 				<!-- Ticket Types -->
@@ -165,7 +175,9 @@
 											class="form-control"
 											[formField]="this.eventForm.ticket_types[i].name"
 											placeholder="e.g. VIP, General"
-											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].name())"
+											[class.is-invalid]="
+												this.isFieldInvalid(this.eventForm.ticket_types[i].name())
+											"
 										/>
 										@for (error of this.eventForm.ticket_types[i].name().errors(); track $index) {
 											<div class="invalid-feedback">
@@ -180,7 +192,9 @@
 											class="form-control"
 											[formField]="this.eventForm.ticket_types[i].price"
 											step="0.01"
-											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].price())"
+											[class.is-invalid]="
+												this.isFieldInvalid(this.eventForm.ticket_types[i].price())
+											"
 										/>
 										@for (error of this.eventForm.ticket_types[i].price().errors(); track $index) {
 											<div class="invalid-feedback">
@@ -194,9 +208,14 @@
 											type="number"
 											class="form-control"
 											[formField]="this.eventForm.ticket_types[i].quantity"
-											[class.is-invalid]="this.isFieldInvalid(this.eventForm.ticket_types[i].quantity())"
+											[class.is-invalid]="
+												this.isFieldInvalid(this.eventForm.ticket_types[i].quantity())
+											"
 										/>
-										@for (error of this.eventForm.ticket_types[i].quantity().errors(); track $index) {
+										@for (
+											error of this.eventForm.ticket_types[i].quantity().errors();
+											track $index
+										) {
 											<div class="invalid-feedback">
 												{{ error.message }}
 											</div>
@@ -212,6 +231,11 @@
 											Remove
 										</button>
 									</div>
+								</div>
+							}
+							@for (error of this.eventForm.ticket_types().errors(); track $index) {
+								<div class="invalid-feedback d-block">
+									{{ error.message }}
 								</div>
 							}
 						</div>
