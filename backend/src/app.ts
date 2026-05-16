@@ -14,6 +14,7 @@ import messageRoutes from './routes/messages.routes';
 import exportRoutes from './routes/export.routes';
 import { completeExpiredEvents } from './services/event.service';
 import { trainModel } from './services/recommendation.service';
+import prisma from './config/prisma';
 
 dotenv.config();
 
@@ -86,12 +87,23 @@ const runTrainModel = async () => {
   console.log('Recommendation model trained');
 };
 
-https.createServer(sslOptions, app).listen(PORT, async () => {
+const server = https.createServer(sslOptions, app);
+
+server.listen(PORT, async () => {
   console.log(`HTTPS server running on port ${PORT}`);
   await runCompleteExpired();
   await runTrainModel();
-  setInterval(runCompleteExpired, 60 * 60 * 1000);
+  setInterval(runCompleteExpired, 5 * 60 * 1000);
   setInterval(runTrainModel, 60 * 60 * 1000);
+});
+
+process.on('SIGTERM', async () => {
+  await prisma.$disconnect();
+  server.close();
+});
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  server.close();
 });
 
 export default app;
