@@ -25,7 +25,7 @@ export class UserDetailComponent {
 	) {}
 
 	public goBack(): void {
-		this.router.navigate(['/admin/users']);
+		this.router.navigate(['admin', 'users']);
 	}
 
 	public approveUser(): void {
@@ -35,7 +35,7 @@ export class UserDetailComponent {
 		this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
 			next: () => {
 				this.toastService.success(`User "${user.username}" approved`);
-				this.router.navigate(['/admin/users', user.id]);
+				this.router.navigate(['admin', 'users', user.id]);
 			},
 			error: (err) => {
 				this.toastService.error(err.error?.message || 'Failed to approve');
@@ -53,7 +53,7 @@ export class UserDetailComponent {
 			this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
 				next: () => {
 					this.toastService.success(`User "${user.username}" rejected`);
-					this.router.navigate(['/admin/users', user.id]);
+					this.router.navigate(['admin', 'users', user.id]);
 				},
 				error: (err) => {
 					this.toastService.error(err.error?.message || 'Failed to reject');
@@ -66,19 +66,21 @@ export class UserDetailComponent {
 	public suspendUser(): void {
 		const user = this.userData();
 		if (!user) return;
-		this.modalService.confirm(`Suspend user "${user.username}"? They will lose access immediately.`).then((confirmed) => {
-			if (!confirmed) return;
-			this.loading.set(true);
-			this.http.patch(`${environment.apiUrl}/users/${user.id}/suspend`, {}).subscribe({
-				next: () => {
-					this.toastService.success(`User "${user.username}" suspended`);
-					this.router.navigate(['/admin/users', user.id]);
-				},
-				error: (err) => {
-					this.toastService.error(err.error?.message || 'Failed to suspend');
-					this.loading.set(false);
-				}
+		this.modalService
+			.confirm(`Suspend user "${user.username}"? They will lose access immediately.`)
+			.then((confirmed) => {
+				if (!confirmed) return;
+				this.loading.set(true);
+				this.http.patch(`${environment.apiUrl}/users/${user.id}/suspend`, {}).subscribe({
+					next: () => {
+						this.toastService.success(`User "${user.username}" suspended`);
+						this.router.navigate(['admin', 'users', user.id]);
+					},
+					error: (err) => {
+						this.toastService.error(err.error?.message || 'Failed to suspend');
+						this.loading.set(false);
+					}
+				});
 			});
-		});
 	}
 }

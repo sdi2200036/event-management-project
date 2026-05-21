@@ -1,15 +1,18 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { unauthenticatedGuard } from './core/guards/unauthenticated.guard';
 import { UserRole } from './shared/models/user.model';
 
 export const appRoutes: Routes = [
 	{
 		path: '',
+		canActivate: [unauthenticatedGuard],
 		loadChildren: () => import('./features/welcome/welcome.routes').then((m) => m.WELCOME_ROUTES)
 	},
 	{
 		path: '',
+		canActivate: [unauthenticatedGuard],
 		loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES)
 	},
 	{
