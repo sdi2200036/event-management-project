@@ -43,11 +43,21 @@ if ! command -v psql &>/dev/null; then
   sudo apt-get update -qq
   sudo apt-get install -y postgresql postgresql-client
 fi
-sudo service postgresql start
+sudo service postgresql start 2>/dev/null || true
 
 # ── 4. postgres user password ─────────────────────────────────────────────────
 echo "[4/9] Setting postgres user password..."
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres123';" 2>/dev/null || true
+read -rsp "    Password for the 'postgres' DB user [press Enter to use 'postgres123', or 's' to skip]: " PG_PASSWORD
+echo ""
+if [ "$PG_PASSWORD" = "s" ]; then
+  echo "    Skipping — using whatever password is already set."
+  echo "    Make sure your .env DATABASE_URL matches if it differs from 'postgres123'."
+  PG_PASSWORD=""
+else
+  PG_PASSWORD="${PG_PASSWORD:-postgres123}"
+  sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$PG_PASSWORD';" 2>/dev/null || true
+  echo "    Password set."
+fi
 
 # ── 5. Create database ────────────────────────────────────────────────────────
 echo "[5/9] Creating database..."
@@ -66,6 +76,10 @@ if [ ! -f "$BACKEND_DIR/.env" ]; then
   cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"
   JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")
   sed -i "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" "$BACKEND_DIR/.env"
+  if [ -n "$PG_PASSWORD" ] && [ "$PG_PASSWORD" != "postgres123" ]; then
+    sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$PG_PASSWORD|" "$BACKEND_DIR/.env"
+    sed -i "s|postgresql://postgres:[^@]*@|postgresql://postgres:$PG_PASSWORD@|" "$BACKEND_DIR/.env"
+  fi
   echo "    .env created with a random JWT secret."
 else
   echo "    .env already exists, skipping."
@@ -74,8 +88,15 @@ fi
 # ── 8. Migrations + seed ──────────────────────────────────────────────────────
 echo "[8/9] Applying database migrations and seeding..."
 cd "$BACKEND_DIR"
-npx prisma migrate deploy
-npx prisma db seed
+if ! npx prisma migrate deploy 2>/dev/null; then
+  echo "    Schema exists without migration history — baselining..."
+  for migration_dir in prisma/migrations/*/; do
+    [ -d "$migration_dir" ] || continue
+    npx prisma migrate resolve --applied "$(basename "$migration_dir")" 2>/dev/null || true
+  done
+  npx prisma migrate deploy
+fi
+npx prisma db seed || echo "    Seed skipped (data may already exist)."
 
 # ── 9. SSL certificates ───────────────────────────────────────────────────────
 echo "[9/9] Generating SSL certificates..."
