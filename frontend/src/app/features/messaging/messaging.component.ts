@@ -21,11 +21,7 @@ enum Tab {
 	imports: [MessageDetailsComponent, MessageListComponent, ComposeComponent]
 })
 export class MessagingComponent {
-	public messagesData: InputSignal<MessagesResolverData> = input({
-		inbox: { messages: [] as Message[], total: 0, unread_count: 0 },
-		sent: { messages: [] as Message[], total: 0 },
-		page: 1
-	});
+	public messagesData: InputSignal<MessagesResolverData> = input.required();
 	public prefillReceiver: InputSignal<string | undefined> = input<string>(undefined, { alias: 'receiver' });
 
 	public activeTab: WritableSignal<Tab> = linkedSignal(() => {

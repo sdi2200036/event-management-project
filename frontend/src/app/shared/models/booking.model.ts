@@ -9,7 +9,6 @@ export interface Booking {
 	total_cost: number;
 	booking_status: BookingStatus;
 	booked_at: string;
-	// Joined fields from API
 	event_title?: string;
 	event_start_datetime?: string;
 	ticket_type_name?: string;

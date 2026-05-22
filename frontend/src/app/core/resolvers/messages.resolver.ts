@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { catchError, EMPTY, forkJoin, map } from 'rxjs';
 import { MessageService, PaginatedInboxResponse, PaginatedSentResponse } from '../services/message.service';
 import { ToastService } from '../services/toast.service';
 
@@ -20,11 +20,7 @@ export const messagesResolver: ResolveFn<MessagesResolverData> = (route: Activat
 		map(([inbox, sent]) => ({ inbox, sent, page })),
 		catchError(() => {
 			toastService.error('Failed to load messages.');
-			return of({
-				inbox: { messages: [], total: 0, unread_count: 0 } as PaginatedInboxResponse,
-				sent: { messages: [], total: 0 } as PaginatedSentResponse,
-				page
-			});
+			return EMPTY;
 		})
 	);
 };

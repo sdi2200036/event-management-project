@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { RedirectCommand, ResolveFn, Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { ResolveFn, Router } from '@angular/router';
+import { catchError, EMPTY } from 'rxjs';
 import { User } from 'src/app/shared/models/user.model';
 import { ToastService } from '../services/toast.service';
 import { UserService } from '../services/user.service';
@@ -14,7 +14,7 @@ export const userDetailResolver: ResolveFn<User> = (route) => {
 	return userService.getUserById(id).pipe(
 		catchError(() => {
 			toastService.error('User not found');
-			return of(new RedirectCommand(router.parseUrl('/admin/users')));
+			return EMPTY;
 		})
 	);
 };

@@ -1,8 +1,8 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { computed, Injectable, Signal, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { User, LoginRequest, RegisterRequest, AuthResponse, UserRole } from '../../shared/models/user.model';
+import { AuthResponse, LoginRequest, RegisterRequest, User, UserRole } from '../../shared/models/user.model';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,7 +12,7 @@ export class AuthService {
 	private _currentUser = signal<User | null>(this.loadUser());
 
 	public currentUser: Signal<User | null> = this._currentUser.asReadonly();
-	public userRole: Signal<UserRole | null> = computed(() => this._currentUser()?.role || null);
+	public userRole: Signal<UserRole> = computed(() => this._currentUser()?.role || UserRole.Undefined);
 	public isLoggedIn: Signal<boolean> = computed(() => !!this._currentUser());
 
 	constructor(private http: HttpClient) {}

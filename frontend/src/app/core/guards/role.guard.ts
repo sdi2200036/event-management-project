@@ -13,15 +13,11 @@ export class RoleGuard implements CanActivate {
 	) {}
 
 	public canActivate(route: ActivatedRouteSnapshot): RedirectCommand | boolean {
-		if (!this.authService.isLoggedIn()) {
-			return new RedirectCommand(this.router.parseUrl('/login'), { skipLocationChange: true });
-		}
-
 		const requiredRoles: string[] = route.data['roles'] || [];
-		const userRole: UserRole | null = this.authService.userRole();
+		const userRole: UserRole = this.authService.userRole();
 
-		if (requiredRoles.length !== 0 && (!userRole || !requiredRoles.includes(userRole))) {
-			return new RedirectCommand(this.router.parseUrl('/events'), { skipLocationChange: true });
+		if (requiredRoles.length !== 0 && !requiredRoles.includes(userRole)) {
+			return new RedirectCommand(this.router.parseUrl('/events'));
 		}
 
 		return true;

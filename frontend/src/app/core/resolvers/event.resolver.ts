@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { RedirectCommand, ResolveFn, Router, RouterStateSnapshot } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, EMPTY, of } from 'rxjs';
 import { Event as EventModel } from 'src/app/shared/models/event.model';
 import { EventService } from '../services/event.service';
 import { ToastService } from '../services/toast.service';
@@ -25,7 +25,7 @@ export const eventResolver: ResolveFn<EventModel | null | RedirectCommand> = (ro
 	return eventService.getEvent(eventId).pipe(
 		catchError((err) => {
 			toastService.error(err.error?.message || 'Failed to load event');
-			return of(new RedirectCommand(router.parseUrl('/events')));
+			return EMPTY;
 		})
 	);
 };

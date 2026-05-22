@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { RedirectCommand, ResolveFn, Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { ResolveFn, Router } from '@angular/router';
+import { catchError, EMPTY } from 'rxjs';
 import { User, UserRole, UserStatus } from 'src/app/shared/models/user.model';
 import { ToastService } from '../services/toast.service';
 import { UserService } from '../services/user.service';
@@ -15,7 +15,7 @@ export const usersResolver: ResolveFn<User[]> = (route) => {
 	return userService.getUsers(filterStatus, filterRole).pipe(
 		catchError(() => {
 			toastService.error('Failed to load users');
-			return of(new RedirectCommand(router.parseUrl('/')));
+			return EMPTY;
 		})
 	);
 };

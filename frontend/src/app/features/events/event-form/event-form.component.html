@@ -128,6 +128,13 @@
 									[initialLng]="this.eventModel().geo_lng"
 									(coordsChange)="this.onCoordsChange($event)"
 								></app-map-picker>
+								<div>
+									@for (error of this.eventForm.geo_lat().errors(); track $index) {
+										<div class="invalid-feedback d-block">
+											{{ error.message }}
+										</div>
+									}
+								</div>
 							</div>
 						</div>
 					</div>

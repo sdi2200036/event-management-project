@@ -46,7 +46,7 @@ export interface Event {
 	status: EventStatus;
 	description?: string;
 	created_at?: string;
-	categories?: EventCategory[];
+	categories: EventCategory[];
 	photos?: string[];
 	ticket_types?: TicketType[];
 	organizer_username?: string;
@@ -88,7 +88,7 @@ export interface CreateEventRequest {
 	end_datetime: string;
 	capacity: number;
 	description?: string;
-	categories?: EventCategory[];
+	categories: EventCategory[];
 	photos?: string[];
 	ticket_types?: Omit<TicketType, 'id' | 'event_id'>[];
 }

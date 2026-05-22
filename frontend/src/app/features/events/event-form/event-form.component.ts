@@ -86,6 +86,8 @@ export class EventFormComponent {
 			min(tt.quantity, 1, { message: 'Quantity must be at least 1' });
 		});
 
+		required(p.geo_lat, { message: 'Location is required' });
+
 		minLength(p.categories, 1, { message: 'At least one category must be selected' });
 
 		validate(p.end_datetime, ({ valueOf }) => {
@@ -203,7 +205,7 @@ export class EventFormComponent {
 			const payload = {
 				...formValue,
 				photos: this.photos(),
-				categories: formValue.categories.length > 0 ? (formValue.categories as EventCategory[]) : undefined,
+				categories: formValue.categories as EventCategory[],
 				geo_lat: formValue.geo_lat ?? undefined,
 				geo_lng: formValue.geo_lng ?? undefined,
 				ticket_types: formValue.ticket_types.map((tt) => ({

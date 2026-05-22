@@ -1,24 +1,16 @@
 import { inject } from '@angular/core';
-import {
-	ActivatedRouteSnapshot,
-	Params,
-	RedirectCommand,
-	ResolveFn,
-	Router,
-	RouterStateSnapshot
-} from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { ActivatedRouteSnapshot, Params, ResolveFn, RouterStateSnapshot } from '@angular/router';
+import { catchError, EMPTY } from 'rxjs';
 import { EventCategory, EventFilters, EventsResponseExtended } from 'src/app/shared/models/event.model';
 import { EventService } from '../services/event.service';
 import { ToastService } from '../services/toast.service';
 
-export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> = (
+export const events: ResolveFn<EventsResponseExtended> = (
 	route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
 	const eventService: EventService = inject(EventService);
 	const toastService: ToastService = inject(ToastService);
-	const router: Router = inject(Router);
 	const params: Params = route.queryParams;
 
 	const isManageMode: boolean = state.url.toString().includes('manage');
@@ -39,13 +31,13 @@ export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> 
 		? eventService.getMyEvents().pipe(
 				catchError(() => {
 					toastService.error('Failed to load your events');
-					return of(new RedirectCommand(router.parseUrl('/error')));
+					return EMPTY;
 				})
 			)
 		: eventService.getEvents(filters).pipe(
 				catchError(() => {
 					toastService.error('Failed to load events');
-					return of(new RedirectCommand(router.parseUrl('/error')));
+					return EMPTY;
 				})
 			);
 };

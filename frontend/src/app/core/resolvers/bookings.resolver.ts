@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { RedirectCommand, ResolveFn, Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { ResolveFn, Router } from '@angular/router';
+import { catchError, EMPTY, of } from 'rxjs';
 import { Booking } from 'src/app/shared/models/booking.model';
 import { BookingService } from '../services/booking.service';
 import { ToastService } from '../services/toast.service';
@@ -20,7 +20,7 @@ export const bookingsResolver: ResolveFn<Booking[]> = (route, state) => {
 	return bookingService.getEventBookings(eventId).pipe(
 		catchError((err) => {
 			toastService.error(err.error?.message || 'Failed to load event');
-			return of(new RedirectCommand(router.parseUrl('/events')));
+			return EMPTY;
 		})
 	);
 };
