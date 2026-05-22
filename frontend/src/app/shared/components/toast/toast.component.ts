@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
@@ -10,5 +10,5 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: [NgClass]
 })
 export class ToastComponent {
-	public readonly toastService: ToastService = inject(ToastService);
+	constructor(public toastService: ToastService) {}
 }

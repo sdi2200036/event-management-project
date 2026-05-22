@@ -36,5 +36,10 @@ export const appRoutes: Routes = [
 		canActivate: [RoleGuard],
 		data: { roles: [UserRole.Admin] }
 	},
+	{
+		path: 'error',
+		loadComponent: () =>
+			import('./shared/components/error-page/error-page.component').then((m) => m.ErrorPageComponent)
+	},
 	{ path: '**', redirectTo: '' }
 ];

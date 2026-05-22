@@ -1,10 +1,10 @@
-import { Component, inject, signal, WritableSignal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { form, FormField, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
+import { ToastService } from 'src/app/core/services/toast.service';
 import { LoginRequest } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
 	selector: 'app-login',
@@ -13,8 +13,6 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: [FormField]
 })
 export class LoginComponent {
-	private readonly toastService: ToastService = inject(ToastService);
-
 	public readonly loginModel: WritableSignal<LoginRequest> = signal({
 		username: '',
 		password: ''
@@ -26,7 +24,8 @@ export class LoginComponent {
 
 	constructor(
 		private authService: AuthService,
-		private router: Router
+		private router: Router,
+		private toastService: ToastService
 	) {}
 
 	public goToRegister(): void {

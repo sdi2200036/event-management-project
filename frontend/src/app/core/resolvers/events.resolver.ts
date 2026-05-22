@@ -39,13 +39,13 @@ export const events: ResolveFn<EventsResponseExtended | null | RedirectCommand> 
 		? eventService.getMyEvents().pipe(
 				catchError(() => {
 					toastService.error('Failed to load your events');
-					return of(new RedirectCommand(router.parseUrl('/events')));
+					return of(new RedirectCommand(router.parseUrl('/error')));
 				})
 			)
 		: eventService.getEvents(filters).pipe(
 				catchError(() => {
 					toastService.error('Failed to load events');
-					return of(new RedirectCommand(router.parseUrl('/events')));
+					return of(new RedirectCommand(router.parseUrl('/error')));
 				})
 			);
 };

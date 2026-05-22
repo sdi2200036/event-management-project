@@ -1,4 +1,4 @@
-import { Component, inject, signal, WritableSignal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { email, FieldState, form, FormField, maxLength, minLength, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
@@ -29,8 +29,6 @@ interface RegisterFormModel {
 	imports: [FormField]
 })
 export class RegisterComponent {
-	private readonly toastService: ToastService = inject(ToastService);
-
 	public readonly registerModel: WritableSignal<RegisterFormModel> = signal({
 		username: '',
 		password: '',
@@ -75,7 +73,8 @@ export class RegisterComponent {
 
 	constructor(
 		private authService: AuthService,
-		private router: Router
+		private router: Router,
+		private toastService: ToastService
 	) {}
 
 	public goToLogin(): void {

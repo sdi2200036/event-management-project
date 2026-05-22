@@ -1,19 +1,9 @@
-import {
-	Component,
-	computed,
-	inject,
-	input,
-	InputSignal,
-	linkedSignal,
-	Signal,
-	signal,
-	WritableSignal
-} from '@angular/core';
+import { Component, computed, input, InputSignal, linkedSignal, Signal, signal, WritableSignal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ModalService } from 'src/app/core/services/modal.service';
+import { ToastService } from 'src/app/core/services/toast.service';
 import { MessagesResolverData } from '../../core/resolvers/messages.resolver';
 import { Message, MessageService, PAGE_SIZE, SendMessageRequest } from '../../core/services/message.service';
-import { ModalService } from '../../core/services/modal.service';
-import { ToastService } from '../../core/services/toast.service';
 import { ComposeComponent } from './message-compose/message-compose.component';
 import { MessageDetailsComponent } from './message-details/message-details.component';
 import { MessageListComponent } from './message-list/message-list.component';
@@ -38,9 +28,6 @@ export class MessagingComponent {
 	});
 	public prefillReceiver: InputSignal<string | undefined> = input<string>(undefined, { alias: 'receiver' });
 
-	private readonly toastService: ToastService = inject(ToastService);
-	private readonly modalService: ModalService = inject(ModalService);
-
 	public activeTab: WritableSignal<Tab> = linkedSignal(() => {
 		const receiver = this.prefillReceiver();
 		return receiver ? Tab.COMPOSE : Tab.INBOX;
@@ -58,7 +45,9 @@ export class MessagingComponent {
 	constructor(
 		private messageService: MessageService,
 		private router: Router,
-		private route: ActivatedRoute
+		private route: ActivatedRoute,
+		private toastService: ToastService,
+		private modalService: ModalService
 	) {
 		this.messageService.refreshUnreadCount();
 	}

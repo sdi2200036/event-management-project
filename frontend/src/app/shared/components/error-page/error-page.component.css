@@ -1,0 +1,9 @@
+.error-page {
+  min-height: calc(100vh - 64px);
+}
+
+.error-code {
+  font-size: 8rem;
+  line-height: 1;
+  letter-spacing: -4px;
+}

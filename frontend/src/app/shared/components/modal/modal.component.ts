@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { ModalService } from '../../../core/services/modal.service';
 
 @Component({
@@ -10,5 +10,5 @@ import { ModalService } from '../../../core/services/modal.service';
 	imports: [NgTemplateOutlet]
 })
 export class ModalComponent {
-	public readonly modalService: ModalService = inject(ModalService);
+	constructor(public modalService: ModalService) {}
 }

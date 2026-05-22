@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Component } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -10,20 +10,19 @@ import { ToastService } from '../../../core/services/toast.service';
 	imports: []
 })
 export class ExportComponent {
-	private readonly toastService: ToastService = inject(ToastService);
-
-	constructor(private http: HttpClient) {}
+	constructor(
+		private http: HttpClient,
+		private toastService: ToastService
+	) {}
 
 	public exportXML(): void {
-		this.http
-			.get(`${environment.apiUrl}/export/xml`, { responseType: 'text', observe: 'response' })
-			.subscribe({
-				next: (response: HttpResponse<string>) => {
-					const blob: Blob = new Blob([response.body || ''], { type: 'application/xml' });
-					this.downloadFile(blob, 'events.xml');
-				},
-				error: (err) => this.toastService.error(err.error?.message || 'Failed to export XML')
-			});
+		this.http.get(`${environment.apiUrl}/export/xml`, { responseType: 'text', observe: 'response' }).subscribe({
+			next: (response: HttpResponse<string>) => {
+				const blob: Blob = new Blob([response.body || ''], { type: 'application/xml' });
+				this.downloadFile(blob, 'events.xml');
+			},
+			error: (err) => this.toastService.error(err.error?.message || 'Failed to export XML')
+		});
 	}
 
 	public exportJSON(): void {
