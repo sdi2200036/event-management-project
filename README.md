@@ -34,6 +34,9 @@ PostgreSQL Database
 
 ```
 project/
+├── dataset/
+│   └── rel_event_csvs/
+│       └── event_interest.csv      # Pre-training data for the recommendation model
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma           # Prisma schema — defines all DB models and relations
@@ -346,13 +349,37 @@ The database has 8 tables, defined in `prisma/schema.prisma` and managed via Pri
 
 ## Recommendation Algorithm
 
-The system uses **Biased Matrix Factorization** to suggest events to logged-in users.
+The system uses **Biased Matrix Factorization (BMF)**, implemented from scratch, to suggest events to logged-in users.
 
-- Bookings count as a rating of 5 (strong interest)
-- Event views count as a rating of 1 (weak interest)
-- The model learns user preferences and event characteristics from this data
-- Users with no booking history get recommendations based on views only
-- The model is trained at server startup and retrained every hour automatically
+### Training data
+
+The model is trained on two sources combined:
+
+| Source | Signal | Rating |
+|--------|--------|--------|
+| Dataset (`event_interest.csv`) | User marked interested | 5 |
+| Dataset (`event_interest.csv`) | No explicit signal (implicit view) | 2 |
+| Live DB | Confirmed booking | 5 |
+| Live DB | Event view | 1 |
+
+Explicit dislikes from the dataset (`not_interested = 1`) are excluded to avoid penalising events the user simply hadn't discovered yet.
+
+### Dataset
+
+The provided dataset (`dataset/rel_event_csvs/event_interest.csv`) is read once at server startup and cached in memory. It gives the model a meaningful starting point before any real users have interacted with the system.
+
+Live DB user and event IDs are shifted by `+10,000,000` before entering the model so they never collide with dataset IDs. Recommendations are always made from events that exist in the live database.
+
+### Training schedule
+
+- **At startup** — model trains immediately (dataset + all current DB interactions)
+- **Every hour** — model retrains to incorporate new bookings and views (dataset is read from cache)
+
+> Interactions that happen *after* the last training cycle only influence recommendations from the next retrain onwards. This is normal for batch-trained collaborative filtering.
+
+### Recommendations for new users
+
+If a user has no bookings, the algorithm falls back to their event views only. If a user has neither, no recommendations are shown.
 
 ---
 

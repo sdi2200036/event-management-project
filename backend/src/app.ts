@@ -26,7 +26,7 @@ app.use(helmet());
 // CORS configuration
 app.use(
 	cors({
-		origin: JSON.parse(process.env.FRONTEND_URL || '["http://localhost:4200"]'),
+		origin: (() => { try { return JSON.parse(process.env.FRONTEND_URL || '["http://localhost:4200"]'); } catch { return process.env.FRONTEND_URL || 'http://localhost:4200'; } })(),
 		credentials: true
 	})
 );

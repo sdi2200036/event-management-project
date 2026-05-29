@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import prisma from '../config/prisma';
 
 /**
@@ -5,7 +7,15 @@ import prisma from '../config/prisma';
  *
  * Model: r_ui = mu + b_u + b_i + p_u^T * q_i
  * Optimized via Stochastic Gradient Descent (SGD).
+ *
+ * ID spaces:
+ *   Dataset users/events  → raw IDs from event_interest.csv (e.g. 8949, 1130067)
+ *   DB users/events       → DB primary keys shifted by DB_OFFSET (e.g. 10_000_001)
+ * The offset ensures the two ID spaces never collide inside the model.
  */
+
+const DB_OFFSET = 10_000_000;
+
 export class BiasedMatrixFactorization {
   private numFactors: number;
   private learningRate: number;
@@ -92,7 +102,44 @@ export class BiasedMatrixFactorization {
   }
 }
 
+type Rating = { userId: number; eventId: number; rating: number };
+
+const loadDatasetRatings = (): Rating[] => {
+  const datasetPath = process.env.DATASET_PATH
+    ? path.resolve(process.env.DATASET_PATH)
+    : path.join(__dirname, '../../../dataset/rel_event_csvs/event_interest.csv');
+
+  if (!fs.existsSync(datasetPath)) {
+    console.warn(`[Recommendations] Dataset not found at ${datasetPath} — skipping pre-training data`);
+    return [];
+  }
+
+  const lines = fs.readFileSync(datasetPath, 'utf-8').split('\n');
+  const ratings: Rating[] = [];
+
+  // Header: user,event,invited,timestamp,interested,not_interested
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const parts = line.split(',');
+    const userId = parseInt(parts[0]);
+    const eventId = parseInt(parts[1]);
+    const interested = parseInt(parts[4]);
+    const notInterested = parseInt(parts[5]);
+
+    if (isNaN(userId) || isNaN(eventId)) continue;
+    if (notInterested === 1) continue; // skip explicit dislikes
+
+    ratings.push({ userId, eventId, rating: interested === 1 ? 5 : 2 });
+  }
+
+  console.log(`[Recommendations] Loaded ${ratings.length} ratings from dataset`);
+  return ratings;
+};
+
 let modelInstance: BiasedMatrixFactorization | null = null;
+let cachedDatasetRatings: Rating[] | null = null;
 
 export const trainModel = async (): Promise<BiasedMatrixFactorization> => {
   const [bookings, views] = await Promise.all([
@@ -100,13 +147,18 @@ export const trainModel = async (): Promise<BiasedMatrixFactorization> => {
     prisma.eventView.findMany({ select: { user_id: true, event_id: true } }),
   ]);
 
-  const allRatings = [
-    ...bookings.map((b) => ({ userId: b.attendee_id, eventId: b.event_id, rating: 5 })),
-    ...views.map((v) => ({ userId: v.user_id, eventId: v.event_id, rating: 1 })),
+  // Dataset is read once and cached — it never changes between retrains
+  if (!cachedDatasetRatings) cachedDatasetRatings = loadDatasetRatings();
+  const datasetRatings = cachedDatasetRatings;
+
+  const dbRatings: Rating[] = [
+    ...bookings.map((b) => ({ userId: b.attendee_id + DB_OFFSET, eventId: b.event_id + DB_OFFSET, rating: 5 })),
+    ...views.map((v) => ({ userId: v.user_id + DB_OFFSET, eventId: v.event_id + DB_OFFSET, rating: 1 })),
   ];
 
-  const ratingMap = new Map<string, { userId: number; eventId: number; rating: number }>();
-  for (const r of allRatings) {
+  // Merge both sources, keeping the highest rating per (user, event) pair
+  const ratingMap = new Map<string, Rating>();
+  for (const r of [...datasetRatings, ...dbRatings]) {
     const key = `${r.userId}_${r.eventId}`;
     const existing = ratingMap.get(key);
     if (!existing || existing.rating < r.rating) ratingMap.set(key, r);
@@ -120,6 +172,8 @@ export const trainModel = async (): Promise<BiasedMatrixFactorization> => {
 
 export const getRecommendationsForUser = async (userId: number, topN: number = 10): Promise<number[]> => {
   if (!modelInstance) await trainModel();
+
+  const dbUserId = userId + DB_OFFSET;
 
   const [bookedIds, viewedIds] = await Promise.all([
     prisma.booking.findMany({ where: { attendee_id: userId }, select: { event_id: true } }).then((r) => r.map((b) => b.event_id)),
@@ -138,11 +192,13 @@ export const getRecommendationsForUser = async (userId: number, topN: number = 1
     take: 200,
   });
 
-  const candidateIds = candidates.map((e) => e.id);
-  if (candidateIds.length === 0) return [];
+  if (candidates.length === 0) return [];
 
   const hasInteractions = bookedIds.length > 0 || viewedIds.length > 0;
   if (!hasInteractions) return [];
 
-  return modelInstance!.getRecommendations(userId, candidateIds, topN);
+  // Shift candidate IDs into the DB space, get recommendations, shift back
+  const candidateIdsShifted = candidates.map((e) => e.id + DB_OFFSET);
+  const recommendedShifted = modelInstance!.getRecommendations(dbUserId, candidateIdsShifted, topN);
+  return recommendedShifted.map((id) => id - DB_OFFSET);
 };
