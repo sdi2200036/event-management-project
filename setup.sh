@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/backend"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 
-echo "=== Event Management System — First-Time Setup ==="
+echo "=== Event Management System - First-Time Setup ==="
 echo ""
 
 # ── 1. nvm + Node.js 20 ───────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ echo "[4/9] Setting postgres user password..."
 read -rsp "    Password for the 'postgres' DB user [press Enter to use 'postgres123', or 's' to skip]: " PG_PASSWORD
 echo ""
 if [ "$PG_PASSWORD" = "s" ]; then
-  echo "    Skipping — using whatever password is already set."
+  echo "    Skipping - using whatever password is already set."
   echo "    Make sure your .env DATABASE_URL matches if it differs from 'postgres123'."
   PG_PASSWORD=""
 else
@@ -89,7 +89,7 @@ fi
 echo "[8/9] Applying database migrations and seeding..."
 cd "$BACKEND_DIR"
 if ! npx prisma migrate deploy 2>/dev/null; then
-  echo "    Schema exists without migration history — baselining..."
+  echo "    Schema exists without migration history - baselining..."
   for migration_dir in prisma/migrations/*/; do
     [ -d "$migration_dir" ] || continue
     npx prisma migrate resolve --applied "$(basename "$migration_dir")" 2>/dev/null || true
