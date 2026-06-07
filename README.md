@@ -404,6 +404,6 @@ If a user has no bookings, the algorithm falls back to their event views only. I
 | ORM      | Prisma                         | Type-safe database access, versioned migrations |
 | Database | PostgreSQL                     | Relational data, strong consistency             |
 | Auth     | JWT + bcryptjs                 | Stateless authentication, secure passwords      |
-| Frontend | Angular 17                     | Component-based SPA framework                   |
-| Maps     | Leaflet.js + OpenStreetMap     | Free interactive maps                           |
+| Frontend | Angular 21                     | Component-based SPA framework                   |
+| Maps     | OpenStreetMap     | Free interactive maps                           |
 | UI       | Bootstrap 5                    | Responsive layout out of the box                |
