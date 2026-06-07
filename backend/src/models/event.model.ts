@@ -29,6 +29,9 @@ export interface Event {
   categories?: string[];
   photos?: string[];
   ticket_types?: TicketType[];
+  organizer_username?: string;
+  organizer_first_name?: string;
+  organizer_last_name?: string;
 }
 
 export interface CreateEventDTO {
@@ -59,6 +62,7 @@ export interface EventFilters {
   maxPrice?: number;
   location?: string;
   status?: EventStatus;
+  organizerId?: number;
   page?: number;
   limit?: number;
 }

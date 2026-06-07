@@ -1,73 +1,128 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Component, signal, WritableSignal } from '@angular/core';
+import { email, FieldState, form, FormField, maxLength, minLength, required, submit } from '@angular/forms/signals';
 import { Router } from '@angular/router';
+import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
+import { RegisterUserRole } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 
-function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
-  const password = control.get('password');
-  const confirmPassword = control.get('confirmPassword');
-  if (password && confirmPassword && password.value !== confirmPassword.value) {
-    return { passwordMismatch: true };
-  }
-  return null;
+interface RegisterFormModel {
+	username: string;
+	password: string;
+	confirmPassword: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	phone: string;
+	address: string;
+	city: string;
+	country: string;
+	postal_code: string;
+	afm: string;
+	role: RegisterUserRole;
 }
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
+	selector: 'app-register',
+	templateUrl: './register.component.html',
+	standalone: true,
+	imports: [FormField]
 })
 export class RegisterComponent {
-  registerForm: FormGroup;
-  error: string = '';
-  success: string = '';
-  loading: boolean = false;
+	public readonly registerModel: WritableSignal<RegisterFormModel> = signal({
+		username: '',
+		password: '',
+		confirmPassword: '',
+		first_name: '',
+		last_name: '',
+		email: '',
+		phone: '',
+		address: '',
+		city: '',
+		country: '',
+		postal_code: '',
+		afm: '',
+		role: RegisterUserRole.Participant
+	});
+	public readonly registerForm = form(this.registerModel, (p) => {
+		required(p.username, { message: 'Username is required' });
+		minLength(p.username, 3, {
+			message: 'Username must be at least 3 characters'
+		});
+		maxLength(p.username, 50, {
+			message: 'Username must be at most 50 characters'
+		});
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.registerForm = this.fb.group(
-      {
-        username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', Validators.required],
-        first_name: ['', Validators.required],
-        last_name: ['', Validators.required],
-        email: ['', [Validators.required, Validators.email]],
-        phone: [''],
-        address: [''],
-        city: [''],
-        country: [''],
-        postal_code: [''],
-        afm: ['', [Validators.minLength(9), Validators.maxLength(9)]],
-        role: ['participant', Validators.required],
-      },
-      { validators: passwordMatchValidator }
-    );
-  }
+		required(p.password, { message: 'Password is required' });
+		minLength(p.password, 6, {
+			message: 'Password must be at least 6 characters'
+		});
 
-  onSubmit(): void {
-    if (this.registerForm.invalid) return;
+		required(p.confirmPassword, { message: 'Confirm Password is required' });
 
-    this.loading = true;
-    this.error = '';
-    this.success = '';
+		required(p.first_name, { message: 'First name is required' });
+		required(p.last_name, { message: 'Last name is required' });
+		required(p.email, { message: 'Email is required' });
+		email(p.email, { message: 'Invalid email format' });
 
-    this.authService.register(this.registerForm.value).subscribe({
-      next: (res) => {
-        this.success = res.message;
-        this.loading = false;
-        setTimeout(() => this.router.navigate(['/login']), 2000);
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Registration failed. Please try again.';
-        this.loading = false;
-      },
-    });
-  }
+		required(p.afm, { message: 'AFM is required' });
+		minLength(p.afm, 9, { message: 'AFM must be 9 characters' });
+		maxLength(p.afm, 9, { message: 'AFM must be 9 characters' });
+		required(p.role, { message: 'Role is required' });
+	});
 
-  get f() {
-    return this.registerForm.controls;
-  }
+	constructor(
+		private authService: AuthService,
+		private router: Router,
+		private toastService: ToastService
+	) {}
+
+	public goToLogin(): void {
+		this.router.navigate(['/login']);
+	}
+
+	public async onSubmit(event: Event): Promise<void> {
+		event.preventDefault();
+
+		await submit(this.registerForm, async (form) => {
+			if (this.registerModel().password !== this.registerModel().confirmPassword) {
+				this.toastService.error('Passwords do not match.');
+				return undefined;
+			}
+
+			return await firstValueFrom(
+				this.authService.register(this.registerModel()).pipe(
+					switchMap((res) => {
+						this.registerForm().reset({
+							username: '',
+							password: '',
+							confirmPassword: '',
+							first_name: '',
+							last_name: '',
+							email: '',
+							phone: '',
+							address: '',
+							city: '',
+							country: '',
+							postal_code: '',
+							afm: '',
+							role: RegisterUserRole.Participant
+						});
+
+						this.toastService.success(res.message);
+						this.router.navigate(['/login']);
+						return of(undefined);
+					}),
+					catchError((err) => {
+						this.toastService.error(err.error?.message || 'Registration failed. Please try again.');
+						return of(undefined);
+					})
+				)
+			);
+		});
+	}
+
+	public isFieldInvalid(field: FieldState<any>): boolean {
+		return field.touched() && !field.valid();
+	}
 }

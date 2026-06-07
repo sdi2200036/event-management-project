@@ -1,0 +1,87 @@
+<div class="container-fluid py-4">
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<h3 class="fw-bold mb-0">My Events</h3>
+		<button type="button" (click)="this.goToCreateEvent()" class="btn btn-primary">+ Create Event</button>
+	</div>
+	@if (this.events().length === 0) {
+		<div class="text-center py-5 text-muted">
+			<div class="display-1">📅</div>
+			<h5>No events yet</h5>
+			<p>Click "Create Event" to get started</p>
+		</div>
+	} @else {
+		<div class="table-responsive">
+			<table class="table table-hover align-middle">
+				<thead class="table-light">
+					<tr>
+						<th>Title</th>
+						<th>Date</th>
+						<th>Location</th>
+						<th>Capacity</th>
+						<th>Status</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (event of this.events(); track event.id) {
+						<tr>
+							<td class="fw-semibold">{{ event.title }}</td>
+							<td class="small">{{ event.start_datetime | date: 'MMM d, y, HH:mm' }}</td>
+							<td class="small">
+								{{ event.city }}
+								@if (event.country) {
+									<span>, {{ event.country }}</span>
+								}
+							</td>
+							<td class="small">{{ event.capacity }}</td>
+							<td>
+								<span class="badge" [ngClass]="this.statusBadgeClass(event.status)">{{ event.status }}</span>
+							</td>
+							<td>
+								<div class="d-flex gap-1 flex-wrap">
+									<button
+										type="button"
+										(click)="this.goToViewEvent(event.id)"
+										class="btn btn-sm btn-outline-secondary"
+									>
+										View
+									</button>
+									@if (event.status === 'DRAFT') {
+										<button class="btn btn-sm btn-success" (click)="this.publishEvent(event)">
+											Publish
+										</button>
+										<button
+											type="button"
+											(click)="this.goToEditEvent(event.id)"
+											class="btn btn-sm btn-outline-primary"
+										>
+											Edit
+										</button>
+										<button class="btn btn-sm btn-danger" (click)="this.deleteEvent(event)">
+											Delete
+										</button>
+									}
+									@if (event.status === 'PUBLISHED') {
+										<button
+											type="button"
+											(click)="this.goToEditEvent(event.id)"
+											class="btn btn-sm btn-outline-primary"
+										>
+											Edit
+										</button>
+										<button class="btn btn-sm btn-warning" (click)="this.cancelEvent(event)">
+											Cancel
+										</button>
+										<button class="btn btn-sm btn-danger" (click)="this.deleteEvent(event)">
+											Delete
+										</button>
+									}
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>

@@ -1,0 +1,32 @@
+<div class="input-group mb-2">
+	<input
+		type="text"
+		class="form-control"
+		placeholder="Search address..."
+		#mapSearchInput
+		(keydown.enter)="$event.preventDefault(); this.searchAddress()"
+	/>
+	<button
+		type="button"
+		class="btn btn-outline-primary"
+		(click)="this.searchAddress()"
+		[disabled]="this.searchingAddress()"
+	>
+		@if (this.searchingAddress()) {
+			<span class="spinner-border spinner-border-sm"></span>
+		} @else {
+			<i class="bi bi-search"></i> Search
+		}
+	</button>
+</div>
+<div #mapContainer style="height: 350px; border-radius: 8px; border: 1px solid #dee2e6"></div>
+@if (this.pinnedLat() !== null && this.pinnedLng() !== null) {
+	<div class="d-flex justify-content-between align-items-center mt-2">
+		<small class="text-muted">📍 {{ this.pinnedLat() }}, {{ this.pinnedLng() }}</small>
+		<button type="button" class="btn btn-sm btn-outline-danger" (click)="this.clearPin()">
+			<i class="bi bi-x-lg"></i> Clear pin
+		</button>
+	</div>
+} @else {
+	<small class="text-muted mt-1 d-block">Click on the map or search an address to set the event location.</small>
+}

@@ -1,132 +1,240 @@
 <div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow-sm border-0">
-        <div class="card-body p-5">
-          <h2 class="card-title text-center mb-4 fw-bold">Create Account</h2>
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<div class="card shadow-sm border-0">
+				<div class="card-body p-5">
+					<h2 class="card-title text-center mb-4 fw-bold">Create Account</h2>
 
-          <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-          <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+					<form
+						(submit)="this.onSubmit($event)"
+						novalidate
+						[class.is-invalid]="this.isFieldInvalid(this.registerForm())"
+					>
+						<!-- Account Type -->
+						<div class="mb-4">
+							<label class="form-label fw-semibold">Register as:</label>
+							<div class="d-flex gap-4">
+								<div class="form-check">
+									<input
+										class="form-check-input"
+										type="radio"
+										[formField]="this.registerForm.role"
+										value="participant"
+										id="roleParticipant"
+									/>
+									<label class="form-check-label" for="roleParticipant">Participant</label>
+								</div>
+								<div class="form-check">
+									<input
+										class="form-check-input"
+										type="radio"
+										[formField]="this.registerForm.role"
+										value="organizer"
+										id="roleOrganizer"
+									/>
+									<label class="form-check-label" for="roleOrganizer">Organizer</label>
+								</div>
+							</div>
+						</div>
 
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <!-- Account Type -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">Register as:</label>
-              <div class="d-flex gap-4">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" formControlName="role" value="participant" id="roleParticipant" />
-                  <label class="form-check-label" for="roleParticipant">Participant</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" formControlName="role" value="organizer" id="roleOrganizer" />
-                  <label class="form-check-label" for="roleOrganizer">Organizer</label>
-                </div>
-              </div>
-            </div>
+						<div class="row g-3">
+							<!-- Username -->
+							<div class="col-md-6">
+								<label for="username" class="form-label">Username *</label>
+								<input
+									id="username"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.username"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.username())"
+								/>
+								@for (error of this.registerForm.username().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-            <div class="row g-3">
-              <!-- Username -->
-              <div class="col-md-6">
-                <label for="username" class="form-label">Username *</label>
-                <input id="username" type="text" class="form-control" formControlName="username"
-                  [class.is-invalid]="f['username'].invalid && f['username'].touched" />
-                <div class="invalid-feedback">Username required (3-50 characters)</div>
-              </div>
+							<!-- Email -->
+							<div class="col-md-6">
+								<label for="email" class="form-label">Email *</label>
+								<input
+									id="email"
+									type="email"
+									class="form-control"
+									[formField]="this.registerForm.email"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.email())"
+								/>
+								@for (error of this.registerForm.email().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- Email -->
-              <div class="col-md-6">
-                <label for="email" class="form-label">Email *</label>
-                <input id="email" type="email" class="form-control" formControlName="email"
-                  [class.is-invalid]="f['email'].invalid && f['email'].touched" />
-                <div class="invalid-feedback">Valid email is required</div>
-              </div>
+							<!-- Password -->
+							<div class="col-md-6">
+								<label for="password" class="form-label">Password *</label>
+								<input
+									id="password"
+									type="password"
+									class="form-control"
+									[formField]="this.registerForm.password"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.password())"
+								/>
+								@for (error of this.registerForm.password().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- Password -->
-              <div class="col-md-6">
-                <label for="password" class="form-label">Password *</label>
-                <input id="password" type="password" class="form-control" formControlName="password"
-                  [class.is-invalid]="f['password'].invalid && f['password'].touched" />
-                <div class="invalid-feedback">Password required (min 6 characters)</div>
-              </div>
+							<!-- Confirm Password -->
+							<div class="col-md-6">
+								<label for="confirmPassword" class="form-label">Confirm Password *</label>
+								<input
+									id="confirmPassword"
+									type="password"
+									class="form-control"
+									[formField]="this.registerForm.confirmPassword"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.confirmPassword())"
+								/>
+								@for (error of this.registerForm.confirmPassword().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- Confirm Password -->
-              <div class="col-md-6">
-                <label for="confirmPassword" class="form-label">Confirm Password *</label>
-                <input id="confirmPassword" type="password" class="form-control" formControlName="confirmPassword"
-                  [class.is-invalid]="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched" />
-                <div class="invalid-feedback">Passwords do not match</div>
-              </div>
+							<!-- First Name -->
+							<div class="col-md-6">
+								<label for="first_name" class="form-label">First Name *</label>
+								<input
+									id="first_name"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.first_name"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.first_name())"
+								/>
+								@for (error of this.registerForm.first_name().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- First Name -->
-              <div class="col-md-6">
-                <label for="first_name" class="form-label">First Name *</label>
-                <input id="first_name" type="text" class="form-control" formControlName="first_name"
-                  [class.is-invalid]="f['first_name'].invalid && f['first_name'].touched" />
-                <div class="invalid-feedback">First name is required</div>
-              </div>
+							<!-- Last Name -->
+							<div class="col-md-6">
+								<label for="last_name" class="form-label">Last Name *</label>
+								<input
+									id="last_name"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.last_name"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.last_name())"
+								/>
+								@for (error of this.registerForm.last_name().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- Last Name -->
-              <div class="col-md-6">
-                <label for="last_name" class="form-label">Last Name *</label>
-                <input id="last_name" type="text" class="form-control" formControlName="last_name"
-                  [class.is-invalid]="f['last_name'].invalid && f['last_name'].touched" />
-                <div class="invalid-feedback">Last name is required</div>
-              </div>
+							<!-- Phone -->
+							<div class="col-md-6">
+								<label for="phone" class="form-label">Phone</label>
+								<input
+									id="phone"
+									type="tel"
+									class="form-control"
+									[formField]="this.registerForm.phone"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.phone())"
+								/>
+								@for (error of this.registerForm.phone().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- Phone -->
-              <div class="col-md-6">
-                <label for="phone" class="form-label">Phone</label>
-                <input id="phone" type="tel" class="form-control" formControlName="phone" />
-              </div>
+							<!-- AFM -->
+							<div class="col-md-6">
+								<label for="afm" class="form-label">Tax ID (AFM) *</label>
+								<input
+									id="afm"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.afm"
+									placeholder="9 digits"
+									[class.is-invalid]="this.isFieldInvalid(this.registerForm.afm())"
+								/>
+								@for (error of this.registerForm.afm().errors(); track $index) {
+									<div class="invalid-feedback">
+										{{ error.message }}
+									</div>
+								}
+							</div>
 
-              <!-- AFM -->
-              <div class="col-md-6">
-                <label for="afm" class="form-label">Tax ID (AFM)</label>
-                <input id="afm" type="text" class="form-control" formControlName="afm"
-                  [class.is-invalid]="f['afm'].invalid && f['afm'].touched" placeholder="9 digits" />
-                <div class="invalid-feedback">AFM must be exactly 9 digits</div>
-              </div>
+							<!-- Address -->
+							<div class="col-12">
+								<label for="address" class="form-label">Address</label>
+								<input
+									id="address"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.address"
+								/>
+							</div>
 
-              <!-- Address -->
-              <div class="col-12">
-                <label for="address" class="form-label">Address</label>
-                <input id="address" type="text" class="form-control" formControlName="address" />
-              </div>
+							<!-- City -->
+							<div class="col-md-4">
+								<label for="city" class="form-label">City</label>
+								<input id="city" type="text" class="form-control" [formField]="this.registerForm.city" />
+							</div>
 
-              <!-- City -->
-              <div class="col-md-4">
-                <label for="city" class="form-label">City</label>
-                <input id="city" type="text" class="form-control" formControlName="city" />
-              </div>
+							<!-- Country -->
+							<div class="col-md-4">
+								<label for="country" class="form-label">Country</label>
+								<input
+									id="country"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.country"
+								/>
+							</div>
 
-              <!-- Country -->
-              <div class="col-md-4">
-                <label for="country" class="form-label">Country</label>
-                <input id="country" type="text" class="form-control" formControlName="country" />
-              </div>
+							<!-- Postal Code -->
+							<div class="col-md-4">
+								<label for="postal_code" class="form-label">Postal Code</label>
+								<input
+									id="postal_code"
+									type="text"
+									class="form-control"
+									[formField]="this.registerForm.postal_code"
+								/>
+							</div>
+						</div>
 
-              <!-- Postal Code -->
-              <div class="col-md-4">
-                <label for="postal_code" class="form-label">Postal Code</label>
-                <input id="postal_code" type="text" class="form-control" formControlName="postal_code" />
-              </div>
-            </div>
+						<div class="mt-4">
+							<button type="submit" class="btn btn-primary w-100" [disabled]="!this.registerForm().valid()">
+								Create Account
+							</button>
+						</div>
+					</form>
 
-            <div class="mt-4">
-              <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid || loading">
-                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                {{ loading ? 'Creating account...' : 'Create Account' }}
-              </button>
-            </div>
-          </form>
-
-          <hr />
-          <p class="text-center text-muted mb-0">
-            Already have an account?
-            <a routerLink="/login" class="text-decoration-none">Sign in</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+					<hr />
+					<p class="text-center text-muted mb-0">
+						Already have an account?
+						<button
+							type="button"
+							(click)="this.goToLogin()"
+							class="btn btn-link p-0 text-decoration-none align-baseline"
+						>
+							Sign in
+						</button>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

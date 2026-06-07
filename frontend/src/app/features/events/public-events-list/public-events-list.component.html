@@ -1,0 +1,192 @@
+<div class="container-fluid py-4">
+	<div>
+		<!-- Search/Filter Bar -->
+		<div class="card shadow-sm border-0 mb-4">
+			<div class="card-body">
+				<h5 class="card-title mb-3">Search Events</h5>
+				<form (submit)="this.onSearch($event)" novalidate>
+					<div class="row g-2">
+						<div class="col-md-3">
+							<input
+								type="text"
+								class="form-control"
+								[formField]="this.filterForm.title"
+								placeholder="Search by title..."
+							/>
+						</div>
+						<div class="col-md-3">
+							<input
+								type="text"
+								class="form-control"
+								[formField]="this.filterForm.description"
+								placeholder="Search by description..."
+							/>
+						</div>
+						<div class="col-md-2">
+							<select class="form-select" [formField]="this.filterForm.category">
+								<option value="">All Categories</option>
+								@for (cat of this.categories; track cat) {
+									<option [value]="cat">{{ cat }}</option>
+								}
+							</select>
+						</div>
+						<div class="col-md-2">
+							<input
+								type="text"
+								class="form-control"
+								[formField]="this.filterForm.location"
+								placeholder="City or Country..."
+							/>
+						</div>
+						<div class="col-md-2">
+							<button type="submit" class="btn btn-primary w-100">Search</button>
+						</div>
+					</div>
+					<div class="row g-2 mt-1">
+						<div class="col-md-2">
+							<input type="date" class="form-control" [formField]="this.filterForm.dateFrom" />
+						</div>
+						<div class="col-md-2">
+							<input type="date" class="form-control" [formField]="this.filterForm.dateTo" />
+						</div>
+						<div class="col-md-2">
+							<input
+								type="number"
+								class="form-control"
+								[formField]="this.filterForm.minPrice"
+								placeholder="Min price €"
+							/>
+						</div>
+						<div class="col-md-2">
+							<input
+								type="number"
+								class="form-control"
+								[formField]="this.filterForm.maxPrice"
+								placeholder="Max price €"
+							/>
+						</div>
+						<div class="col-md-2">
+							<button type="button" class="btn btn-outline-secondary" (click)="this.onReset()">Reset</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- Recommended Events -->
+		@if (this.isLoggedIn() && this.recommendedEvents().length > 0) {
+			<div class="mb-5">
+				<h4 class="mb-3 fw-semibold">Recommended for You</h4>
+				<div class="row row-cols-1 row-cols-md-3 g-3">
+					@for (event of this.recommendedEvents(); track event.id) {
+						<div class="col">
+							<div class="card h-100 border-0 shadow-sm">
+								<div class="card-body">
+									<span class="badge bg-primary mb-2">Recommended</span>
+									<h6 class="card-title">{{ event.title }}</h6>
+									<p class="text-muted small mb-1">
+										{{ event.start_datetime | date: 'mediumDate' }}
+									</p>
+									<p class="text-muted small mb-0">{{ event.city }}, {{ event.country }}</p>
+								</div>
+								<div class="card-footer bg-transparent border-0">
+									<button
+										type="button"
+										(click)="this.goToEventDetail(event.id)"
+										class="btn btn-sm btn-outline-primary"
+									>
+										View Details
+									</button>
+								</div>
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		}
+		<!-- Events Grid -->
+		<div>
+			<div class="d-flex justify-content-between align-items-center mb-3">
+				<h4 class="fw-semibold mb-0">
+					All Events <small class="text-muted fs-6">({{ this.total() }} found)</small>
+				</h4>
+			</div>
+			@if (this.events().length === 0) {
+				<div class="text-center py-5 text-muted">
+					<h5>No events found</h5>
+					<p>Try adjusting your search filters</p>
+				</div>
+			}
+			<div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+				@for (event of this.events(); track event.id) {
+					<div class="col">
+						<div class="card h-100 border-0 shadow-sm">
+							<div class="card-img-top bg-light text-center py-4" style="min-height: 140px">
+								@if (event.photos && event.photos.length > 0) {
+									<img
+										[src]="event.photos[0]"
+										class="img-fluid"
+										style="max-height: 140px; object-fit: cover; width: 100%"
+									/>
+								}
+								@if (!event.photos || event.photos.length === 0) {
+									<span class="display-3">🎫</span>
+								}
+							</div>
+							<div class="card-body">
+								<div class="d-flex gap-1 flex-wrap mb-2">
+									@for (cat of event.categories; track cat) {
+										<span class="badge bg-secondary">{{ cat }}</span>
+									}
+								</div>
+								<h6 class="card-title fw-bold">{{ event.title }}</h6>
+								<p class="text-muted small mb-1">
+									{{ event.start_datetime | date: 'EEE, MMM d, y, HH:mm' }}
+								</p>
+								<p class="text-muted small mb-2">
+									{{ event.venue ? event.venue + ', ' : '' }}{{ event.city }}
+								</p>
+								@if (event.ticket_types && event.ticket_types.length > 0) {
+									<div class="small">
+										From <strong>€{{ this.getMinPrice(event) }}</strong>
+									</div>
+								}
+								@if (!event.ticket_types || event.ticket_types.length === 0) {
+									<div class="small text-success fw-semibold">Free Entry</div>
+								}
+							</div>
+							<div class="card-footer bg-transparent border-0 pt-0">
+								<button
+									type="button"
+									(click)="this.goToEventDetail(event.id)"
+									class="btn btn-sm btn-primary w-100"
+								>
+									View Details
+								</button>
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+			<!-- Pagination -->
+			@if (this.totalPages() > 1) {
+				<nav class="mt-4">
+					<ul class="pagination justify-content-center">
+						<li class="page-item" [class.disabled]="this.currentPage() === 1">
+							<button class="page-link" (click)="this.onPageChange(this.currentPage() - 1)">
+								Previous
+							</button>
+						</li>
+						@for (page of this.pages(); track page) {
+							<li class="page-item" [class.active]="page === this.currentPage()">
+								<button class="page-link" (click)="this.onPageChange(page)">{{ page }}</button>
+							</li>
+						}
+						<li class="page-item" [class.disabled]="this.currentPage() === this.totalPages()">
+							<button class="page-link" (click)="this.onPageChange(this.currentPage() + 1)">Next</button>
+						</li>
+					</ul>
+				</nav>
+			}
+		</div>
+	</div>
+</div>

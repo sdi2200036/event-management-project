@@ -1,98 +1,147 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container">
-    <a class="navbar-brand fw-bold" routerLink="/">EventHub</a>
+	<div class="container">
+		<button type="button" (click)="this.goToHome()" class="navbar-brand fw-bold border-0 bg-transparent p-0">
+			EventHub
+		</button>
 
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-      aria-controls="navbarNav"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
+		<button
+			class="navbar-toggler"
+			type="button"
+			data-bs-toggle="collapse"
+			data-bs-target="#navbarNav"
+			aria-controls="navbarNav"
+			aria-expanded="false"
+			aria-label="Toggle navigation"
+		>
+			<span class="navbar-toggler-icon"></span>
+		</button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Home
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/events" routerLinkActive="active">Events</a>
-        </li>
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav me-auto">
+				<li class="nav-item">
+					<button
+						type="button"
+						(click)="this.goToEvents()"
+						class="nav-link border-0 bg-transparent"
+						[class.active]="this.isExactRoute('/events/public')"
+					>
+						Events
+					</button>
+				</li>
 
-        <!-- Organizer links -->
-        <li class="nav-item" *ngIf="isOrganizer()">
-          <a class="nav-link" routerLink="/manage/events" routerLinkActive="active">My Events</a>
-        </li>
-        <li class="nav-item" *ngIf="isOrganizer()">
-          <a class="nav-link" routerLink="/manage/events/new" routerLinkActive="active">Create Event</a>
-        </li>
+				<!-- Organizer links -->
+				@if (this.isOrganizer()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="this.goToManageEvents()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="this.isExactRoute('/events/manage')"
+						>
+							My Events
+						</button>
+					</li>
+				}
+				@if (this.isOrganizer()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="this.goToCreateEvent()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="this.isExactRoute('/events/manage/new')"
+						>
+							Create Event
+						</button>
+					</li>
+				}
 
-        <!-- Participant links -->
-        <li class="nav-item" *ngIf="isParticipant()">
-          <a class="nav-link" routerLink="/bookings" routerLinkActive="active">My Bookings</a>
-        </li>
+				<!-- Participant links -->
+				@if (this.isParticipant()) {
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="this.goToBookings()"
+							class="nav-link border-0 bg-transparent"
+							[class.active]="this.isRoutePrefix('/bookings')"
+						>
+							My Bookings
+						</button>
+					</li>
+				}
 
-        <!-- Admin links -->
-        <li class="nav-item dropdown" *ngIf="isAdmin()">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="adminDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Admin
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-            <li><a class="dropdown-item" routerLink="/admin/users">User Management</a></li>
-            <li><a class="dropdown-item" routerLink="/admin/export">Export Data</a></li>
-          </ul>
-        </li>
-      </ul>
+				<!-- Admin links -->
+				@if (this.isAdmin()) {
+					<li class="nav-item dropdown">
+						<button
+							type="button"
+							class="nav-link dropdown-toggle border-0 bg-transparent"
+							id="adminDropdown"
+							data-bs-toggle="dropdown"
+							aria-expanded="false"
+						>
+							Admin
+						</button>
+						<ul class="dropdown-menu" aria-labelledby="adminDropdown">
+							<li>
+								<button type="button" (click)="this.goToAdminUsers()" class="dropdown-item">
+									User Management
+								</button>
+							</li>
+							<li>
+								<button type="button" (click)="this.goToAdminExport()" class="dropdown-item">
+									Export Data
+								</button>
+							</li>
+						</ul>
+					</li>
+				}
+			</ul>
 
-      <!-- Right side -->
-      <ul class="navbar-nav ms-auto align-items-center">
-        <ng-container *ngIf="isLoggedIn(); else guestLinks">
-          <!-- Messages with badge -->
-          <li class="nav-item">
-            <a class="nav-link position-relative" routerLink="/messages" routerLinkActive="active">
-              Messages
-              <span
-                *ngIf="unreadCount > 0"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                style="font-size: 0.65rem;"
-              >
-                {{ unreadCount > 99 ? '99+' : unreadCount }}
-              </span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <span class="nav-link text-light opacity-75">
-              {{ currentUser?.first_name }} {{ currentUser?.last_name }}
-              <small class="badge bg-secondary ms-1">{{ currentUser?.role }}</small>
-            </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-outline-light btn-sm ms-2" (click)="logout()">Logout</button>
-          </li>
-        </ng-container>
-
-        <ng-template #guestLinks>
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/login">Login</a>
-          </li>
-          <li class="nav-item">
-            <a class="btn btn-outline-light btn-sm ms-2" routerLink="/register">Register</a>
-          </li>
-        </ng-template>
-      </ul>
-    </div>
-  </div>
+			<!-- Right side -->
+			<ul class="navbar-nav ms-auto align-items-center">
+				@if (this.isLoggedIn()) {
+					<!-- Messages with badge -->
+					<li class="nav-item">
+						<button
+							type="button"
+							(click)="this.goToMessages()"
+							class="nav-link position-relative border-0 bg-transparent"
+							[class.active]="this.isRoutePrefix('/messages')"
+						>
+							Messages
+							@if (this.unreadCount() > 0) {
+								<span
+									class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+									style="font-size: 0.65rem"
+								>
+									{{ this.unreadCount() > 99 ? '99+' : this.unreadCount() }}
+								</span>
+							}
+						</button>
+					</li>
+					<li class="nav-item">
+						<span class="nav-link text-light opacity-75">
+							{{ this.authService.currentUser()?.first_name }}
+							{{ this.authService.currentUser()?.last_name }}
+							<small class="badge bg-secondary ms-1">{{ this.authService.currentUser()?.role }}</small>
+						</span>
+					</li>
+					<li class="nav-item">
+						<button class="btn btn-outline-light btn-sm ms-2" (click)="this.logout()">Logout</button>
+					</li>
+				} @else {
+					<li class="nav-item">
+						<button type="button" (click)="this.goToLogin()" class="nav-link border-0 bg-transparent">
+							Login
+						</button>
+					</li>
+					<li class="nav-item">
+						<button type="button" (click)="this.goToRegister()" class="btn btn-outline-light btn-sm ms-2">
+							Register
+						</button>
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
 </nav>

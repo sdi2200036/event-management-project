@@ -1,0 +1,11 @@
+.list-group-item-action.active:hover {
+	background-color: var(--bs-list-group-active-bg);
+	border-color: var(--bs-list-group-active-border-color);
+	color: var(--bs-list-group-active-color);
+	cursor: default;
+}
+
+/* Remove the focus ring that appears after clicking a page button */
+.page-link:focus {
+	box-shadow: none;
+}

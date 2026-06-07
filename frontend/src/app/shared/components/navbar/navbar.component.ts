@@ -1,79 +1,104 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, Signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Subscription, interval } from 'rxjs';
-import { switchMap, startWith } from 'rxjs/operators';
+import { interval } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { MessageService } from '../../../core/services/message.service';
-import { User } from '../../models/user.model';
 
 @Component({
-  selector: 'app-navbar',
-  templateUrl: './navbar.component.html',
+	selector: 'app-navbar',
+	templateUrl: './navbar.component.html',
+	standalone: true,
+	imports: []
 })
-export class NavbarComponent implements OnInit, OnDestroy {
-  currentUser: User | null = null;
-  unreadCount: number = 0;
-  private subscriptions = new Subscription();
+export class NavbarComponent {
+	public readonly unreadCount: Signal<number> = this.messageService.unreadCount;
 
-  constructor(
-    private authService: AuthService,
-    private messageService: MessageService,
-    private router: Router
-  ) {}
+	constructor(
+		protected authService: AuthService,
+		private messageService: MessageService,
+		private router: Router
+	) {
+		if (this.authService.currentUser()) {
+			this.messageService.refreshUnreadCount();
+		}
 
-  ngOnInit(): void {
-    this.subscriptions.add(
-      this.authService.currentUser$.subscribe((user) => {
-        this.currentUser = user;
-        if (user) {
-          this.loadUnreadCount();
-        } else {
-          this.unreadCount = 0;
-        }
-      })
-    );
+		// Poll unread count every 30 seconds when logged in
+		interval(30000)
+			.pipe(takeUntilDestroyed())
+			.subscribe(() => {
+				if (this.authService.currentUser()) {
+					this.messageService.refreshUnreadCount();
+				}
+			});
+	}
 
-    // Poll unread count every 30 seconds when logged in
-    this.subscriptions.add(
-      interval(30000).pipe(
-        startWith(0),
-      ).subscribe(() => {
-        if (this.currentUser) {
-          this.loadUnreadCount();
-        }
-      })
-    );
-  }
+	public isLoggedIn(): boolean {
+		return this.authService.isLoggedIn();
+	}
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
+	public isAdmin(): boolean {
+		return this.authService.currentUser()?.role === 'admin';
+	}
 
-  loadUnreadCount(): void {
-    this.messageService.getUnreadCount().subscribe({
-      next: (res) => (this.unreadCount = res.count),
-      error: () => {},
-    });
-  }
+	public isOrganizer(): boolean {
+		return this.authService.currentUser()?.role === 'organizer';
+	}
 
-  isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
-  }
+	public isParticipant(): boolean {
+		return this.authService.currentUser()?.role === 'participant';
+	}
 
-  isAdmin(): boolean {
-    return this.currentUser?.role === 'admin';
-  }
+	public isExactRoute(path: string): boolean {
+		return this.router.url === path;
+	}
 
-  isOrganizer(): boolean {
-    return this.currentUser?.role === 'organizer';
-  }
+	public isRoutePrefix(path: string): boolean {
+		return this.router.url.startsWith(path);
+	}
 
-  isParticipant(): boolean {
-    return this.currentUser?.role === 'participant';
-  }
+	public goToHome(): void {
+		this.router.navigate(['/']);
+	}
 
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/']);
-  }
+	public goToEvents(): void {
+		this.router.navigate(['events']);
+	}
+
+	public goToManageEvents(): void {
+		this.router.navigate(['events', 'manage']);
+	}
+
+	public goToCreateEvent(): void {
+		this.router.navigate(['events', 'manage', 'new']);
+	}
+
+	public goToBookings(): void {
+		this.router.navigate(['bookings']);
+	}
+
+	public goToAdminUsers(): void {
+		this.router.navigate(['admin', 'users']);
+	}
+
+	public goToAdminExport(): void {
+		this.router.navigate(['admin', 'export']);
+	}
+
+	public goToMessages(): void {
+		this.router.navigate(['messages']);
+	}
+
+	public goToLogin(): void {
+		this.router.navigate(['login']);
+	}
+
+	public goToRegister(): void {
+		this.router.navigate(['register']);
+	}
+
+	public logout(): void {
+		this.authService.logout();
+		this.router.navigate(['/']);
+	}
 }

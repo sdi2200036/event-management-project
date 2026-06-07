@@ -1,50 +1,51 @@
-import { Component, OnInit } from '@angular/core';
+import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { Component, input, InputSignal, signal, WritableSignal } from '@angular/core';
+import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
+import { ModalService } from '../../../core/services/modal.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Booking } from '../../../shared/models/booking.model';
 
 @Component({
-  selector: 'app-my-bookings',
-  templateUrl: './my-bookings.component.html',
+	selector: 'app-my-bookings',
+	templateUrl: './my-bookings.component.html',
+	standalone: true,
+	imports: [NgClass, DecimalPipe, DatePipe]
 })
-export class MyBookingsComponent implements OnInit {
-  bookings: Booking[] = [];
-  loading: boolean = true;
-  error: string = '';
-  cancellingId: number | null = null;
+export class MyBookingsComponent {
+	public readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], { alias: 'bookingsData' });
+	public cancellingId: WritableSignal<number | null> = signal(null);
 
-  constructor(private bookingService: BookingService) {}
+	constructor(
+		private bookingService: BookingService,
+		private router: Router,
+		private toastService: ToastService,
+		private modalService: ModalService
+	) {}
 
-  ngOnInit(): void {
-    this.loadBookings();
-  }
+	public cancelBooking(booking: Booking): void {
+		this.modalService.confirm(`Cancel booking for "${booking.event_title}"?`).then((confirmed) => {
+			if (!confirmed) return;
+			this.cancellingId.set(booking.id);
+			this.bookingService.cancelBooking(booking.id).subscribe({
+				next: () => {
+					this.toastService.warning('Booking cancelled successfully');
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.cancellingId.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to cancel booking');
+					this.cancellingId.set(null);
+				}
+			});
+		});
+	}
 
-  loadBookings(): void {
-    this.loading = true;
-    this.bookingService.getMyBookings().subscribe({
-      next: (bookings) => {
-        this.bookings = bookings;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load bookings';
-        this.loading = false;
-      },
-    });
-  }
+	public goToEvents(): void {
+		this.router.navigate(['events']);
+	}
 
-  cancelBooking(booking: Booking): void {
-    if (!confirm(`Cancel booking for "${booking.event_title}"?`)) return;
-
-    this.cancellingId = booking.id;
-    this.bookingService.cancelBooking(booking.id).subscribe({
-      next: () => {
-        booking.booking_status = 'CANCELLED';
-        this.cancellingId = null;
-      },
-      error: (err) => {
-        alert(err.error?.message || 'Failed to cancel booking');
-        this.cancellingId = null;
-      },
-    });
-  }
+	public goToEventDetail(eventId: number): void {
+		this.router.navigate(['events', 'public', eventId]);
+	}
 }

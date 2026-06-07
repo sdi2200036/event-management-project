@@ -1,74 +1,104 @@
-import { Component, OnInit } from '@angular/core';
+import { DatePipe, NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Component, computed, input, InputSignal, Signal, signal, WritableSignal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { User } from '../../../shared/models/user.model';
+import { ModalService } from '../../../core/services/modal.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { User, UserStatus } from '../../../shared/models/user.model';
 
 @Component({
-  selector: 'app-user-management',
-  templateUrl: './user-management.component.html',
+	selector: 'app-user-management',
+	templateUrl: './user-management.component.html',
+	standalone: true,
+	imports: [ReactiveFormsModule, FormsModule, NgClass, DatePipe]
 })
-export class UserManagementComponent implements OnInit {
-  users: User[] = [];
-  loading: boolean = true;
-  error: string = '';
-  filterStatus: string = '';
-  filterRole: string = '';
-  actionLoading: number | null = null;
+export class UserManagementComponent {
+	public users: InputSignal<User[]> = input<User[]>([], { alias: 'usersData' });
+	public filterStatus: WritableSignal<string> = signal('');
+	public filterRole: WritableSignal<string> = signal('');
+	public actionLoading: WritableSignal<number | null> = signal(null);
 
-  constructor(private http: HttpClient) {}
+	public pendingCount: Signal<number> = computed(
+		() => this.users().filter((u) => u.status === UserStatus.Pending).length
+	);
 
-  ngOnInit(): void {
-    this.loadUsers();
-  }
+	constructor(
+		private http: HttpClient,
+		private router: Router,
+		private toastService: ToastService,
+		private modalService: ModalService
+	) {}
 
-  loadUsers(): void {
-    this.loading = true;
-    let url = `${environment.apiUrl}/users?`;
-    if (this.filterStatus) url += `status=${this.filterStatus}&`;
-    if (this.filterRole) url += `role=${this.filterRole}&`;
+	public viewUser(id: number): void {
+		this.router.navigate(['/admin/users', id]);
+	}
 
-    this.http.get<User[]>(url).subscribe({
-      next: (users) => {
-        this.users = users;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load users';
-        this.loading = false;
-      },
-    });
-  }
+	public loadUsers(): void {
+		this.router.navigate([], {
+			queryParams: {
+				status: this.filterStatus() || null,
+				role: this.filterRole() || null
+			},
+			queryParamsHandling: 'merge',
+			onSameUrlNavigation: 'reload'
+		});
+	}
 
-  approveUser(user: User): void {
-    this.actionLoading = user.id;
-    this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
-      next: () => {
-        user.status = 'approved';
-        this.actionLoading = null;
-      },
-      error: (err) => {
-        alert(err.error?.message || 'Failed to approve');
-        this.actionLoading = null;
-      },
-    });
-  }
+	public approveUser(user: User): void {
+		this.modalService.confirm(`Approve user "${user.username}"?`).then((confirmed) => {
+			if (!confirmed) return;
+			this.actionLoading.set(user.id);
+			this.http.patch(`${environment.apiUrl}/users/${user.id}/approve`, {}).subscribe({
+				next: () => {
+					this.toastService.success(`User "${user.username}" approved`);
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.actionLoading.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to approve');
+					this.actionLoading.set(null);
+				}
+			});
+		});
+	}
 
-  rejectUser(user: User): void {
-    if (!confirm(`Reject user "${user.username}"?`)) return;
-    this.actionLoading = user.id;
-    this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
-      next: () => {
-        user.status = 'rejected';
-        this.actionLoading = null;
-      },
-      error: (err) => {
-        alert(err.error?.message || 'Failed to reject');
-        this.actionLoading = null;
-      },
-    });
-  }
+	public rejectUser(user: User): void {
+		this.modalService.confirm(`Reject user "${user.username}"?`).then((confirmed) => {
+			if (!confirmed) return;
+			this.actionLoading.set(user.id);
+			this.http.patch(`${environment.apiUrl}/users/${user.id}/reject`, {}).subscribe({
+				next: () => {
+					this.toastService.success(`User "${user.username}" rejected`);
+					this.router.navigate([], { onSameUrlNavigation: 'reload' });
+					this.actionLoading.set(null);
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Failed to reject');
+					this.actionLoading.set(null);
+				}
+			});
+		});
+	}
 
-  get pendingCount(): number {
-    return this.users.filter((u) => u.status === 'pending').length;
-  }
+	public suspendUser(user: User): void {
+		this.modalService
+			.confirm(`Suspend user "${user.username}"? They will lose access immediately.`)
+			.then((confirmed) => {
+				if (!confirmed) return;
+				this.actionLoading.set(user.id);
+				this.http.patch(`${environment.apiUrl}/users/${user.id}/suspend`, {}).subscribe({
+					next: () => {
+						this.toastService.success(`User "${user.username}" suspended`);
+						this.router.navigate([], { onSameUrlNavigation: 'reload' });
+						this.actionLoading.set(null);
+					},
+					error: (err) => {
+						this.toastService.error(err.error?.message || 'Failed to suspend');
+						this.actionLoading.set(null);
+					}
+				});
+			});
+	}
 }

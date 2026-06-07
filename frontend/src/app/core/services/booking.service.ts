@@ -5,26 +5,26 @@ import { environment } from '../../../environments/environment';
 import { Booking, CreateBookingRequest } from '../../shared/models/booking.model';
 
 @Injectable({
-  providedIn: 'root',
+	providedIn: 'root'
 })
 export class BookingService {
-  private apiUrl = `${environment.apiUrl}/bookings`;
+	private apiUrl = `${environment.apiUrl}/bookings`;
 
-  constructor(private http: HttpClient) {}
+	constructor(private http: HttpClient) {}
 
-  createBooking(data: CreateBookingRequest): Observable<Booking> {
-    return this.http.post<Booking>(this.apiUrl, data);
-  }
+	createBooking(data: CreateBookingRequest): Observable<Booking> {
+		return this.http.post<Booking>(this.apiUrl, data);
+	}
 
-  getMyBookings(): Observable<Booking[]> {
-    return this.http.get<Booking[]>(`${this.apiUrl}/my`);
-  }
+	getMyBookings(): Observable<Booking[]> {
+		return this.http.get<Booking[]>(`${this.apiUrl}/my`);
+	}
 
-  getEventBookings(eventId: number): Observable<Booking[]> {
-    return this.http.get<Booking[]>(`${this.apiUrl}/event/${eventId}`);
-  }
+	getEventBookings(eventId: number): Observable<Booking[]> {
+		return this.http.get<Booking[]>(`${this.apiUrl}/event/${eventId}`);
+	}
 
-  cancelBooking(bookingId: number): Observable<{ message: string }> {
-    return this.http.patch<{ message: string }>(`${this.apiUrl}/${bookingId}/cancel`, {});
-  }
+	cancelBooking(bookingId: number): Observable<{ message: string }> {
+		return this.http.patch<{ message: string }>(`${this.apiUrl}/${bookingId}/cancel`, {});
+	}
 }

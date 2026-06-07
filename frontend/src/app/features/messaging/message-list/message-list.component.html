@@ -1,0 +1,37 @@
+<div class="d-flex flex-column h-75">
+	<div class="list-group flex-grow-1">
+		@if (this.messages().length === 0) {
+			<div class="text-muted text-center py-4">No messages</div>
+		}
+		@for (msg of this.messages(); track msg.id) {
+			<button
+				class="list-group-item list-group-item-action"
+				[class.fw-bold]="this.highlightUnread() && !msg.is_read"
+				[class.active]="this.selectedMessage()?.id === msg.id"
+				(click)="this.onOpenMessage(msg)"
+			>
+				<div class="d-flex justify-content-between">
+					<span class="small">{{ msg.sender_first_name }} {{ msg.sender_last_name }}</span>
+					<span class="small text-muted">{{ msg.sent_at | date: 'shortDate' }}</span>
+				</div>
+				<div class="text-truncate small">{{ msg.subject }}</div>
+			</button>
+		}
+	</div>
+
+	<nav class="mt-2" [class.invisible]="this.totalPages() <= 1">
+		<ul class="pagination pagination-sm justify-content-center mb-0">
+			<li class="page-item" [class.disabled]="this.currentPage() === 1">
+				<button class="page-link" (click)="this.goToPage(this.currentPage() - 1)">&laquo;</button>
+			</li>
+			@for (page of this.pageNumbers(); track page) {
+				<li class="page-item" [class.active]="this.currentPage() === page">
+					<button class="page-link" (click)="this.goToPage(page)">{{ page }}</button>
+				</li>
+			}
+			<li class="page-item" [class.disabled]="this.currentPage() === this.totalPages()">
+				<button class="page-link" (click)="this.goToPage(this.currentPage() + 1)">&raquo;</button>
+			</li>
+		</ul>
+	</nav>
+</div>

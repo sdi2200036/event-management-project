@@ -1,0 +1,27 @@
+@if (modalService.state(); as modal) {
+	<div class="modal d-block modal-enter" tabindex="-1" role="dialog" (click)="modalService.close(null)">
+		<div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+			<div class="modal-content">
+				<div class="modal-body">
+					@if (modal.message) {
+						<p class="mb-0">{{ modal.message }}</p>
+					} @else if (modal.template) {
+						<ng-container [ngTemplateOutlet]="modal.template"></ng-container>
+					}
+				</div>
+				<div class="modal-footer">
+					@for (button of modal.buttons; track button.label) {
+						<button
+							type="button"
+							[class]="'btn ' + (button.class || 'btn-secondary')"
+							(click)="modalService.close(button.label)"
+						>
+							{{ button.label }}
+						</button>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal-backdrop modal-backdrop-enter"></div>
+}

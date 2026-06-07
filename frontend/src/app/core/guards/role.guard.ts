@@ -1,27 +1,25 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, RedirectCommand, Router } from '@angular/router';
+import { UserRole } from 'src/app/shared/models/user.model';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
-  providedIn: 'root',
+	providedIn: 'root'
 })
 export class RoleGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+	constructor(
+		private authService: AuthService,
+		private router: Router
+	) {}
 
-  canActivate(route: ActivatedRouteSnapshot): boolean {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return false;
-    }
+	public canActivate(route: ActivatedRouteSnapshot): RedirectCommand | boolean {
+		const requiredRoles: string[] = route.data['roles'] || [];
+		const userRole: UserRole = this.authService.userRole();
 
-    const requiredRoles: string[] = route.data['roles'] || [];
-    const userRole = this.authService.getUserRole();
+		if (requiredRoles.length !== 0 && !requiredRoles.includes(userRole)) {
+			return new RedirectCommand(this.router.parseUrl('/events'));
+		}
 
-    if (requiredRoles.length === 0 || (userRole && requiredRoles.includes(userRole))) {
-      return true;
-    }
-
-    this.router.navigate(['/events']);
-    return false;
-  }
+		return true;
+	}
 }

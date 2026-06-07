@@ -1,88 +1,117 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { EventService } from '../../../core/services/event.service';
+import { DatePipe } from '@angular/common';
+import {
+	Component,
+	computed,
+	input,
+	linkedSignal,
+	Signal,
+	signal,
+	TemplateRef,
+	viewChild,
+	WritableSignal
+} from '@angular/core';
+import { form, FormField, min, required, submit, validate } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 import { BookingService } from '../../../core/services/booking.service';
-import { Event, TicketType } from '../../../shared/models/event.model';
+import { ModalService } from '../../../core/services/modal.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { Event as EventModel, TicketType } from '../../../shared/models/event.model';
 
 @Component({
-  selector: 'app-booking-form',
-  templateUrl: './booking-form.component.html',
+	selector: 'app-booking-form',
+	templateUrl: './booking-form.component.html',
+	standalone: true,
+	imports: [DatePipe, FormField]
 })
-export class BookingFormComponent implements OnInit {
-  event: Event | null = null;
-  bookingForm: FormGroup;
-  loading: boolean = false;
-  loadingEvent: boolean = true;
-  error: string = '';
-  showConfirmation: boolean = false;
-  bookingCreated: boolean = false;
+export class BookingFormComponent {
+	private confirmTemplate: Signal<TemplateRef<any>> = viewChild.required('confirmTemplate');
 
-  constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private bookingService: BookingService
-  ) {
-    this.bookingForm = this.fb.group({
-      ticket_type_id: [null, Validators.required],
-      number_of_tickets: [1, [Validators.required, Validators.min(1), Validators.max(20)]],
-    });
-  }
+	public readonly event: Signal<EventModel | undefined> = input<EventModel>(undefined, { alias: 'eventData' });
 
-  ngOnInit(): void {
-    const eventId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
-    this.eventService.getEvent(eventId).subscribe({
-      next: (ev) => {
-        this.event = ev;
-        this.loadingEvent = false;
-        if (ev.ticket_types && ev.ticket_types.length > 0) {
-          this.bookingForm.get('ticket_type_id')?.setValue(ev.ticket_types[0].id);
-        }
-      },
-      error: () => {
-        this.error = 'Event not found';
-        this.loadingEvent = false;
-      },
-    });
-  }
+	public readonly bookingModel: WritableSignal<{ ticket_type_id: string; number_of_tickets: number }> = linkedSignal(
+		() => ({
+			ticket_type_id: String(this.event()?.ticket_types?.[0]?.id),
+			number_of_tickets: 1
+		})
+	);
+	public readonly bookingForm = form(this.bookingModel, (p) => {
+		required(p.ticket_type_id);
+		required(p.number_of_tickets);
+		min(p.number_of_tickets, 1, { message: 'Must book at least 1 ticket' });
+		validate(p, ({ valueOf }) => {
+			const count = valueOf(p.number_of_tickets);
+			const ticketTypeId = valueOf(p.ticket_type_id);
+			const ticketType = this.event()?.ticket_types?.find((t) => String(t.id) === ticketTypeId);
+			if (ticketType && count > ticketType.available) {
+				return [{ kind: 'form', message: `Only ${ticketType.available} ticket(s) available for this type` }];
+			}
+			return undefined;
+		});
+	});
 
-  get selectedTicketType(): TicketType | undefined {
-    const id = this.bookingForm.get('ticket_type_id')?.value;
-    return this.event?.ticket_types?.find((t) => t.id == id);
-  }
+	public bookingCreated: WritableSignal<boolean> = signal(false);
 
-  get totalCost(): number {
-    if (!this.selectedTicketType) return 0;
-    return this.selectedTicketType.price * (this.bookingForm.get('number_of_tickets')?.value || 1);
-  }
+	public readonly selectedTicketType: Signal<TicketType | undefined> = computed(() => {
+		const id: number = Number(this.bookingModel().ticket_type_id);
+		return this.event()?.ticket_types?.find((t) => t.id == id);
+	});
 
-  openConfirmation(): void {
-    if (this.bookingForm.invalid) return;
-    this.showConfirmation = true;
-  }
+	public readonly totalCost: Signal<number> = computed(() => {
+		const ticket = this.selectedTicketType();
+		if (!ticket) return 0;
+		return ticket.price * (this.bookingModel().number_of_tickets || 1);
+	});
 
-  confirmBooking(): void {
-    if (!this.event) return;
+	constructor(
+		private router: Router,
+		private bookingService: BookingService,
+		private toastService: ToastService,
+		private modalService: ModalService
+	) {}
 
-    this.loading = true;
-    this.error = '';
+	public async onSubmit(event: Event): Promise<void> {
+		event.preventDefault();
+		await submit(this.bookingForm, async () => {
+			const btn = await this.modalService.open(this.confirmTemplate(), [
+				{ label: 'Cancel', class: 'btn-outline-secondary' },
+				{ label: 'Pay & Confirm', class: 'btn-primary' }
+			]);
+			if (btn === 'Pay & Confirm') this.confirmBooking();
+		});
+	}
 
-    this.bookingService.createBooking({
-      event_id: this.event.id,
-      ...this.bookingForm.value,
-    }).subscribe({
-      next: () => {
-        this.bookingCreated = true;
-        this.showConfirmation = false;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Booking failed';
-        this.showConfirmation = false;
-        this.loading = false;
-      },
-    });
-  }
+	private confirmBooking(): void {
+		const ev = this.event();
+		if (!ev) return;
+
+		this.bookingService
+			.createBooking({
+				event_id: ev.id,
+				ticket_type_id: Number(this.bookingModel().ticket_type_id),
+				number_of_tickets: Number(this.bookingModel().number_of_tickets)
+			})
+			.subscribe({
+				next: () => {
+					this.bookingCreated.set(true);
+					this.toastService.success('Booking confirmed!');
+				},
+				error: (err) => {
+					this.toastService.error(err.error?.message || 'Booking failed');
+				}
+			});
+	}
+
+	public goToBookings(): void {
+		this.router.navigate(['/bookings']);
+	}
+
+	public goToEvents(): void {
+		this.router.navigate(['/events']);
+	}
+
+	public messageOrganizer(): void {
+		const username = this.event()?.organizer_username;
+		if (!username) return;
+		this.router.navigate(['/messages'], { queryParams: { receiver: username } });
+	}
 }

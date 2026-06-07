@@ -4,7 +4,7 @@ node_modules/
 # Angular build cache
 frontend/.angular/
 
-# Environment variables (contains passwords - NEVER commit this)
+# Environment variables
 .env
 backend/.env
 
@@ -12,9 +12,9 @@ backend/.env
 dist/
 backend/dist/
 
-# Logs
-*.log
-npm-debug.log*
+# SSL certificates
+*.pem
+backend/certs/
 
 # OS files
 .DS_Store

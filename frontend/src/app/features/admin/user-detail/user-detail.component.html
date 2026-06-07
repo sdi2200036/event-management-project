@@ -1,0 +1,92 @@
+@if (this.userData(); as user) {
+	<div class="container py-4" style="max-width: 720px">
+		<button type="button" class="btn btn-lg btn-link mb-3 p-0" (click)="this.goBack()">
+			<i class="bi bi-arrow-left"></i> Back to Users
+		</button>
+
+		<div class="card border-0 shadow-sm">
+			<div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+				<div>
+					<h4 class="mb-0 fw-bold">{{ user.first_name }} {{ user.last_name }}</h4>
+					<span class="text-muted small">&#64;{{ user.username }}</span>
+				</div>
+				<div class="d-flex gap-2">
+					<span
+						class="badge fs-6"
+						[ngClass]="{
+							'bg-danger': user.role === 'admin',
+							'bg-info': user.role === 'organizer',
+							'bg-secondary': user.role === 'participant'
+						}"
+						>{{ user.role }}</span
+					>
+					<span
+						class="badge fs-6"
+						[ngClass]="{
+							'bg-warning text-dark': user.status === 'pending',
+							'bg-success': user.status === 'approved',
+							'bg-danger': user.status === 'rejected',
+							'bg-secondary': user.status === 'suspended'
+						}"
+						>{{ user.status }}</span
+					>
+				</div>
+			</div>
+
+			<div class="card-body">
+				<div class="row g-3">
+					<div class="col-sm-6">
+						<label class="text-muted small">Email</label>
+						<div class="fw-semibold">{{ user.email }}</div>
+					</div>
+					<div class="col-sm-6">
+						<label class="text-muted small">Phone</label>
+						<div class="fw-semibold">{{ user.phone || '-' }}</div>
+					</div>
+					<div class="col-sm-6">
+						<label class="text-muted small">AFM</label>
+						<div class="fw-semibold">{{ user.afm || '-' }}</div>
+					</div>
+					<div class="col-sm-6">
+						<label class="text-muted small">Registered</label>
+						<div class="fw-semibold">{{ user.created_at | date: 'dd MMM yyyy, HH:mm' }}</div>
+					</div>
+					<div class="col-12">
+						<label class="text-muted small">Address</label>
+						<div class="fw-semibold">
+							{{ user.address || '-' }}
+							@if (user.city || user.country) {
+								<span>, {{ user.city }}{{ user.country ? ', ' + user.country : '' }}</span>
+							}
+							@if (user.postal_code) {
+								<span> {{ user.postal_code }}</span>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			@if (user.role !== 'admin') {
+				<div class="card-footer bg-white d-flex gap-2 justify-content-end py-3">
+					@if (user.status === 'pending') {
+						<button class="btn btn-success" (click)="this.approveUser()" [disabled]="this.loading()">
+							Approve
+						</button>
+						<button class="btn btn-outline-danger" (click)="this.rejectUser()" [disabled]="this.loading()">
+							Reject
+						</button>
+					}
+					@if (user.status === 'approved') {
+						<button
+							class="btn btn-outline-warning"
+							(click)="this.suspendUser()"
+							[disabled]="this.loading()"
+						>
+							Suspend
+						</button>
+					}
+				</div>
+			}
+		</div>
+	</div>
+}

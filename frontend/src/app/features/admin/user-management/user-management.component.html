@@ -1,120 +1,144 @@
 <div class="container-fluid py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="fw-bold mb-0">User Management</h2>
-      <p class="text-muted mb-0">{{ users.length }} users total</p>
-    </div>
-    <span *ngIf="pendingCount > 0" class="badge bg-warning text-dark fs-6">
-      {{ pendingCount }} pending approval
-    </span>
-  </div>
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<div>
+			<h2 class="fw-bold mb-0">User Management</h2>
+			<p class="text-muted mb-0">{{ this.users().length }} users total</p>
+		</div>
+		@if (this.pendingCount() > 0) {
+			<span class="badge bg-warning text-dark fs-6"> {{ this.pendingCount() }} pending approval </span>
+		}
+	</div>
 
-  <!-- Filters -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row g-2 align-items-end">
-        <div class="col-md-3">
-          <label class="form-label">Filter by Status</label>
-          <select class="form-select" [(ngModel)]="filterStatus" (change)="loadUsers()">
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Filter by Role</label>
-          <select class="form-select" [(ngModel)]="filterRole" (change)="loadUsers()">
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="organizer">Organizer</option>
-            <option value="participant">Participant</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
+	<!-- Filters -->
+	<div class="card border-0 shadow-sm mb-4">
+		<div class="card-body">
+			<div class="row g-2 align-items-end">
+				<div class="col-md-3">
+					<label class="form-label">Filter by Status</label>
+					<select class="form-select" [(ngModel)]="this.filterStatus" (change)="this.loadUsers()">
+						<option value>All Statuses</option>
+						<option value="pending">Pending</option>
+						<option value="approved">Approved</option>
+						<option value="rejected">Rejected</option>
+						<option value="suspended">Suspended</option>
+					</select>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label">Filter by Role</label>
+					<select class="form-select" [(ngModel)]="this.filterRole" (change)="this.loadUsers()">
+						<option value>All Roles</option>
+						<option value="admin">Admin</option>
+						<option value="organizer">Organizer</option>
+						<option value="participant">Participant</option>
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
 
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary"></div>
-  </div>
+	@if (this.users().length > 0) {
+		<div>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle">
+					<thead class="table-light">
+						<tr>
+							<th>ID</th>
+							<th>Username</th>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Role</th>
+							<th>Status</th>
+							<th>Registered</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (user of this.users(); track user.id) {
+							<tr
+								[class.table-warning]="user.status === 'pending'"
+								[class.table-danger]="user.status === 'rejected'"
+								[class.table-secondary]="user.status === 'suspended'"
+							>
+								<td class="text-muted small">{{ user.id }}</td>
+								<td class="fw-semibold">{{ user.username }}</td>
+								<td>{{ user.first_name }} {{ user.last_name }}</td>
+								<td class="small">{{ user.email }}</td>
+								<td>
+									<span
+										class="badge"
+										[ngClass]="{
+											'bg-danger': user.role === 'admin',
+											'bg-info': user.role === 'organizer',
+											'bg-secondary': user.role === 'participant'
+										}"
+									>
+										{{ user.role }}
+									</span>
+								</td>
+								<td>
+									<span
+										class="badge"
+										[ngClass]="{
+											'bg-warning text-dark': user.status === 'pending',
+											'bg-success': user.status === 'approved',
+											'bg-danger': user.status === 'rejected',
+											'bg-secondary': user.status === 'suspended'
+										}"
+									>
+										{{ user.status }}
+									</span>
+								</td>
+								<td class="small text-muted">
+									{{ user.created_at | date: 'shortDate' }}
+								</td>
+								<td>
+									<div class="d-flex gap-1">
+										<button
+											class="btn btn-sm btn-outline-secondary"
+											(click)="this.viewUser(user.id)"
+											[disabled]="this.actionLoading() === user.id"
+										>
+											View
+										</button>
+										@if (user.status === 'pending') {
+											<button
+												class="btn btn-sm btn-success"
+												(click)="this.approveUser(user)"
+												[disabled]="this.actionLoading() === user.id"
+											>
+												@if (this.actionLoading() === user.id) {
+													<span class="spinner-border spinner-border-sm me-1"></span>
+												}
+												Approve
+											</button>
+											<button
+												class="btn btn-sm btn-outline-danger"
+												(click)="this.rejectUser(user)"
+												[disabled]="this.actionLoading() === user.id"
+											>
+												Reject
+											</button>
+										}
+										@if (user.status === 'approved' && user.role !== 'admin') {
+											<button
+												class="btn btn-sm btn-outline-warning"
+												(click)="this.suspendUser(user)"
+												[disabled]="this.actionLoading() === user.id"
+											>
+												Suspend
+											</button>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-  <div *ngIf="!loading && users.length > 0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Registered</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let user of users"
-            [class.table-warning]="user.status === 'pending'"
-            [class.table-danger]="user.status === 'rejected'"
-          >
-            <td class="text-muted small">{{ user.id }}</td>
-            <td class="fw-semibold">{{ user.username }}</td>
-            <td>{{ user.first_name }} {{ user.last_name }}</td>
-            <td class="small">{{ user.email }}</td>
-            <td>
-              <span class="badge"
-                [ngClass]="{
-                  'bg-danger': user.role === 'admin',
-                  'bg-info': user.role === 'organizer',
-                  'bg-secondary': user.role === 'participant'
-                }">
-                {{ user.role }}
-              </span>
-            </td>
-            <td>
-              <span class="badge"
-                [ngClass]="{
-                  'bg-warning text-dark': user.status === 'pending',
-                  'bg-success': user.status === 'approved',
-                  'bg-danger': user.status === 'rejected'
-                }">
-                {{ user.status }}
-              </span>
-            </td>
-            <td class="small text-muted">{{ user.created_at | date:'shortDate' }}</td>
-            <td>
-              <div class="d-flex gap-1">
-                <button
-                  *ngIf="user.status === 'pending'"
-                  class="btn btn-sm btn-success"
-                  (click)="approveUser(user)"
-                  [disabled]="actionLoading === user.id"
-                >
-                  <span *ngIf="actionLoading === user.id" class="spinner-border spinner-border-sm me-1"></span>
-                  Approve
-                </button>
-                <button
-                  *ngIf="user.status === 'pending' || user.status === 'approved'"
-                  class="btn btn-sm btn-outline-danger"
-                  (click)="rejectUser(user)"
-                  [disabled]="actionLoading === user.id || user.role === 'admin'"
-                >
-                  Reject
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div *ngIf="!loading && users.length === 0" class="text-center py-5 text-muted">
-    No users found matching the selected filters.
-  </div>
+	@if (this.users().length === 0) {
+		<div class="text-center py-5 text-muted">No users found matching the selected filters.</div>
+	}
 </div>

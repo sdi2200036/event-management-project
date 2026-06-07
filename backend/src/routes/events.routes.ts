@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/role.middleware';
 import {
   getEvents,
@@ -24,8 +24,8 @@ router.get('/my', authenticate, requireRole('organizer', 'admin'), getOrganizerE
 // GET /api/events/recommendations - Authenticated: get recommendations
 router.get('/recommendations', authenticate, getRecommendations);
 
-// GET /api/events/:id - Public: get event details
-router.get('/:id', getEventById);
+// GET /api/events/:id - Public: get event details (optional auth to track views)
+router.get('/:id', optionalAuthenticate, getEventById);
 
 // POST /api/events - Organizer only: create event
 router.post('/', authenticate, requireRole('organizer'), createEvent);

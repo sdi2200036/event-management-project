@@ -1,110 +1,153 @@
-import { query } from '../config/database';
-import { Message, MessageWithUsers, SendMessageDTO } from '../models/message.model';
+import prisma from '../config/prisma';
+import {
+  Message,
+  MessageWithUsers,
+  PaginatedInboxResponse,
+  PaginatedSentResponse,
+  SendMessageDTO,
+} from '../models/message.model';
+
+const userSelect = { username: true, first_name: true, last_name: true };
+
+function mapMessage(m: any): MessageWithUsers {
+  const { sender, receiver, ...rest } = m;
+  return {
+    ...rest,
+    sender_username: sender?.username,
+    sender_first_name: sender?.first_name,
+    sender_last_name: sender?.last_name,
+    receiver_username: receiver?.username,
+    receiver_first_name: receiver?.first_name,
+    receiver_last_name: receiver?.last_name,
+  };
+}
 
 export const sendMessage = async (senderId: number, dto: SendMessageDTO): Promise<Message> => {
-  const { receiver_id, booking_id, subject, body } = dto;
+  const { receiver_username, booking_id, subject, body } = dto;
 
-  // Verify receiver exists
-  const receiver = await query('SELECT id FROM users WHERE id = $1', [receiver_id]);
-  if (receiver.rows.length === 0) throw new Error('Receiver not found');
+  const receiver = await prisma.user.findUnique({ where: { username: receiver_username }, select: { id: true } });
+  if (!receiver) throw new Error('Receiver not found');
+  if (receiver.id === senderId) throw new Error('You cannot send a message to yourself');
 
-  const result = await query(
-    `INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [senderId, receiver_id, booking_id || null, subject, body]
-  );
-  return result.rows[0];
+  const message = await prisma.message.create({
+    data: {
+      sender_id: senderId,
+      receiver_id: receiver.id,
+      booking_id: booking_id ?? null,
+      subject,
+      body,
+    },
+  });
+
+  return message as unknown as Message;
 };
 
-export const getInbox = async (userId: number): Promise<MessageWithUsers[]> => {
-  const result = await query(
-    `SELECT m.*,
-            s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
-            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
-     FROM messages m
-     JOIN users s ON s.id = m.sender_id
-     JOIN users r ON r.id = m.receiver_id
-     WHERE m.receiver_id = $1 AND m.deleted_by_receiver = FALSE
-     ORDER BY m.sent_at DESC`,
-    [userId]
-  );
-  return result.rows;
+export const getInbox = async (userId: number, page: number, limit: number): Promise<PaginatedInboxResponse> => {
+  const offset = (page - 1) * limit;
+  const where = { receiver_id: userId, deleted_by_receiver: false };
+
+  const [total, unread_count, rows] = await Promise.all([
+    prisma.message.count({ where }),
+    prisma.message.count({ where: { receiver_id: userId, is_read: false, deleted_by_receiver: false } }),
+    prisma.message.findMany({
+      where,
+      include: { sender: { select: userSelect }, receiver: { select: userSelect } },
+      orderBy: [{ is_read: 'asc' }, { sent_at: 'desc' }],
+      skip: offset,
+      take: limit,
+    }),
+  ]);
+
+  return { messages: rows.map(mapMessage), total, unread_count };
 };
 
-export const getSent = async (userId: number): Promise<MessageWithUsers[]> => {
-  const result = await query(
-    `SELECT m.*,
-            s.username as sender_username, s.first_name as sender_first_name, s.last_name as sender_last_name,
-            r.username as receiver_username, r.first_name as receiver_first_name, r.last_name as receiver_last_name
-     FROM messages m
-     JOIN users s ON s.id = m.sender_id
-     JOIN users r ON r.id = m.receiver_id
-     WHERE m.sender_id = $1 AND m.deleted_by_sender = FALSE
-     ORDER BY m.sent_at DESC`,
-    [userId]
-  );
-  return result.rows;
+export const getSent = async (userId: number, page: number, limit: number): Promise<PaginatedSentResponse> => {
+  const offset = (page - 1) * limit;
+  const where = { sender_id: userId, deleted_by_sender: false };
+
+  const [total, rows] = await Promise.all([
+    prisma.message.count({ where }),
+    prisma.message.findMany({
+      where,
+      include: { sender: { select: userSelect }, receiver: { select: userSelect } },
+      orderBy: { sent_at: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+  ]);
+
+  return { messages: rows.map(mapMessage), total };
 };
 
 export const markAsRead = async (messageId: number, userId: number): Promise<void> => {
-  const result = await query(
-    'UPDATE messages SET is_read = TRUE WHERE id = $1 AND receiver_id = $2 RETURNING id',
-    [messageId, userId]
-  );
-  if (result.rows.length === 0) throw new Error('Message not found or not authorized');
+  const result = await prisma.message.updateMany({
+    where: { id: messageId, receiver_id: userId },
+    data: { is_read: true },
+  });
+  if (result.count === 0) throw new Error('Message not found or not authorized');
 };
 
 export const deleteMessage = async (messageId: number, userId: number): Promise<void> => {
-  const result = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
-  if (result.rows.length === 0) throw new Error('Message not found');
+  const msg = await prisma.message.findUnique({ where: { id: messageId } });
+  if (!msg) throw new Error('Message not found');
 
-  const msg = result.rows[0];
   if (msg.sender_id === userId) {
-    await query('UPDATE messages SET deleted_by_sender = TRUE WHERE id = $1', [messageId]);
+    await prisma.message.update({ where: { id: messageId }, data: { deleted_by_sender: true } });
   } else if (msg.receiver_id === userId) {
-    await query('UPDATE messages SET deleted_by_receiver = TRUE WHERE id = $1', [messageId]);
+    await prisma.message.update({ where: { id: messageId }, data: { deleted_by_receiver: true } });
   } else {
     throw new Error('Not authorized to delete this message');
   }
 
-  // If both sides deleted, hard-delete the record
-  const updated = await query('SELECT * FROM messages WHERE id = $1', [messageId]);
-  if (updated.rows[0].deleted_by_sender && updated.rows[0].deleted_by_receiver) {
-    await query('DELETE FROM messages WHERE id = $1', [messageId]);
+  const updated = await prisma.message.findUnique({ where: { id: messageId } });
+  if (updated?.deleted_by_sender && updated?.deleted_by_receiver) {
+    await prisma.message.delete({ where: { id: messageId } });
   }
 };
 
 export const getUnreadCount = async (userId: number): Promise<number> => {
-  const result = await query(
-    'SELECT COUNT(*) FROM messages WHERE receiver_id = $1 AND is_read = FALSE AND deleted_by_receiver = FALSE',
-    [userId]
-  );
-  return parseInt(result.rows[0].count, 10);
+  return prisma.message.count({
+    where: { receiver_id: userId, is_read: false, deleted_by_receiver: false },
+  });
 };
 
 export const notifyEventCancellation = async (eventId: number): Promise<void> => {
-  // Get all confirmed bookings for this event
-  const bookings = await query(
-    `SELECT b.attendee_id, b.id as booking_id, e.title as event_title, e.organizer_id,
-            u.first_name, u.last_name
-     FROM bookings b
-     JOIN events e ON e.id = b.event_id
-     JOIN users u ON u.id = b.attendee_id
-     WHERE b.event_id = $1 AND b.booking_status = 'CONFIRMED'`,
-    [eventId]
-  );
+  const bookings = await prisma.booking.findMany({
+    where: { event_id: eventId, booking_status: 'CONFIRMED' },
+    include: {
+      attendee: { select: { first_name: true, last_name: true } },
+      event: { select: { title: true, organizer_id: true } },
+    },
+  });
 
-  for (const row of bookings.rows) {
-    await query(
-      `INSERT INTO messages (sender_id, receiver_id, booking_id, subject, body)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [
-        row.organizer_id,
-        row.attendee_id,
-        row.booking_id,
-        `Event Cancellation Notice`,
-        `Dear ${row.first_name} ${row.last_name},\n\nWe regret to inform you that the event "${row.event_title}" has been cancelled.\nYour booking has been cancelled and a refund will be processed.\n\nWe apologize for any inconvenience.`,
-      ]
-    );
+  if (bookings.length === 0) return;
+
+  // Group by ticket_type_id and restore available counts
+  const restoreMap = new Map<number, number>();
+  for (const b of bookings) {
+    restoreMap.set(b.ticket_type_id, (restoreMap.get(b.ticket_type_id) ?? 0) + b.number_of_tickets);
+  }
+
+  await prisma.$transaction([
+    ...Array.from(restoreMap.entries()).map(([ttId, qty]) =>
+      prisma.ticketType.update({ where: { id: ttId }, data: { available: { increment: qty } } })
+    ),
+    prisma.booking.updateMany({
+      where: { event_id: eventId, booking_status: 'CONFIRMED' },
+      data: { booking_status: 'CANCELLED' },
+    }),
+  ]);
+
+  // Send notification messages after the transaction commits
+  for (const b of bookings) {
+    await prisma.message.create({
+      data: {
+        sender_id: b.event.organizer_id,
+        receiver_id: b.attendee_id,
+        booking_id: b.id,
+        subject: 'Event Cancellation Notice',
+        body: `Dear ${b.attendee.first_name} ${b.attendee.last_name},\n\nWe regret to inform you that the event "${b.event.title}" has been cancelled.\nYour booking has been cancelled and a refund will be processed.\n\nWe apologize for any inconvenience.`,
+      },
+    });
   }
 };

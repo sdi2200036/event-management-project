@@ -1,63 +1,53 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { computed, Injectable, Signal, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { User, LoginRequest, RegisterRequest, AuthResponse, UserRole } from '../../shared/models/user.model';
+import { AuthResponse, LoginRequest, RegisterRequest, User, UserRole } from '../../shared/models/user.model';
 
 @Injectable({
-  providedIn: 'root',
+	providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = environment.apiUrl;
-  private currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
-  public currentUser$ = this.currentUserSubject.asObservable();
+	private apiUrl = environment.apiUrl;
+	private _currentUser = signal<User | null>(this.loadUser());
 
-  constructor(private http: HttpClient) {}
+	public currentUser: Signal<User | null> = this._currentUser.asReadonly();
+	public userRole: Signal<UserRole> = computed(() => this._currentUser()?.role || UserRole.Undefined);
+	public isLoggedIn: Signal<boolean> = computed(() => !!this._currentUser());
 
-  private loadUser(): User | null {
-    try {
-      const userData = localStorage.getItem('currentUser');
-      return userData ? JSON.parse(userData) : null;
-    } catch {
-      return null;
-    }
-  }
+	constructor(private http: HttpClient) {}
 
-  login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
-      tap((response) => {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('currentUser', JSON.stringify(response.user));
-        this.currentUserSubject.next(response.user);
-      })
-    );
-  }
+	private loadUser(): User | null {
+		try {
+			const userData = localStorage.getItem('currentUser');
+			return userData ? JSON.parse(userData) : null;
+		} catch {
+			return null;
+		}
+	}
 
-  register(data: RegisterRequest): Observable<{ message: string }> {
-    const { confirmPassword, ...payload } = data;
-    return this.http.post<{ message: string }>(`${this.apiUrl}/auth/register`, payload);
-  }
+	login(credentials: LoginRequest): Observable<AuthResponse> {
+		return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
+			tap((response) => {
+				localStorage.setItem('token', response.token);
+				localStorage.setItem('currentUser', JSON.stringify(response.user));
+				this._currentUser.set(response.user);
+			})
+		);
+	}
 
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
-    this.currentUserSubject.next(null);
-  }
+	register(data: RegisterRequest): Observable<{ message: string }> {
+		const { confirmPassword, ...payload } = data;
+		return this.http.post<{ message: string }>(`${this.apiUrl}/auth/register`, payload);
+	}
 
-  getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
+	logout(): void {
+		localStorage.removeItem('token');
+		localStorage.removeItem('currentUser');
+		this._currentUser.set(null);
+	}
 
-  isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
-  }
-
-  getUserRole(): UserRole | null {
-    const user = this.getCurrentUser();
-    return user ? user.role : null;
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
+	getToken(): string | null {
+		return localStorage.getItem('token');
+	}
 }

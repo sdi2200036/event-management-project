@@ -1,97 +1,136 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { DatePipe, NgClass } from '@angular/common';
+import { Component, computed, input, InputSignal, Signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Event } from '../../../shared/models/event.model';
-
-declare const L: any; // Leaflet global
+import { EventService } from '../../../core/services/event.service';
+import { ModalService } from '../../../core/services/modal.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { MapViewComponent } from '../../../shared/components/map-view/map-view.component';
+import { Booking } from '../../../shared/models/booking.model';
+import { Event as EventModel } from '../../../shared/models/event.model';
 
 @Component({
-  selector: 'app-event-detail',
-  templateUrl: './event-detail.component.html',
+	selector: 'app-event-detail',
+	templateUrl: './event-detail.component.html',
+	standalone: true,
+	imports: [NgClass, DatePipe, MapViewComponent]
 })
-export class EventDetailComponent implements OnInit, AfterViewInit {
-  event: Event | null = null;
-  loading: boolean = true;
-  error: string = '';
-  isLoggedIn: boolean = false;
-  isParticipant: boolean = false;
-  isOrganizer: boolean = false;
-  isOwner: boolean = false;
-  mapInitialized: boolean = false;
+export class EventDetailComponent {
+	public readonly event: InputSignal<EventModel> = input.required<EventModel>({ alias: 'eventData' });
+	public readonly bookings: InputSignal<Booking[]> = input<Booking[]>([], {
+		alias: 'bookingsData'
+	});
+	public readonly isManageMode: InputSignal<boolean> = input<boolean>(false);
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private authService: AuthService
-  ) {}
+	public readonly isLoggedIn: Signal<boolean> = this.authService.isLoggedIn;
+	public readonly isParticipant: Signal<boolean> = computed(
+		() => this.authService.currentUser()?.role === 'participant'
+	);
+	public readonly isOrganizer: Signal<boolean> = computed(() => this.authService.currentUser()?.role === 'organizer');
+	public readonly isOwner: Signal<boolean> = computed(() => {
+		const user = this.authService.currentUser();
+		const ev = this.event();
+		return !!user && !!ev && user.id === ev.organizer_id;
+	});
 
-  ngOnInit(): void {
-    const id = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
-    this.isLoggedIn = this.authService.isLoggedIn();
-    const user = this.authService.getCurrentUser();
-    this.isParticipant = user?.role === 'participant';
-    this.isOrganizer = user?.role === 'organizer';
+	public readonly minTicketPrice: Signal<number> = computed(() => {
+		const ev = this.event();
+		if (!ev || !ev.ticket_types || ev.ticket_types.length === 0) return 0;
+		return Math.min(...ev.ticket_types.map((t) => t.price));
+	});
 
-    this.eventService.getEvent(id).subscribe({
-      next: (ev) => {
-        this.event = ev;
-        this.loading = false;
-        this.isOwner = user?.id === ev.organizer_id;
-        if (ev.geo_lat && ev.geo_lng) {
-          setTimeout(() => this.initMap(ev.geo_lat!, ev.geo_lng!), 200);
-        }
-      },
-      error: () => {
-        this.error = 'Event not found';
-        this.loading = false;
-      },
-    });
-  }
+	constructor(
+		private router: Router,
+		private eventService: EventService,
+		private authService: AuthService,
+		private toastService: ToastService,
+		private modalService: ModalService,
+		private activatedRoute: ActivatedRoute
+	) {}
 
-  ngAfterViewInit(): void {}
+	public goBack(): void {
+		this.router.navigate(['..'], { relativeTo: this.activatedRoute });
+	}
 
-  initMap(lat: number, lng: number): void {
-    if (this.mapInitialized || typeof L === 'undefined') return;
-    try {
-      const map = L.map('event-map').setView([lat, lng], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
-      L.marker([lat, lng]).addTo(map).bindPopup(this.event?.title || 'Event Location').openPopup();
-      this.mapInitialized = true;
-    } catch (e) {
-      console.warn('Map initialization failed:', e);
-    }
-  }
+	public goToEditEvent(): void {
+		const ev = this.event();
+		if (!ev) return;
+		this.router.navigate(['events', 'manage', ev.id, 'edit']);
+	}
 
-  publishEvent(): void {
-    if (!this.event) return;
-    this.eventService.publishEvent(this.event.id).subscribe({
-      next: (ev) => (this.event = ev),
-      error: (err) => alert(err.error?.message || 'Failed to publish'),
-    });
-  }
+	public goToBookEvent(): void {
+		const ev = this.event();
+		if (!ev) return;
+		this.router.navigate(['bookings', 'new', ev.id]);
+	}
 
-  cancelEvent(): void {
-    if (!this.event || !confirm('Are you sure you want to cancel this event?')) return;
-    this.eventService.cancelEvent(this.event.id).subscribe({
-      next: (ev) => (this.event = ev),
-      error: (err) => alert(err.error?.message || 'Failed to cancel'),
-    });
-  }
+	public goToLogin(): void {
+		this.router.navigate(['login']);
+	}
 
-  deleteEvent(): void {
-    if (!this.event || !confirm('Are you sure you want to delete this event?')) return;
-    this.eventService.deleteEvent(this.event.id).subscribe({
-      next: () => this.router.navigate(['/manage/events']),
-      error: (err) => alert(err.error?.message || 'Failed to delete'),
-    });
-  }
+	public goToEvents(): void {
+		this.router.navigate(['events']);
+	}
 
-  get minTicketPrice(): number {
-    if (!this.event?.ticket_types || this.event.ticket_types.length === 0) return 0;
-    return Math.min(...this.event.ticket_types.map((t) => t.price));
-  }
+	public messageOrganizer(): void {
+		const ev = this.event();
+		if (!ev?.organizer_username) return;
+		this.router.navigate(['messages'], { queryParams: { receiver: ev.organizer_username } });
+	}
+
+	public publishEvent(): void {
+		const event = this.event();
+		this.modalService
+			.confirm(`Publish "${event.title}"? It will become visible to all users.`, 'Publish')
+			.then((confirmed) => {
+				if (!confirmed) return;
+				this.eventService.publishEvent(event.id).subscribe({
+					next: () => {
+						this.toastService.success(`"${event.title}" published successfully`);
+						this.router.navigate([], {
+							relativeTo: this.activatedRoute,
+							queryParamsHandling: 'preserve',
+							onSameUrlNavigation: 'reload'
+						});
+					},
+					error: (err) => this.toastService.error(err.error?.message || 'Failed to publish event')
+				});
+			});
+	}
+
+	public cancelEvent(): void {
+		const event = this.event();
+		this.modalService.confirm(`Cancel "${event.title}"? This cannot be undone.`).then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.cancelEvent(event.id).subscribe({
+				next: () => {
+					this.toastService.warning(`"${event.title}" cancelled`);
+					this.router.navigate([], {
+						relativeTo: this.activatedRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to cancel event')
+			});
+		});
+	}
+
+	public deleteEvent(): void {
+		const event = this.event();
+		this.modalService.confirm(`Delete "${event.title}"? This is permanent.`).then((confirmed) => {
+			if (!confirmed) return;
+			this.eventService.deleteEvent(event.id).subscribe({
+				next: () => {
+					this.toastService.warning(`"${event.title}" deleted`);
+					this.router.navigate([], {
+						relativeTo: this.activatedRoute,
+						queryParamsHandling: 'preserve',
+						onSameUrlNavigation: 'reload'
+					});
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete event')
+			});
+		});
+	}
 }

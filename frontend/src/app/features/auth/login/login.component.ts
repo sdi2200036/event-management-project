@@ -1,44 +1,56 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, signal, WritableSignal } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
+import { Router } from '@angular/router';
+import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { LoginRequest } from 'src/app/shared/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
+	selector: 'app-login',
+	templateUrl: './login.component.html',
+	standalone: true,
+	imports: [FormField]
 })
 export class LoginComponent {
-  loginForm: FormGroup;
-  error: string = '';
-  loading: boolean = false;
+	public readonly loginModel: WritableSignal<LoginRequest> = signal({
+		username: '',
+		password: ''
+	});
+	public readonly loginFields = form(this.loginModel, (p) => {
+		required(p.username);
+		required(p.password);
+	});
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {
-    this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
-  }
+	constructor(
+		private authService: AuthService,
+		private router: Router,
+		private toastService: ToastService
+	) {}
 
-  onSubmit(): void {
-    if (this.loginForm.invalid) return;
+	public goToRegister(): void {
+		this.router.navigate(['/register']);
+	}
 
-    this.loading = true;
-    this.error = '';
+	public async onSubmit(event: Event): Promise<void> {
+		event.preventDefault();
 
-    this.authService.login(this.loginForm.value).subscribe({
-      next: () => {
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/events';
-        this.router.navigateByUrl(returnUrl);
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Login failed. Please try again.';
-        this.loading = false;
-      },
-    });
-  }
+		await submit(this.loginFields, async (form) => {
+			return await firstValueFrom(
+				this.authService.login(form().value()).pipe(
+					switchMap((response) => {
+						const destination = response.user.role === 'admin' ? '/admin/users' : '/events';
+						this.router.navigate([destination]);
+						return of(undefined);
+					}),
+					catchError((err) => {
+						this.toastService.error(
+							err.error?.message || 'Invalid username or password. Please try again.'
+						);
+						return of(undefined);
+					})
+				)
+			);
+		});
+	}
 }

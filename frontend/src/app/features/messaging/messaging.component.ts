@@ -1,117 +1,115 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MessageService, Message } from '../../core/services/message.service';
+import { Component, computed, input, InputSignal, linkedSignal, Signal, signal, WritableSignal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ModalService } from 'src/app/core/services/modal.service';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { MessagesResolverData } from '../../core/resolvers/messages.resolver';
+import { Message, MessageService, PAGE_SIZE, SendMessageRequest } from '../../core/services/message.service';
+import { ComposeComponent } from './message-compose/message-compose.component';
+import { MessageDetailsComponent } from './message-details/message-details.component';
+import { MessageListComponent } from './message-list/message-list.component';
+
+enum Tab {
+	INBOX = 'inbox',
+	SENT = 'sent',
+	COMPOSE = 'compose'
+}
 
 @Component({
-  selector: 'app-messaging',
-  templateUrl: './messaging.component.html',
+	selector: 'app-messaging',
+	templateUrl: './messaging.component.html',
+	standalone: true,
+	imports: [MessageDetailsComponent, MessageListComponent, ComposeComponent]
 })
-export class MessagingComponent implements OnInit {
-  activeTab: 'inbox' | 'sent' | 'compose' = 'inbox';
-  inbox: Message[] = [];
-  sent: Message[] = [];
-  loading: boolean = false;
-  error: string = '';
-  success: string = '';
-  composeForm: FormGroup;
-  selectedMessage: Message | null = null;
+export class MessagingComponent {
+	public messagesData: InputSignal<MessagesResolverData> = input.required();
+	public prefillReceiver: InputSignal<string | undefined> = input<string>(undefined, { alias: 'receiver' });
 
-  constructor(private messageService: MessageService, private fb: FormBuilder) {
-    this.composeForm = this.fb.group({
-      receiver_id: [null, [Validators.required, Validators.min(1)]],
-      subject: ['', [Validators.required, Validators.maxLength(255)]],
-      body: ['', Validators.required],
-    });
-  }
+	public activeTab: WritableSignal<Tab> = linkedSignal(() => {
+		const receiver = this.prefillReceiver();
+		return receiver ? Tab.COMPOSE : Tab.INBOX;
+	});
+	public unreadCount: Signal<number> = this.messageService.unreadCount;
+	public selectedMessage: WritableSignal<Message | null> = signal(null);
+	public Tab: typeof Tab = Tab;
 
-  ngOnInit(): void {
-    this.loadInbox();
-  }
+	public readonly inboxMessages: Signal<Message[]> = computed(() => this.messagesData().inbox.messages);
+	public readonly inboxTotal: Signal<number> = computed(() => this.messagesData().inbox.total);
+	public readonly sentMessages: Signal<Message[]> = computed(() => this.messagesData().sent.messages);
+	public readonly sentTotal: Signal<number> = computed(() => this.messagesData().sent.total);
+	public readonly page: Signal<number> = computed(() => this.messagesData().page);
 
-  loadInbox(): void {
-    this.loading = true;
-    this.messageService.getInbox().subscribe({
-      next: (msgs) => {
-        this.inbox = msgs;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load inbox';
-        this.loading = false;
-      },
-    });
-  }
+	constructor(
+		private messageService: MessageService,
+		private router: Router,
+		private route: ActivatedRoute,
+		private toastService: ToastService,
+		private modalService: ModalService
+	) {
+		this.messageService.refreshUnreadCount();
+	}
 
-  loadSent(): void {
-    this.loading = true;
-    this.messageService.getSent().subscribe({
-      next: (msgs) => {
-        this.sent = msgs;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load sent messages';
-        this.loading = false;
-      },
-    });
-  }
+	public switchTab(tab: Tab): void {
+		this.activeTab.set(tab);
+		this.selectedMessage.set(null);
+		this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: 1 } });
+	}
 
-  switchTab(tab: 'inbox' | 'sent' | 'compose'): void {
-    this.activeTab = tab;
-    this.selectedMessage = null;
-    this.error = '';
-    this.success = '';
+	public onPageChange(page: number): void {
+		this.selectedMessage.set(null);
+		this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: page } });
+	}
 
-    if (tab === 'inbox') this.loadInbox();
-    if (tab === 'sent') this.loadSent();
-  }
+	public markAsRead(msg: Message): void {
+		if (!msg.is_read && this.activeTab() === Tab.INBOX) {
+			this.messageService.markAsRead(msg.id).subscribe({
+				next: () => {
+					this.router.navigate([], {
+						relativeTo: this.route,
+						queryParams: { pageIndex: this.page() },
+						onSameUrlNavigation: 'reload',
+						replaceUrl: true
+					});
+				},
+				error: () => this.toastService.error('Failed to mark as read')
+			});
+		}
+	}
 
-  openMessage(msg: Message): void {
-    this.selectedMessage = msg;
-    if (!msg.is_read && this.activeTab === 'inbox') {
-      this.messageService.markAsRead(msg.id).subscribe({
-        next: () => (msg.is_read = true),
-        error: () => {},
-      });
-    }
-  }
+	public deleteMessage(msg: Message): void {
+		this.modalService.confirm('Delete this message?').then((confirmed) => {
+			if (!confirmed) return;
+			this.messageService.deleteMessage(msg.id).subscribe({
+				next: () => {
+					if (this.selectedMessage()?.id === msg.id) {
+						this.selectedMessage.set(null);
+					}
 
-  deleteMessage(msg: Message): void {
-    if (!confirm('Delete this message?')) return;
-    this.messageService.deleteMessage(msg.id).subscribe({
-      next: () => {
-        if (this.activeTab === 'inbox') {
-          this.inbox = this.inbox.filter((m) => m.id !== msg.id);
-        } else {
-          this.sent = this.sent.filter((m) => m.id !== msg.id);
-        }
-        if (this.selectedMessage?.id === msg.id) {
-          this.selectedMessage = null;
-        }
-      },
-      error: (err) => (this.error = err.error?.message || 'Failed to delete'),
-    });
-  }
+					const currentTotal = this.activeTab() === Tab.INBOX ? this.inboxTotal() : this.sentTotal();
+					const maxPage = Math.max(1, Math.ceil((currentTotal - 1) / PAGE_SIZE));
+					const pageToLoad = Math.min(this.page(), maxPage);
 
-  sendMessage(): void {
-    if (this.composeForm.invalid) return;
+					this.router.navigate([], {
+						relativeTo: this.route,
+						queryParams: { pageIndex: pageToLoad },
+						onSameUrlNavigation: 'reload',
+						replaceUrl: true
+					});
+					this.toastService.warning('Message deleted successfully');
+				},
+				error: (err) => this.toastService.error(err.error?.message || 'Failed to delete')
+			});
+		});
+	}
 
-    this.loading = true;
-    this.messageService.sendMessage(this.composeForm.value).subscribe({
-      next: () => {
-        this.success = 'Message sent successfully!';
-        this.composeForm.reset();
-        this.loading = false;
-        setTimeout(() => this.switchTab('sent'), 1500);
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Failed to send message';
-        this.loading = false;
-      },
-    });
-  }
-
-  get unreadCount(): number {
-    return this.inbox.filter((m) => !m.is_read).length;
-  }
+	public sendMessage(data: SendMessageRequest): void {
+		this.messageService.sendMessage(data).subscribe({
+			next: () => {
+				this.router.navigate([], { relativeTo: this.route, queryParams: { pageIndex: 1 } });
+				this.toastService.success('Message sent successfully');
+			},
+			error: (err) => {
+				this.toastService.error(err.error?.message || 'Failed to send message');
+			}
+		});
+	}
 }

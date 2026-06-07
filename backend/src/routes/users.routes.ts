@@ -6,7 +6,7 @@ import {
   getUserById,
   approveUser,
   rejectUser,
-  updateUser,
+  suspendUser,
 } from '../controllers/users.controller';
 
 const router = Router();
@@ -17,13 +17,13 @@ router.get('/', authenticate, requireRole('admin'), getAllUsers);
 // GET /api/users/:id - Authenticated: get user by id
 router.get('/:id', authenticate, getUserById);
 
-// PATCH /api/users/:id - Authenticated: update own profile (admin can update any)
-router.patch('/:id', authenticate, updateUser);
-
 // PATCH /api/users/:id/approve - Admin only
 router.patch('/:id/approve', authenticate, requireRole('admin'), approveUser);
 
-// PATCH /api/users/:id/reject - Admin only
+// PATCH /api/users/:id/reject - Admin only (pending users only)
 router.patch('/:id/reject', authenticate, requireRole('admin'), rejectUser);
+
+// PATCH /api/users/:id/suspend - Admin only (approved users only)
+router.patch('/:id/suspend', authenticate, requireRole('admin'), suspendUser);
 
 export default router;

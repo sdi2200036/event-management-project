@@ -1,142 +1,256 @@
-<div class="container py-4" *ngIf="!loading && !error && event">
-  <div class="row">
-    <!-- Main Content -->
-    <div class="col-lg-8">
-      <!-- Photos -->
-      <div *ngIf="event.photos && event.photos.length > 0" class="mb-4">
-        <img [src]="event.photos[0]" class="img-fluid rounded shadow-sm w-100" style="max-height: 400px; object-fit: cover;" [alt]="event.title" />
-      </div>
-
-      <!-- Header -->
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-          <h1 class="fw-bold mb-1">{{ event.title }}</h1>
-          <div class="d-flex gap-2 flex-wrap mb-2">
-            <span class="badge bg-primary">{{ event.event_type }}</span>
-            <span
-              class="badge"
-              [ngClass]="{
-                'bg-success': event.status === 'PUBLISHED',
-                'bg-secondary': event.status === 'DRAFT',
-                'bg-danger': event.status === 'CANCELLED',
-                'bg-info': event.status === 'COMPLETED'
-              }"
-            >{{ event.status }}</span>
-            <span *ngFor="let cat of event.categories" class="badge bg-light text-dark border">{{ cat }}</span>
-          </div>
-        </div>
-
-        <!-- Organizer Actions -->
-        <div *ngIf="isOwner || isOrganizer" class="d-flex gap-2">
-          <a *ngIf="event.status === 'DRAFT'" [routerLink]="['/manage/events', event.id, 'edit']" class="btn btn-sm btn-outline-primary">Edit</a>
-          <button *ngIf="event.status === 'DRAFT'" class="btn btn-sm btn-success" (click)="publishEvent()">Publish</button>
-          <button *ngIf="event.status === 'PUBLISHED'" class="btn btn-sm btn-warning" (click)="cancelEvent()">Cancel Event</button>
-          <button *ngIf="event.status === 'DRAFT'" class="btn btn-sm btn-danger" (click)="deleteEvent()">Delete</button>
-        </div>
-      </div>
-
-      <!-- Description -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h5 class="card-title">About this Event</h5>
-          <p class="card-text" style="white-space: pre-line;">{{ event.description || 'No description provided.' }}</p>
-        </div>
-      </div>
-
-      <!-- Map -->
-      <div *ngIf="event.geo_lat && event.geo_lng" class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Location</h5>
-          <p class="text-muted mb-2">
-            {{ event.venue ? event.venue + ', ' : '' }}{{ event.address }}, {{ event.city }}, {{ event.country }}
-          </p>
-          <div id="event-map" style="height: 300px; border-radius: 8px;"></div>
-        </div>
-      </div>
-
-      <!-- No map location text -->
-      <div *ngIf="!event.geo_lat || !event.geo_lng" class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-          <h5 class="card-title">Location</h5>
-          <p class="text-muted">
-            {{ event.venue ? event.venue + ', ' : '' }}
-            {{ event.address ? event.address + ', ' : '' }}
-            {{ event.city }}, {{ event.country }}
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sidebar -->
-    <div class="col-lg-4">
-      <!-- Event Info Card -->
-      <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-          <h5 class="card-title mb-3">Event Details</h5>
-          <ul class="list-unstyled">
-            <li class="mb-2">
-              <strong>Date:</strong>
-              {{ event.start_datetime | date:'EEEE, MMMM d, y' }}
-            </li>
-            <li class="mb-2">
-              <strong>Time:</strong>
-              {{ event.start_datetime | date:'HH:mm' }} - {{ event.end_datetime | date:'HH:mm' }}
-            </li>
-            <li class="mb-2">
-              <strong>Venue:</strong> {{ event.venue || 'TBA' }}
-            </li>
-            <li class="mb-2">
-              <strong>City:</strong> {{ event.city }}, {{ event.country }}
-            </li>
-            <li class="mb-2">
-              <strong>Capacity:</strong> {{ event.capacity }} attendees
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Ticket Types -->
-      <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-          <h5 class="card-title mb-3">Ticket Types</h5>
-          <div *ngIf="!event.ticket_types || event.ticket_types.length === 0" class="text-success fw-semibold">
-            Free Entry
-          </div>
-          <div *ngFor="let tt of event.ticket_types" class="d-flex justify-content-between align-items-center py-2 border-bottom">
-            <div>
-              <div class="fw-semibold">{{ tt.name }}</div>
-              <small class="text-muted">{{ tt.available }} available</small>
-            </div>
-            <div class="fw-bold text-primary">€{{ tt.price }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Book Now Button (Participant only, published events) -->
-      <div *ngIf="isLoggedIn && isParticipant && event.status === 'PUBLISHED'">
-        <a
-          [routerLink]="['/events', event.id, 'book']"
-          class="btn btn-primary btn-lg w-100"
-        >
-          Book Now {{ minTicketPrice > 0 ? ('from €' + minTicketPrice) : '(Free)' }}
-        </a>
-      </div>
-
-      <!-- Guest prompt -->
-      <div *ngIf="!isLoggedIn">
-        <a routerLink="/login" class="btn btn-outline-primary btn-lg w-100">
-          Login to Book
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div *ngIf="loading" class="text-center py-5">
-  <div class="spinner-border text-primary" role="status"></div>
-</div>
-
-<div *ngIf="error" class="container py-5">
-  <div class="alert alert-danger">{{ error }}</div>
-  <a routerLink="/events" class="btn btn-primary">Back to Events</a>
+<div class="container py-4">
+	<button type="button" class="btn btn-lg btn-link mb-3 p-0" (click)="this.goBack()">
+		<i class="bi bi-arrow-left"></i> Back to Events
+	</button>
+	<div class="row">
+		<!-- Main Content -->
+		<div class="col-lg-8">
+			<!-- Photos -->
+			@if (this.event().photos && this.event().photos!.length > 0) {
+				<div class="mb-4">
+					<img
+						[src]="this.event().photos![0]"
+						class="img-fluid rounded shadow-sm w-100"
+						style="max-height: 400px; object-fit: cover"
+						[alt]="this.event().title"
+					/>
+					@if (this.event().photos!.length > 1) {
+						<div class="row g-2 mt-2">
+							@for (photo of this.event().photos!.slice(1); track $index) {
+								<div class="col-4">
+									<img
+										[src]="photo"
+										class="img-fluid rounded shadow-sm"
+										style="height: 130px; width: 100%; object-fit: cover"
+										[alt]="this.event().title"
+									/>
+								</div>
+							}
+						</div>
+					}
+				</div>
+			}
+			<!-- Header -->
+			<div class="d-flex justify-content-between align-items-start mb-3">
+				<div>
+					<h1 class="fw-bold mb-1">{{ this.event().title }}</h1>
+					<div class="d-flex gap-2 flex-wrap mb-2">
+						<span class="badge bg-primary">{{ this.event().event_type }}</span>
+						<span
+							class="badge"
+							[ngClass]="{
+								'bg-success': this.event().status === 'PUBLISHED',
+								'bg-secondary': this.event().status === 'DRAFT',
+								'bg-danger': this.event().status === 'CANCELLED',
+								'bg-info': this.event().status === 'COMPLETED'
+							}"
+							>{{ this.event().status }}</span
+						>
+						@for (cat of this.event().categories; track cat) {
+							<span class="badge bg-light text-dark border">{{ cat }}</span>
+						}
+					</div>
+				</div>
+				<!-- Organizer Actions -->
+				@if (this.isOwner() && this.isManageMode()) {
+					<div class="d-flex gap-2">
+						@if (this.event().status === 'DRAFT') {
+							<button class="btn btn-sm btn-success" (click)="this.publishEvent()">Publish</button>
+							<button type="button" (click)="this.goToEditEvent()" class="btn btn-sm btn-outline-primary">
+								Edit
+							</button>
+							<button class="btn btn-sm btn-danger" (click)="this.deleteEvent()">Delete</button>
+						}
+						@if (this.event().status === 'PUBLISHED') {
+							<button type="button" (click)="this.goToEditEvent()" class="btn btn-sm btn-outline-primary">
+								Edit
+							</button>
+							<button class="btn btn-sm btn-warning" (click)="this.cancelEvent()">Cancel Event</button>
+							@if (this.bookings().filter((b) => b.booking_status === 'CANCELLED').length === 0) {
+								<button class="btn btn-sm btn-danger" (click)="this.deleteEvent()">Delete</button>
+							}
+						}
+					</div>
+				}
+			</div>
+			<!-- Description -->
+			<div class="card border-0 shadow-sm mb-4">
+				<div class="card-body">
+					<h5 class="card-title">About this Event</h5>
+					<p class="card-text" style="white-space: pre-line">
+						{{ this.event().description || 'No description provided.' }}
+					</p>
+				</div>
+			</div>
+			<!-- Map -->
+			<div class="card border-0 shadow-sm mb-4">
+				<div class="card-body">
+					<h5 class="card-title">Location</h5>
+					<p class="text-muted mb-2">
+						{{ this.event().venue ? this.event().venue + ', ' : '' }}{{ this.event().address }},
+						{{ this.event().city }},
+						{{ this.event().country }}
+					</p>
+					@if (this.event().geo_lat && this.event().geo_lng) {
+						<app-map-view
+							[lat]="this.event().geo_lat!"
+							[lng]="this.event().geo_lng!"
+							[label]="this.event().title"
+							height="300px"
+						></app-map-view>
+					}
+				</div>
+			</div>
+			<!-- Attendees (owner only) -->
+			@if (this.isOwner() && this.isManageMode()) {
+				<div class="card border-0 shadow-sm mb-4">
+					<div class="card-body">
+						<h5 class="card-title mb-3">Attendees</h5>
+						@if (this.bookings().length === 0) {
+							<div class="text-muted">No bookings yet.</div>
+						} @else {
+							<div class="table-responsive">
+								<table class="table table-sm align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>Attendee</th>
+											<th>Booked At</th>
+											<th>Ticket Type</th>
+											<th class="text-center">Qty</th>
+											<th class="text-end">Total</th>
+											<th class="text-center">Status</th>
+										</tr>
+									</thead>
+									<tbody>
+										@for (booking of this.bookings(); track booking.id) {
+											<tr>
+												<td>
+													<div class="fw-semibold">{{ booking.attendee_username }}</div>
+													<small class="text-muted">{{ booking.attendee_email }}</small>
+												</td>
+												<td>
+													<small>{{ booking.booked_at | date: 'dd MMM y, HH:mm' }}</small>
+												</td>
+												<td>{{ booking.ticket_type_name }}</td>
+												<td class="text-center">{{ booking.number_of_tickets }}</td>
+												<td class="text-end fw-semibold">€{{ booking.total_cost }}</td>
+												<td class="text-center">
+													<span
+														class="badge"
+														[ngClass]="{
+															'bg-success': booking.booking_status === 'CONFIRMED',
+															'bg-warning text-dark':
+																booking.booking_status === 'PENDING',
+															'bg-danger': booking.booking_status === 'CANCELLED'
+														}"
+														>{{ booking.booking_status }}</span
+													>
+												</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+						}
+					</div>
+				</div>
+			}
+		</div>
+		<!-- Sidebar -->
+		<div class="col-lg-4">
+			<!-- Event Info Card -->
+			<div class="card border-0 shadow-sm mb-3">
+				<div class="card-body">
+					<h5 class="card-title mb-3">Event Details</h5>
+					<ul class="list-unstyled">
+						<li class="mb-2">
+							<strong>Date:</strong>
+							{{ this.event()!.start_datetime | date: 'EEEE, MMMM d, y' }}
+						</li>
+						<li class="mb-2">
+							<strong>Time:</strong>
+							{{ this.event()!.start_datetime | date: 'HH:mm' }}
+						</li>
+						<li class="mb-2"><strong>Venue:</strong> {{ this.event()!.venue || 'TBA' }}</li>
+						<li class="mb-2">
+							<strong>City:</strong> {{ this.event()!.city }}, {{ this.event()!.country }}
+						</li>
+						<li class="mb-2"><strong>Capacity:</strong> {{ this.event()!.capacity }} attendees</li>
+					</ul>
+				</div>
+			</div>
+			<!-- Organizer Card (visible to non-owners) -->
+			@if (!this.isOwner() && this.event().organizer_username) {
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<h5 class="card-title mb-3">Organizer</h5>
+						<div class="d-flex align-items-center gap-3 mb-3">
+							<div
+								class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+								style="width: 48px; height: 48px; font-size: 1.2rem"
+							>
+								{{
+									(this.event().organizer_first_name || this.event().organizer_username)!
+										.charAt(0)
+										.toUpperCase()
+								}}
+							</div>
+							<div>
+								@if (this.event().organizer_first_name || this.event().organizer_last_name) {
+									<div class="fw-semibold">
+										{{ this.event().organizer_first_name }}
+										{{ this.event().organizer_last_name }}
+									</div>
+								}
+								<div class="text-muted small">&#64;{{ this.event().organizer_username }}</div>
+							</div>
+						</div>
+						@if (this.isLoggedIn()) {
+							<button
+								type="button"
+								class="btn btn-outline-primary btn-sm w-100"
+								(click)="this.messageOrganizer()"
+							>
+								Message Organizer
+							</button>
+						}
+					</div>
+				</div>
+			}
+			<!-- Ticket Types -->
+			<div class="card border-0 shadow-sm mb-3">
+				<div class="card-body">
+					<h5 class="card-title mb-3">Ticket Types</h5>
+					@if (!this.event().ticket_types || this.event().ticket_types?.length === 0) {
+						<div class="text-success fw-semibold">Free Entry</div>
+					}
+					@for (tt of this.event().ticket_types; track tt) {
+						<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+							<div>
+								<div class="fw-semibold">{{ tt.name }}</div>
+								<small class="text-muted">{{ tt.available }} available</small>
+							</div>
+							<div class="fw-bold text-primary">€{{ tt.price }}</div>
+						</div>
+					}
+				</div>
+			</div>
+			<!-- Book Now Button (Participant only, published events) -->
+			@if (this.isLoggedIn() && this.isParticipant() && this.event().status === 'PUBLISHED') {
+				<div>
+					<button type="button" (click)="this.goToBookEvent()" class="btn btn-primary btn-lg w-100">
+						Book Now {{ this.minTicketPrice() > 0 ? 'from €' + this.minTicketPrice() : '(Free)' }}
+					</button>
+				</div>
+			}
+			<!-- Guest prompt -->
+			@else if (!this.isLoggedIn()) {
+				<div>
+					<button type="button" (click)="this.goToLogin()" class="btn btn-outline-primary btn-lg w-100">
+						Login to Book
+					</button>
+				</div>
+			}
+		</div>
+	</div>
 </div>

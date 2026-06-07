@@ -1,0 +1,17 @@
+{
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"prettier.resolveGlobalModules": false,
+	"prettier.useEditorConfig": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit",
+		"source.organizeImports": "explicit"
+	},
+
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[html]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
+}

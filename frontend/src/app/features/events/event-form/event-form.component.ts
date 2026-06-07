@@ -1,164 +1,253 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { Component, computed, input, InputSignal, linkedSignal, Signal, WritableSignal } from '@angular/core';
+import {
+	applyEach,
+	FieldState,
+	form,
+	FormField,
+	maxLength,
+	min,
+	minLength,
+	required,
+	submit,
+	validate
+} from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, firstValueFrom, of, switchMap } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
-import { Event } from '../../../shared/models/event.model';
+import { ToastService } from '../../../core/services/toast.service';
+import { LatLng, MapPickerComponent } from '../../../shared/components/map-picker/map-picker.component';
+import { EventCategory, Event as EventModel } from '../../../shared/models/event.model';
+
+type EventFormModel = {
+	title: string;
+	event_type: string;
+	description: string;
+	venue: string;
+	address: string;
+	city: string;
+	country: string;
+	geo_lat: number | null;
+	geo_lng: number | null;
+	start_datetime: string;
+	end_datetime: string;
+	capacity: number;
+	categories: EventCategory[];
+	ticket_types: Array<{ name: string; price: number; quantity: number }>;
+};
 
 @Component({
-  selector: 'app-event-form',
-  templateUrl: './event-form.component.html',
+	selector: 'app-event-form',
+	templateUrl: './event-form.component.html',
+	standalone: true,
+	imports: [FormField, MapPickerComponent]
 })
-export class EventFormComponent implements OnInit {
-  eventForm: FormGroup;
-  isEditMode: boolean = false;
-  eventId: number | null = null;
-  loading: boolean = false;
-  error: string = '';
-  success: string = '';
+export class EventFormComponent {
+	// Resolved event data for edit mode (null/undefined for create mode)
+	public readonly event: InputSignal<EventModel | null> = input<EventModel | null>(null, { alias: 'eventData' });
 
-  categories = [
-    'Music', 'Sports', 'Arts', 'Technology', 'Business',
-    'Food & Drink', 'Health', 'Community', 'Film', 'Fashion', 'Education', 'Other',
-  ];
+	public readonly eventModel: WritableSignal<EventFormModel> = linkedSignal<EventFormModel>(() => ({
+		title: this.event()?.title || '',
+		event_type: this.event()?.event_type || '',
+		description: this.event()?.description || '',
+		venue: this.event()?.venue || '',
+		address: this.event()?.address || '',
+		city: this.event()?.city || '',
+		country: this.event()?.country || '',
+		geo_lat: this.event()?.geo_lat || null,
+		geo_lng: this.event()?.geo_lng || null,
+		start_datetime: this.event()?.start_datetime ? this.toLocalDatetimeString(this.event()!.start_datetime) : '',
+		end_datetime: this.event()?.end_datetime ? this.toLocalDatetimeString(this.event()!.end_datetime) : '',
+		capacity: this.event()?.capacity || 100,
+		categories: this.event()?.categories || [],
+		ticket_types: (this.event()?.ticket_types || []).length
+			? this.event()!.ticket_types!.map((tt) => ({
+					name: tt.name,
+					price: tt.price,
+					quantity: tt.quantity
+				}))
+			: [{ name: '', price: 0, quantity: 100 }]
+	}));
 
-  constructor(
-    private fb: FormBuilder,
-    private eventService: EventService,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {
-    this.eventForm = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(255)]],
-      event_type: [''],
-      description: [''],
-      venue: [''],
-      address: [''],
-      city: [''],
-      country: [''],
-      geo_lat: [null],
-      geo_lng: [null],
-      start_datetime: ['', Validators.required],
-      end_datetime: ['', Validators.required],
-      capacity: [100, [Validators.required, Validators.min(1)]],
-      categories: [[]],
-      ticket_types: this.fb.array([]),
-    });
-  }
+	public readonly eventForm = form(this.eventModel, (p) => {
+		required(p.title, { message: 'Title is required' });
+		maxLength(p.title, 255, { message: 'Title must be at most 255 characters' });
 
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.isEditMode = true;
-      this.eventId = parseInt(id, 10);
-      this.loadEvent(this.eventId);
-    } else {
-      this.addTicketType(); // Add one ticket type by default
-    }
-  }
+		required(p.start_datetime, { message: 'Start date/time is required' });
+		required(p.end_datetime, { message: 'End date/time is required' });
 
-  loadEvent(id: number): void {
-    this.loading = true;
-    this.eventService.getEvent(id).subscribe({
-      next: (event: Event) => {
-        this.eventForm.patchValue({
-          title: event.title,
-          event_type: event.event_type,
-          description: event.description,
-          venue: event.venue,
-          address: event.address,
-          city: event.city,
-          country: event.country,
-          geo_lat: event.geo_lat,
-          geo_lng: event.geo_lng,
-          start_datetime: event.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 16) : '',
-          end_datetime: event.end_datetime ? new Date(event.end_datetime).toISOString().slice(0, 16) : '',
-          capacity: event.capacity,
-          categories: event.categories || [],
-        });
+		required(p.capacity, { message: 'Capacity is required' });
+		min(p.capacity, 1, { message: 'Capacity must be at least 1' });
 
-        // Load ticket types
-        this.ticketTypes.clear();
-        (event.ticket_types || []).forEach((tt) => {
-          this.ticketTypes.push(this.createTicketType(tt.name, tt.price, tt.quantity));
-        });
-        if (this.ticketTypes.length === 0) this.addTicketType();
+		applyEach(p.ticket_types, (tt) => {
+			required(tt.name, { message: 'Ticket type name is required' });
+			required(tt.price, { message: 'Price is required' });
+			min(tt.price, 0, { message: 'Price must be greater or equal to 0' });
+			required(tt.quantity, { message: 'Quantity is required' });
+			min(tt.quantity, 1, { message: 'Quantity must be at least 1' });
+		});
 
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load event';
-        this.loading = false;
-      },
-    });
-  }
+		required(p.geo_lat, { message: 'Location is required' });
 
-  get ticketTypes(): FormArray {
-    return this.eventForm.get('ticket_types') as FormArray;
-  }
+		minLength(p.categories, 1, { message: 'At least one category must be selected' });
 
-  createTicketType(name = '', price = 0, quantity = 100): FormGroup {
-    return this.fb.group({
-      name: [name, Validators.required],
-      price: [price, [Validators.required, Validators.min(0)]],
-      quantity: [quantity, [Validators.required, Validators.min(1)]],
-    });
-  }
+		validate(p.end_datetime, ({ valueOf }) => {
+			const start = valueOf(p.start_datetime);
+			const end = valueOf(p.end_datetime);
+			if (start && end && new Date(end) <= new Date(start)) {
+				return [
+					{ kind: 'field', field: p.end_datetime, message: 'End date/time must be after start date/time' }
+				];
+			}
+			return undefined;
+		});
 
-  addTicketType(): void {
-    this.ticketTypes.push(this.createTicketType());
-  }
+		validate(p.ticket_types, ({ valueOf }) => {
+			if (valueOf(p.capacity) < valueOf(p.ticket_types).reduce((sum, tt) => sum + tt.quantity, 0)) {
+				return [
+					{ kind: 'form', field: 'capacity', message: 'Capacity cannot be less than total ticket quantity' }
+				];
+			}
+			return undefined;
+		});
+	});
 
-  removeTicketType(index: number): void {
-    this.ticketTypes.removeAt(index);
-  }
+	public readonly isEditMode: Signal<boolean> = computed(() => !!this.event());
+	public readonly photos: WritableSignal<string[]> = linkedSignal<string[]>(() => this.event()?.photos ?? []);
 
-  toggleCategory(cat: string): void {
-    const current: string[] = this.eventForm.get('categories')?.value || [];
-    const idx = current.indexOf(cat);
-    if (idx > -1) {
-      current.splice(idx, 1);
-    } else {
-      current.push(cat);
-    }
-    this.eventForm.get('categories')?.setValue([...current]);
-  }
+	public categories: EventCategory[] = Object.values(EventCategory);
 
-  isCategorySelected(cat: string): boolean {
-    return (this.eventForm.get('categories')?.value || []).includes(cat);
-  }
+	constructor(
+		private eventService: EventService,
+		private router: Router,
+		private toastService: ToastService,
+		private activatedRoute: ActivatedRoute
+	) {}
 
-  onSubmit(): void {
-    if (this.eventForm.invalid) return;
+	private toLocalDatetimeString(isoString: string): string {
+		const d = new Date(isoString);
+		const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+		return local.toISOString().slice(0, 16);
+	}
 
-    this.loading = true;
-    this.error = '';
+	public onCoordsChange(coords: LatLng | null): void {
+		this.eventModel.update((current) => ({
+			...current,
+			geo_lat: coords?.lat ?? null,
+			geo_lng: coords?.lng ?? null
+		}));
+	}
 
-    const formValue = this.eventForm.value;
+	// Photo Management
 
-    if (this.isEditMode && this.eventId) {
-      this.eventService.updateEvent(this.eventId, formValue).subscribe({
-        next: () => {
-          this.success = 'Event updated successfully!';
-          this.loading = false;
-          setTimeout(() => this.router.navigate(['/manage/events']), 1500);
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Failed to update event';
-          this.loading = false;
-        },
-      });
-    } else {
-      this.eventService.createEvent(formValue).subscribe({
-        next: (event) => {
-          this.success = 'Event created successfully!';
-          this.loading = false;
-          setTimeout(() => this.router.navigate(['/manage/events']), 1500);
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Failed to create event';
-          this.loading = false;
-        },
-      });
-    }
-  }
+	public onPhotosSelected(event: Event): void {
+		const input = event.target as HTMLInputElement;
+		if (!input.files) return;
+
+		Array.from(input.files).forEach((file) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				this.photos.update((current) => [...current, reader.result as string]);
+			};
+			reader.readAsDataURL(file);
+		});
+
+		// Reset so the same file can be selected again if removed
+		input.value = '';
+	}
+
+	public removePhoto(index: number): void {
+		this.photos.update((current) => current.filter((_, i) => i !== index));
+	}
+
+	// Form Actions
+
+	public addTicketType(): void {
+		this.eventModel.update((current) => ({
+			...current,
+			ticket_types: [...current.ticket_types, { name: '', price: 0, quantity: 100 }]
+		}));
+	}
+
+	public removeTicketType(index: number): void {
+		this.eventModel.update((current) => ({
+			...current,
+			ticket_types:
+				current.ticket_types.length <= 1
+					? current.ticket_types
+					: current.ticket_types.filter((_, i) => i !== index)
+		}));
+	}
+
+	public toggleCategory(cat: EventCategory): void {
+		const current: EventCategory[] = [...this.eventModel().categories];
+		const idx: number = current.indexOf(cat);
+		if (idx > -1) {
+			current.splice(idx, 1);
+		} else {
+			current.push(cat);
+		}
+		this.eventModel.update((value) => ({ ...value, categories: current }));
+	}
+
+	public isCategorySelected(cat: EventCategory): boolean {
+		return this.eventModel().categories.includes(cat);
+	}
+
+	public cancel(): void {
+		this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+	}
+
+	public async onSubmit(event: Event): Promise<void> {
+		event.preventDefault();
+
+		await submit(this.eventForm, (form) => {
+			const formValue = form().value();
+			const payload = {
+				...formValue,
+				photos: this.photos(),
+				categories: formValue.categories as EventCategory[],
+				geo_lat: formValue.geo_lat ?? undefined,
+				geo_lng: formValue.geo_lng ?? undefined,
+				ticket_types: formValue.ticket_types.map((tt) => ({
+					...tt,
+					available: tt.quantity
+				}))
+			};
+
+			const eventData = this.event();
+			if (this.isEditMode() && eventData) {
+				return firstValueFrom(
+					this.eventService.updateEvent(eventData.id, payload).pipe(
+						switchMap(() => {
+							this.toastService.success('Event updated successfully');
+							this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+							return of(undefined);
+						}),
+						catchError((err) => {
+							this.toastService.error(err.error?.message || 'Failed to update event');
+							return of(undefined);
+						})
+					)
+				);
+			} else {
+				return firstValueFrom(
+					this.eventService.createEvent(payload).pipe(
+						switchMap(() => {
+							this.toastService.success('Event created successfully');
+							this.router.navigate(['../'], { relativeTo: this.activatedRoute });
+							return of(undefined);
+						}),
+						catchError((err) => {
+							this.toastService.error(err.error?.message || 'Failed to create event');
+							return of(undefined);
+						})
+					)
+				);
+			}
+		});
+	}
+
+	protected isFieldInvalid(field: FieldState<unknown>): boolean {
+		return field.touched() && !field.valid();
+	}
 }

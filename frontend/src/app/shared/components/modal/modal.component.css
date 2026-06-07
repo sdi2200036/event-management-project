@@ -1,0 +1,33 @@
+@keyframes modalFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes backdropFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 0.35;
+	}
+}
+
+.modal-enter .modal-dialog {
+	animation: modalFadeIn 0.2s ease-out both;
+}
+
+.modal-backdrop-enter {
+	animation: backdropFadeIn 0.2s ease-out both;
+	opacity: 0.35;
+	z-index: 1040;
+}
+
+.modal {
+	z-index: 1050;
+}
