@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
 import helmet from 'helmet';
+import http from 'http';
 import https from 'https';
 import path from 'path';
 
@@ -62,24 +63,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 const PORT = process.env.PORT || 3000;
-const keyPath = path.resolve(process.env.SSL_KEY_PATH || './certs/key.pem');
-const certPath = path.resolve(process.env.SSL_CERT_PATH || './certs/cert.pem');
-
-if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-	console.error('SSL certificate files not found.');
-	console.error(`Expected key:  ${keyPath}`);
-	console.error(`Expected cert: ${certPath}`);
-	console.error('Generate them with:');
-	console.error(
-		'  mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"'
-	);
-	process.exit(1);
-}
-
-const sslOptions = {
-	key: fs.readFileSync(keyPath),
-	cert: fs.readFileSync(certPath)
-};
+const isProduction = process.env.NODE_ENV === 'production';
 
 const runCompleteExpired = async () => {
 	const count = await completeExpiredEvents();
@@ -91,15 +75,40 @@ const runTrainModel = async () => {
 	console.log('Recommendation model trained');
 };
 
-const server = https.createServer(sslOptions, app);
-
-server.listen(PORT, async () => {
-	console.log(`HTTPS server running on port ${PORT}`);
+const onListening = async () => {
+	console.log(`${isProduction ? 'HTTP' : 'HTTPS'} server running on port ${PORT}`);
 	await runCompleteExpired();
 	await runTrainModel();
 	setInterval(runCompleteExpired, 5 * 60 * 1000);
 	setInterval(runTrainModel, 60 * 60 * 1000);
-});
+};
+
+let server: http.Server;
+
+if (isProduction) {
+	server = http.createServer(app);
+} else {
+	const keyPath = path.resolve(process.env.SSL_KEY_PATH || './certs/key.pem');
+	const certPath = path.resolve(process.env.SSL_CERT_PATH || './certs/cert.pem');
+
+	if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+		console.error('SSL certificate files not found.');
+		console.error(`Expected key:  ${keyPath}`);
+		console.error(`Expected cert: ${certPath}`);
+		console.error('Generate them with:');
+		console.error(
+			'  mkdir -p certs && openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"'
+		);
+		process.exit(1);
+	}
+
+	server = https.createServer(
+		{ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) },
+		app
+	) as unknown as http.Server;
+}
+
+server.listen(PORT, onListening);
 
 process.on('SIGTERM', async () => {
 	await prisma.$disconnect();
