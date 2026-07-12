@@ -1,32 +1,59 @@
 # Event Management & Online Booking System
 
-A full-stack web application for managing events and online ticket booking. Built as a university assignment (ΤΕΔ 2026).
+A full-stack web application for managing events and online ticket booking, built as a university assignment (ΤΕΔ 2026).
 
-Users can register, browse events, book tickets, and message each other. Organizers create and manage events. Admins approve accounts and export data.
+Users can register, browse events, book tickets, and message each other. Organizers create and manage events. Admins approve accounts and export data. The system includes a personalized recommendation engine built from scratch using Biased Matrix Factorization.
 
 ---
 
-## How It Works (Big Picture)
+## Live Demo
 
-The app is split into two separate programs that run at the same time:
+| | URL |
+|--|--|
+| **Frontend** | https://event-management-project-gd26.vercel.app |
+| **Backend API** | https://event-management-project-production.up.railway.app/api/health |
 
-- **Backend** - a REST API server (Node.js + Express + Prisma) that handles all business logic, talks to the database, and responds to HTTPS requests. Runs on port `3000` over **HTTPS**.
-- **Frontend** - an Angular app served over HTTP on port `4200`. It talks to the backend via HTTPS.
-- **Database** - PostgreSQL stores all data (users, events, bookings, messages). Prisma is used as the ORM.
+**Demo login:** `admin` / `admin123`
 
-When you open `http://localhost:4200`, the Angular app loads in your browser. Every action (login, create event, book ticket) sends an HTTPS request to `https://localhost:3000/api/...`, which the backend handles and responds to with JSON.
+---
+
+## How It Works
+
+The app is split into two separate services:
+
+- **Backend** — a REST API server (Node.js + Express + Prisma) that handles all business logic and talks to the database.
+- **Frontend** — an Angular SPA that communicates with the backend via HTTPS.
+- **Database** — PostgreSQL stores all data (users, events, bookings, messages).
 
 ```
-Browser (localhost:4200)
-        |
-        | HTTPS requests (JSON)
-        v
-Backend API (https://localhost:3000)
-        |
-        | Prisma ORM
-        v
-PostgreSQL Database
+Browser (Vercel)
+      |
+      | HTTPS requests (JSON)
+      v
+Backend API (Railway)
+      |
+      | Prisma ORM
+      v
+PostgreSQL (Railway)
 ```
+
+In local development the backend runs its own HTTPS server with a self-signed certificate. In production, Railway and Vercel handle TLS termination and the backend runs plain HTTP internally.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Why |
+|-------|------------|-----|
+| Backend | Node.js + Express + TypeScript | Fast, typed REST API |
+| ORM | Prisma | Type-safe DB access, versioned migrations |
+| Database | PostgreSQL | Relational data, strong consistency |
+| Auth | JWT + bcryptjs | Stateless authentication, secure passwords |
+| Frontend | Angular 21 | Component-based SPA framework |
+| Maps | OpenStreetMap | Free interactive maps |
+| UI | Bootstrap 5 | Responsive layout |
+| Backend hosting | Railway | Auto-deploys from GitHub, managed PostgreSQL |
+| Frontend hosting | Vercel | Auto-deploys from GitHub, global CDN |
 
 ---
 
@@ -56,9 +83,14 @@ project/
 │   │   ├── middleware/
 │   │   │   ├── auth.middleware.ts  # Checks JWT token on every protected request
 │   │   │   └── role.middleware.ts  # Checks user role (admin/organizer/participant)
+│   │   ├── services/
+│   │   │   ├── recommendation.service.ts  # Biased Matrix Factorization engine
+│   │   │   ├── event.service.ts
+│   │   │   ├── booking.service.ts
+│   │   │   └── ...
 │   │   └── utils/
 │   │       └── jwt.utils.ts        # Sign and verify JWT tokens
-│   ├── certs/                      # SSL certificates (gitignored, generate locally)
+│   ├── certs/                      # SSL certificates (gitignored, local dev only)
 │   ├── .env.example                # Template for environment variables
 │   └── package.json
 │
@@ -72,10 +104,10 @@ project/
             │   ├── interceptors/
             │   │   └── jwt.interceptor.ts  # Automatically adds JWT to every request
             │   └── services/
-            │       ├── auth.service.ts     # Login, register, logout, current user
-            │       ├── event.service.ts    # API calls for events
-            │       ├── booking.service.ts  # API calls for bookings
-            │       └── message.service.ts  # API calls for messages
+            │       ├── auth.service.ts
+            │       ├── event.service.ts
+            │       ├── booking.service.ts
+            │       └── message.service.ts
             ├── features/
             │   ├── welcome/                # Landing page
             │   ├── auth/                   # Login and Register pages
@@ -92,45 +124,82 @@ project/
 
 ## User Roles
 
-| Role            | What they can do                                                    |
-| --------------- | ------------------------------------------------------------------- |
-| **Guest**       | Browse and search published events                                  |
-| **Participant** | Book tickets, view bookings, send messages                          |
-| **Organizer**   | Create/edit/publish/cancel events, view bookings for their events   |
-| **Admin**       | Approve/reject/suspend user accounts, manage all users, export data |
+| Role | What they can do |
+|------|-----------------|
+| **Guest** | Browse and search published events |
+| **Participant** | Book tickets, view bookings, send messages |
+| **Organizer** | Create/edit/publish/cancel events, view bookings for their events |
+| **Admin** | Approve/reject/suspend users, manage all users, export data |
 
-New accounts start as `pending` and must be approved by an Admin before they can log in. Approved users can later be `suspended`, which revokes their access without deleting their account.
-
----
-
-## Prerequisites
-
-You need the following installed on your machine (WSL/Ubuntu):
-
-- **Node.js v20+** - install via nvm (see below)
-- **PostgreSQL 14+**
-- **Angular CLI**
+New accounts start as `pending` and must be approved by an Admin before they can log in.
 
 ---
 
-## Setup (WSL / Ubuntu)
+## Deployment
 
-### Option A - Automated (recommended)
+The app is deployed with a split architecture: backend on Railway, frontend on Vercel.
 
-A setup script handles all steps below automatically (skips anything already done):
+### Architecture
+
+```
+Vercel (Frontend - Angular)
+        |
+        | HTTPS API calls
+        v
+Railway (Backend - Node.js/Express)
+        |
+        | Prisma ORM
+        v
+Railway (PostgreSQL)
+```
+
+### Backend — Railway
+
+Railway auto-deploys on every push to `deployment`. It runs:
+1. `npm install`
+2. `npm run build` → generates Prisma client + compiles TypeScript to `dist/`
+3. `npm start` → runs migrations + starts the HTTP server
+
+**Required environment variables on Railway:**
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Auto-injected by Railway when PostgreSQL is linked |
+| `NODE_ENV` | Set to `production` (switches server from HTTPS to HTTP) |
+| `JWT_SECRET` | Long random string for signing tokens |
+| `JWT_EXPIRES_IN` | e.g. `24h` |
+| `FRONTEND_URL` | Your Vercel URL, e.g. `https://your-app.vercel.app` |
+
+### Frontend — Vercel
+
+Vercel auto-deploys on every push to `master`. It runs:
+1. `ng build --configuration production`
+2. Serves the output from `dist/event-management-frontend/browser`
+
+The production API URL is configured in `frontend/src/environments/environment.prod.ts`. Angular's build system automatically uses this file when building with `--configuration production`.
+
+### Re-deploying
+
+Both services watch the `deployment` branch — pushing to `deployment` triggers an automatic redeploy on both Railway and Vercel with no manual steps needed.
+
+---
+
+## Local Development Setup (WSL / Ubuntu)
+
+### Option A — Automated (recommended)
 
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-After it finishes, follow the [Trust the certificate](#10-trust-the-self-signed-certificate) step manually - that one requires browser interaction.
+After it finishes, follow the [Trust the certificate](#10-trust-the-self-signed-certificate) step — that one requires browser interaction.
 
 ---
 
-### Option B - Manual Step-by-Step
+### Option B — Manual Step-by-Step
 
-### 1. Install Node.js v20 via nvm
+#### 1. Install Node.js v20 via nvm
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -141,13 +210,13 @@ nvm alias default 20
 node --version   # should print v20.x.x
 ```
 
-### 2. Install Angular CLI
+#### 2. Install Angular CLI
 
 ```bash
 npm install -g @angular/cli
 ```
 
-### 3. Install and start PostgreSQL
+#### 3. Install and start PostgreSQL
 
 ```bash
 sudo apt update
@@ -155,26 +224,26 @@ sudo apt install -y postgresql postgresql-client
 sudo service postgresql start
 ```
 
-### 4. Set a password for the postgres user
+#### 4. Set a password for the postgres user
 
 ```bash
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres123';"
 ```
 
-### 5. Create the database
+#### 5. Create the database
 
 ```bash
 sudo -u postgres psql -c "CREATE DATABASE eventmanagement;"
 ```
 
-### 6. Install backend dependencies
+#### 6. Install backend dependencies
 
 ```bash
 cd backend
 npm install
 ```
 
-### 7. Configure backend environment
+#### 7. Configure backend environment
 
 ```bash
 cp .env.example .env
@@ -184,7 +253,6 @@ Open `.env` and set your values:
 
 ```
 DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/eventmanagement"
-
 JWT_SECRET=any_long_random_string_here
 JWT_EXPIRES_IN=24h
 PORT=3000
@@ -193,40 +261,34 @@ SSL_KEY_PATH=./certs/key.pem
 SSL_CERT_PATH=./certs/cert.pem
 ```
 
-### 8. Apply database migrations and seed
+#### 8. Apply database migrations and seed
 
 ```bash
 npx prisma migrate deploy
 npx prisma db seed
 ```
 
-- `npx prisma migrate deploy` applies all versioned migrations from `prisma/migrations/` - this creates every table, enum, and index in the correct order.
+- `npx prisma migrate deploy` creates every table, enum, and index.
 - `npx prisma db seed` inserts the default admin account (`admin` / `admin123`).
 
-> **Making a schema change?** Edit `prisma/schema.prisma`, then run `npx prisma migrate dev --name describe_your_change`. This generates a new migration file, applies it, and keeps all teammates in sync - they just need to run `npx prisma migrate deploy` to catch up.
+> **Making a schema change?** Edit `prisma/schema.prisma`, then run `npx prisma migrate dev --name describe_your_change`.
 
-### 9. Generate SSL certificates
-
-The backend requires HTTPS. Generate a self-signed certificate for development:
+#### 9. Generate SSL certificates
 
 ```bash
 mkdir -p certs
 openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/CN=localhost"
 ```
 
-This creates `backend/certs/key.pem` and `backend/certs/cert.pem`. These files are gitignored and never committed.
-
-### 10. Trust the self-signed certificate {#10-trust-the-self-signed-certificate}
-
-The backend uses a self-signed certificate which browsers block by default. You need to accept it once:
+#### 10. Trust the self-signed certificate {#10-trust-the-self-signed-certificate}
 
 1. Start the backend (`npm run dev`)
 2. Open **https://localhost:3000/api/health** in your browser
-3. Click **Advanced** -> **Proceed to localhost** (or equivalent in your browser)
+3. Click **Advanced** → **Proceed to localhost**
 
-You only need to do this once per browser.
+You only need to do this once per browser session.
 
-### 11. Install frontend dependencies
+#### 11. Install frontend dependencies
 
 ```bash
 cd frontend
@@ -235,21 +297,21 @@ npm install
 
 ---
 
-## Running the App
+## Running Locally
 
 You need **two terminals open at the same time**.
 
-**Terminal 1 - Start the backend:**
+**Terminal 1 — backend:**
 
 ```bash
-sudo service postgresql start      # make sure DB is running
+sudo service postgresql start
 cd backend
 npm run dev
 ```
 
 You should see: `HTTPS server running on port 3000`
 
-**Terminal 2 - Start the frontend:**
+**Terminal 2 — frontend:**
 
 ```bash
 cd frontend
@@ -258,20 +320,17 @@ npm start
 
 You should see: `Application bundle generation complete`
 
-> **WSL users:** file change detection is already configured with polling (`--poll=2000`) so the browser auto-refreshes when you save a file. No extra setup needed.
+Open **http://localhost:4200**
 
-Open your browser at **http://localhost:4200**
+**Default admin login:** `admin` / `admin123`
 
-**Default admin login:**
-
-- Username: `admin`
-- Password: `admin123`
+> **WSL users:** file change detection is configured with polling (`--poll=2000`) — the browser auto-refreshes when you save a file.
 
 ---
 
 ## Every Time You Restart Your Machine
 
-PostgreSQL does not start automatically in WSL. Run this before starting the backend:
+PostgreSQL does not start automatically in WSL:
 
 ```bash
 sudo service postgresql start
@@ -279,131 +338,126 @@ sudo service postgresql start
 
 ---
 
-## API Endpoints Reference
+## API Endpoints
 
 ### Authentication
 
-| Method | URL                  | Description              |
-| ------ | -------------------- | ------------------------ |
-| POST   | `/api/auth/register` | Register new user        |
-| POST   | `/api/auth/login`    | Login, returns JWT token |
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login, returns JWT token |
 
 > Both auth endpoints are rate-limited to **20 requests per 15 minutes** per IP.
 
 ### Users
 
-| Method | URL                      | Auth  | Description                                                   |
-| ------ | ------------------------ | ----- | ------------------------------------------------------------- |
-| GET    | `/api/users`             | Admin | List all users (filter by role/status)                        |
-| GET    | `/api/users/:id`         | Any   | Get user profile (`afm` hidden unless self or admin)          |
-| PATCH  | `/api/users/:id/approve` | Admin | Approve a pending user                                        |
-| PATCH  | `/api/users/:id/reject`  | Admin | Reject a pending user (only works if status is `pending`)     |
-| PATCH  | `/api/users/:id/suspend` | Admin | Suspend an approved user (only works if status is `approved`) |
+| Method | URL | Auth | Description |
+|--------|-----|------|-------------|
+| GET | `/api/users` | Admin | List all users (filter by role/status) |
+| GET | `/api/users/:id` | Any | Get user profile |
+| PATCH | `/api/users/:id/approve` | Admin | Approve a pending user |
+| PATCH | `/api/users/:id/reject` | Admin | Reject a pending user |
+| PATCH | `/api/users/:id/suspend` | Admin | Suspend an approved user |
 
 ### Events
 
-| Method | URL                           | Description                           |
-| ------ | ----------------------------- | ------------------------------------- |
-| GET    | `/api/events`                 | Search/list published events (public) |
-| GET    | `/api/events/:id`             | Get event details (public)            |
-| GET    | `/api/events/my`              | Organizer's own events                |
-| GET    | `/api/events/recommendations` | Personalized recommendations          |
-| POST   | `/api/events`                 | Create event (organizer)              |
-| PUT    | `/api/events/:id`             | Edit event (organizer)                |
-| PATCH  | `/api/events/:id/publish`     | Publish a draft event                 |
-| PATCH  | `/api/events/:id/cancel`      | Cancel an event                       |
-| DELETE | `/api/events/:id`             | Delete a draft event                  |
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/events` | Search/list published events (public) |
+| GET | `/api/events/:id` | Get event details (public) |
+| GET | `/api/events/my` | Organizer's own events |
+| GET | `/api/events/recommendations` | Personalized recommendations |
+| POST | `/api/events` | Create event (organizer) |
+| PUT | `/api/events/:id` | Edit event (organizer) |
+| PATCH | `/api/events/:id/publish` | Publish a draft event |
+| PATCH | `/api/events/:id/cancel` | Cancel an event |
+| DELETE | `/api/events/:id` | Delete a draft event |
 
 ### Bookings
 
-| Method | URL                        | Description                                  |
-| ------ | -------------------------- | -------------------------------------------- |
-| POST   | `/api/bookings`            | Book tickets (participant)                   |
-| GET    | `/api/bookings/my`         | View own bookings                            |
-| GET    | `/api/bookings/event/:id`  | View bookings for an event (organizer/admin) |
-| PATCH  | `/api/bookings/:id/cancel` | Cancel a booking                             |
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/bookings` | Book tickets (participant) |
+| GET | `/api/bookings/my` | View own bookings |
+| GET | `/api/bookings/event/:id` | View bookings for an event (organizer/admin) |
+| PATCH | `/api/bookings/:id/cancel` | Cancel a booking |
 
 ### Messages
 
-| Method | URL                          | Description                                                 |
-| ------ | ---------------------------- | ----------------------------------------------------------- |
-| GET    | `/api/messages/inbox`        | View inbox (paginated, unread first)                        |
-| GET    | `/api/messages/sent`         | View sent messages (paginated)                              |
-| GET    | `/api/messages/unread-count` | Get number of unread messages                               |
-| POST   | `/api/messages`              | Send a message                                              |
-| PATCH  | `/api/messages/:id/read`     | Mark as read                                                |
-| DELETE | `/api/messages/:id`          | Delete a message (hard-deleted only when both sides delete) |
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/messages/inbox` | View inbox (paginated, unread first) |
+| GET | `/api/messages/sent` | View sent messages (paginated) |
+| GET | `/api/messages/unread-count` | Get unread count |
+| POST | `/api/messages` | Send a message |
+| PATCH | `/api/messages/:id/read` | Mark as read |
+| DELETE | `/api/messages/:id` | Delete a message |
 
 ### Export (Admin only)
 
-| Method | URL                | Description                 |
-| ------ | ------------------ | --------------------------- |
-| GET    | `/api/export/xml`  | Download all events as XML  |
-| GET    | `/api/export/json` | Download all events as JSON |
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/export/xml` | Download all events as XML |
+| GET | `/api/export/json` | Download all events as JSON |
 
 ---
 
 ## Database Schema
 
-The database has 8 tables, defined in `prisma/schema.prisma` and managed via Prisma Migrate:
+8 tables, defined in `prisma/schema.prisma` and managed via Prisma Migrate:
 
-| Table              | Description                                                  |
-| ------------------ | ------------------------------------------------------------ |
-| `users`            | All user accounts with role and approval status              |
-| `events`           | Events with location, dates, capacity, status                |
-| `event_categories` | Tags/categories per event (many per event)                   |
-| `event_photos`     | Photo URLs per event                                         |
-| `ticket_types`     | Ticket tiers per event (name, price, quantity, available)    |
-| `bookings`         | Ticket bookings linking users to events                      |
-| `messages`         | Internal messages between users                              |
-| `event_views`      | Tracks which users viewed which events (for recommendations) |
+| Table | Description |
+|-------|-------------|
+| `users` | All user accounts with role and approval status |
+| `events` | Events with location, dates, capacity, status |
+| `event_categories` | Tags/categories per event |
+| `event_photos` | Base64-encoded photos per event |
+| `ticket_types` | Ticket tiers per event (name, price, quantity) |
+| `bookings` | Ticket bookings linking users to events |
+| `messages` | Internal messages between users |
+| `event_views` | Tracks which users viewed which events (for recommendations) |
 
 ---
 
 ## Recommendation Algorithm
 
-The system uses **Biased Matrix Factorization (BMF)**, implemented from scratch, to suggest events to logged-in users.
+The system uses **Biased Matrix Factorization (BMF)**, implemented from scratch (no ML library), to suggest events to logged-in users.
+
+### The model
+
+```
+predicted_rating = μ + b_u + b_i + p_u · q_i
+```
+
+| Symbol | Meaning |
+|--------|---------|
+| μ | Global mean rating across all training data |
+| b_u | User bias — does this user tend to rate things high or low? |
+| b_i | Item bias — is this event generally popular? |
+| p_u · q_i | Dot product of user and event latent factor vectors — the personalized match score |
+
+Parameters are learned via **Stochastic Gradient Descent** over 50 epochs.
 
 ### Training data
 
-The model is trained on two sources combined:
+| Source | Signal | Rating |
+|--------|--------|--------|
+| `event_interest.csv` (provided dataset) | User marked interested | 5 |
+| `event_interest.csv` | Implicit view, no reaction | 2 |
+| Live DB | Confirmed booking | 5 |
+| Live DB | Event view | 1 |
 
-| Source                         | Signal                             | Rating |
-| ------------------------------ | ---------------------------------- | ------ |
-| Dataset (`event_interest.csv`) | User marked interested             | 5      |
-| Dataset (`event_interest.csv`) | No explicit signal (implicit view) | 2      |
-| Live DB                        | Confirmed booking                  | 5      |
-| Live DB                        | Event view                         | 1      |
+Explicit dislikes (`not_interested = 1`) are excluded — they would suppress events the user simply hadn't discovered yet.
 
-Explicit dislikes from the dataset (`not_interested = 1`) are excluded to avoid penalising events the user simply hadn't discovered yet.
+### ID space isolation
 
-### Dataset
-
-The provided dataset (`dataset/rel_event_csvs/event_interest.csv`) is read once at server startup and cached in memory. It gives the model a meaningful starting point before any real users have interacted with the system.
-
-Live DB user and event IDs are shifted by `+10,000,000` before entering the model so they never collide with dataset IDs. Recommendations are always made from events that exist in the live database.
+Dataset user/event IDs and live DB IDs coexist in one model. DB IDs are shifted by `+10,000,000` before entering the model to prevent collisions. The shift is reversed when returning results.
 
 ### Training schedule
 
-- **At startup** - model trains immediately (dataset + all current DB interactions)
-- **Every hour** - model retrains to incorporate new bookings and views (dataset is read from cache)
+- **At startup** — model trains immediately on dataset + all current DB interactions
+- **Every hour** — retrains to incorporate new bookings and views (dataset is cached in memory)
 
-> Interactions that happen _after_ the last training cycle only influence recommendations from the next retrain onwards. This is normal for batch-trained collaborative filtering.
+### New user fallback
 
-### Recommendations for new users
-
-If a user has no bookings, the algorithm falls back to their event views only. If a user has neither, no recommendations are shown.
-
----
-
-## Tech Stack
-
-| Layer    | Technology                     | Why                                             |
-| -------- | ------------------------------ | ----------------------------------------------- |
-| Backend  | Node.js + Express + TypeScript | Fast, typed REST API                            |
-| ORM      | Prisma                         | Type-safe database access, versioned migrations |
-| Database | PostgreSQL                     | Relational data, strong consistency             |
-| Auth     | JWT + bcryptjs                 | Stateless authentication, secure passwords      |
-| Frontend | Angular 21                     | Component-based SPA framework                   |
-| Maps     | OpenStreetMap     | Free interactive maps                           |
-| UI       | Bootstrap 5                    | Responsive layout out of the box                |
+If a user has no bookings or views, no recommendations are shown rather than serving meaningless generic results.
