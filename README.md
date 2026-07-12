@@ -13,7 +13,7 @@ Users can register, browse events, book tickets, and message each other. Organiz
 | **Frontend** | https://event-management-project-gd26.vercel.app |
 | **Backend API** | https://event-management-project-production.up.railway.app/api/health |
 
-**Demo login:** `admin` / `admin123`
+**Demo login:** `participant` / `participant123`
 
 ---
 
